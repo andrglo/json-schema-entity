@@ -2,6 +2,8 @@
 > Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL dtaabase
 
 
+WORK IN PROGRESS
+
 ## Install
 
 ```sh
@@ -14,7 +16,6 @@ $ npm install --save json-schema-entity
 ```js
 var jsonSchemaEntity = require('json-schema-entity');
 
-jsonSchemaEntity('Rainbow');
 ```
 
 ## License
@@ -28,5 +29,5 @@ MIT © [Andre Gloria]()
 [travis-url]: https://travis-ci.org/andrglo/json-schema-entity
 [daviddm-image]: https://david-dm.org/andrglo/json-schema-entity.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/andrglo/json-schema-entity
-[coveralls-image]: https://coveralls.io/repos/andrglo/json-schema-entity/badge.svg
-[coveralls-url]: https://coveralls.io/r/andrglo/json-schema-entity
+[coveralls-image]: https://coveralls.io/repos/andrglo/json-schema-entity/badge.svg?branch=master&service=github
+[coveralls-url]: https://coveralls.io/github/andrglo/json-schema-entity?branch=master

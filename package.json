@@ -1,9 +1,9 @@
 {
   "name": "json-schema-entity",
-  "version": "0.0.0",
-  "description": "Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL dtaabase",
+  "version": "0.0.1",
+  "description": "Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL database",
   "homepage": "",
-  "repository": "andrglo/json-schema-entity",
+  "repository": "https://github.com/andrglo/json-schema-entity.git",
   "author": {
     "name": "Andre Gloria",
     "email": "andredagloria@gmail.com",
