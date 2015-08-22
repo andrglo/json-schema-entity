@@ -6,7 +6,7 @@ _.str = require('underscore.string');
 var sql = {
 
   escapeId: function(val) {
-    return "[" + val.replace(/'/g, "''") + "]";
+    return '[' + val.replace(/'/g, '\'\'') + ']';
   },
 
   escape: function(val, stringifyObjects, timeZone) {
@@ -28,14 +28,14 @@ var sql = {
 
     val = val.replace(/[\']/g, function(s) {
       switch (s) {
-        case "\'":
-          return "''";
+        case '\'':
+          return '\'\'';
         default:
-          return " ";
+          return ' ';
       }
     });
 
-    return "'" + val + "'";
+    return '\'' + val + '\'';
   },
 
   normalizeSchema: function(schema) {
@@ -63,7 +63,7 @@ var sql = {
   // @returns ALTER query for adding a column
   addColumn: function(collectionName, attrName, attrDef) {
     var tableName = collectionName;
-    var columnDefinition = sql._schema(collectionName, attrDef, attrName);
+    var columnDefinition = sql.uSchema(collectionName, attrDef, attrName);
     return 'ALTER TABLE [' + tableName + '] ADD ' + columnDefinition;
   },
 
@@ -81,10 +81,10 @@ var sql = {
 
   // Create a schema csv for a DDL query
   schema: function(collectionName, attributes) {
-    return sql.build(collectionName, attributes, sql._schema);
+    return sql.build(collectionName, attributes, sql.uSchema);
   },
 
-  _schema: function(collectionName, attribute, attrName) {
+  uSchema: function(collectionName, attribute, attrName) {
 
     attrName = '[' + attrName + ']';
     var type = sqlTypeCast(attribute.type);
@@ -133,7 +133,8 @@ var sql = {
 
     // Build escaped attr and value strings using either the key,
     // or if one exists, the parent key
-    var attrStr, valueStr;
+    var attrStr;
+    var valueStr;
 
     // Special comparator case
     if (parentKey) {
@@ -152,7 +153,7 @@ var sql = {
         if (value === null) return attrStr + ' IS NOT NULL';
         else if (_.isArray(value)) {
           //return attrStr + ' NOT IN (' + valueStr.split(',') + ')';
-          return attrStr + " NOT IN (" + sql.values(collectionName, value, key) + ")";
+          return attrStr + ' NOT IN (' + sql.values(collectionName, value, key) + ')';
         }
         else return attrStr + '<>' + valueStr;
       }
@@ -165,8 +166,8 @@ var sql = {
       attrStr = sql.prepareAttribute(collectionName, value, key);
       valueStr = sql.prepareValue(collectionName, value, key);
       if (_.isNull(value)) {
-        return attrStr + " IS NULL";
-      } else return attrStr + "=" + valueStr;
+        return attrStr + ' IS NULL';
+      } else return attrStr + '=' + valueStr;
     }
   },
 
@@ -208,23 +209,14 @@ var sql = {
     if (key.toLowerCase() === 'or') {
       queryPart = sql.build(collectionName, criterion, sql.where, ' OR ');
       return ' ( ' + queryPart + ' ) ';
-    }
-
-    // AND
-    else if (key.toLowerCase() === 'and') {
+    } else if (key.toLowerCase() === 'and') { // AND
       queryPart = sql.build(collectionName, criterion, sql.where, ' AND ');
       return ' ( ' + queryPart + ' ) ';
-    }
-
-    // IN
-    else if (_.isArray(criterion)) {
-      values = sql.values(collectionName, criterion, key) || 'NULL';
-      queryPart = sql.prepareAttribute(collectionName, null, key) + " IN (" + values + ")";
+    } else if (_.isArray(criterion)) { // IN
+      var values = sql.values(collectionName, criterion, key) || 'NULL';
+      queryPart = sql.prepareAttribute(collectionName, null, key) + ' IN (' + values + ')';
       return queryPart;
-    }
-
-    // LIKE
-    else if (key.toLowerCase() === 'like') {
+    } else if (key.toLowerCase() === 'like') { // LIKE
       return sql.build(collectionName, criterion, function(collectionName, value, attrName) {
         var attrStr = sql.prepareAttribute(collectionName, value, attrName);
         if (_.isRegExp(value)) {
@@ -234,17 +226,11 @@ var sql = {
         // Handle escaped percent (%) signs [encoded as %%%]
         valueStr = valueStr.replace(/%%%/g, '\\%');
 
-        return attrStr + " LIKE " + valueStr;
+        return attrStr + ' LIKE ' + valueStr;
       }, ' AND ');
-    }
-
-    // NOT
-    else if (key.toLowerCase() === 'not') {
+    } else if (key.toLowerCase() === 'not') { // NOT
       throw new Error('NOT not supported yet!');
-    }
-
-    // Basic criteria item
-    else {
+    } else { // Basic criteria item
       return sql.prepareCriterion(collectionName, criterion, key);
     }
 
@@ -348,8 +334,8 @@ function sqlTypeCast(type) {
       return 'DATETIME';
 
     default:
-      console.error("Unregistered type given: " + type);
-      return "VARCHAR";
+      console.error('Unregistered type given: ' + type);
+      return 'VARCHAR';
   }
 }
 

@@ -1,5 +1,3 @@
-'use strict';
-
 var _ = require('lodash');
 var assert = require('assert');
 var xml2json = require('xml2json');
@@ -7,9 +5,6 @@ var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
 
-var log = console.log;
-
-const pk = '__jse__'; // package key
 const xmlSpaceToken = '_-_';
 const xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
@@ -17,42 +12,41 @@ function EntityError(options) {
   options = options || {};
   this.name = options.name || 'EntityError';
   this.message = options.message || 'Entity error';
-  options.errors &&
-  (this.errors = options.errors);
-  options.type &&
-  (this.type = options.type);
+  if (options.errors) this.errors = options.errors;
+  if (options.type) this.type = options.type;
 }
 EntityError.prototype = Object.create(Error.prototype);
 EntityError.prototype.constructor = EntityError;
 
 function runValidations(is, was, data) {
 
-  let errors = [];
+  var errors = [];
 
   function validate(is, was, data) {
     return runFieldValidations(is, was, data, errors).then(function() {
       return runModelValidations(is, was, data, errors).then(function() {
         return _.reduce(data.associations, function(chain, association) {
           return chain.then(function() {
-            let associationKey = association.data.key;
+            var associationKey = association.data.key;
             debug('Associated validation:', associationKey);
-            let from = is && is[associationKey];
-            let to = was && was[associationKey];
+            var from = is && is[associationKey];
+            var to = was && was[associationKey];
             if (_.isArray(from) || _.isArray(to)) {
-              from = _.isArray(from) ? from.slice(0) : from ? [form] : [];
+              from = _.isArray(from) ? from.slice(0) : from ? [from] : [];
               to = _.isArray(to) ? to.slice(0) : to ? [to] : [];
-              let pairs = [];
+              var pairs = [];
 
               var hasEqualPrimaryKey = function(a, b) {
-                let same;
+                var same = false;
                 _.forEach(association.data.primaryKeyAttributes, function(name) {
-                  return same = a[name] === b[name]
+                  same = a[name] === b[name];
+                  return same;
                 });
                 return same;
               }
 
               var findAndRemove = function(arr, obj) {       //todo refactor and more validation tests
-                let res = _.remove(arr, function(e) { //todo save and new in instance
+                var res = _.remove(arr, function(e) { //todo save and new in instance
                   if (hasEqualPrimaryKey(e, obj)) {
                     return true
                   }
@@ -97,13 +91,13 @@ function runValidations(is, was, data) {
 }
 
 function runFieldValidations(is, was, data, errors) {
-  let validator = data.validator;
+  var validator = data.validator;
   return _.reduce(is && validator && data.properties, function(chain, property, key) {
 
-    let validations = {};
+    var validations = {};
     if (is[key]) {
       _.forEach(property.validations, function(validation, name) {
-        let args = _.map(validation.args, function(arg) {
+        var args = _.map(validation.args, function(arg) {
           if (typeof arg === 'string' && arg.startsWith('this.')) {
             return is[arg.substring(5)]
           } else {
@@ -128,7 +122,7 @@ function runFieldValidations(is, was, data, errors) {
     return _.reduce(validations, function(chain, validation) {
       return chain.then(function() {
         debug('Running field validation:', validation.id, validation.args);
-        let res;
+        var res;
         try {
           res = validation.fn.apply(validator, validation.args)
         } catch (err) {
@@ -161,7 +155,7 @@ function runModelValidations(is, was, data, errors) {
         return;
       }
       debug('Running validation:', validation.id);
-      let res;
+      var res;
       try {
         res = validation.fn.call(is || was, is ? was : void 0)
       } catch (err) {
@@ -189,7 +183,7 @@ function Base(entity) {
 
 function newInstace(entity, data) {
 
-  let oldValues = _.cloneDeep(entity);
+  var oldValues = _.cloneDeep(entity);
 
   function Instance(values) {
     _.extend(this, values)
@@ -207,12 +201,12 @@ function newInstace(entity, data) {
 
 function buildEntity(record, data) {
   debug('Entity will be built:', data.key);
-  let entity = data.adapter.createInstance(_.pick(record, data.propertiesList), data.identity.name, data);
+  var entity = data.adapter.createInstance(_.pick(record, data.propertiesList), data.identity.name, data);
   _.forEach(data.associations, function(association) {
-    let key = association.data.key;
+    var key = association.data.key;
     debug('Checking association key:', key);
     if (record[key]) {
-      let recordset = extractRecordset(record[key], association.data.coerce)
+      var recordset = extractRecordset(record[key], association.data.coerce)
         .map(function(record) {
           return buildEntity(record, association.data)
         });
@@ -224,7 +218,7 @@ function buildEntity(record, data) {
 }
 
 function extractRecordset(xmlField, coerce) {
-  let json = xml2json.toJson('<recordset>' + xmlField + '</recordset>', {
+  var json = xml2json.toJson('<recordset>' + xmlField + '</recordset>', {
     object: false,
     reversible: false,
     coerce: false,
@@ -241,10 +235,9 @@ function extractRecordset(xmlField, coerce) {
   _.forEach(isArray ? json : [json], function(record) {
     coerce.map(function(coercion) {
       debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
-      record[coercion.property] &&
-      (record[coercion.property] = coercion.fn(record[coercion.property]));
+      if (record[coercion.property]) record[coercion.property] = coercion.fn(record[coercion.property]);
       debug('Coercion after', coercion.property, typeof record[coercion.property], record[coercion.property]);
-    })
+    });
   });
 
   return isArray ? json : [json];
@@ -252,7 +245,7 @@ function extractRecordset(xmlField, coerce) {
 
 function runHooks(hooks, model, transaction, data) {
 
-  let allHooks = [];
+  var allHooks = [];
   hooks.map(function(name) {
     allHooks = allHooks.concat(data.hooks[name])
   });
@@ -260,7 +253,7 @@ function runHooks(hooks, model, transaction, data) {
   return _.reduce(allHooks, function(chain, hook) {
     return chain.then(function() {
       debug('Running hook:', hook.id);
-      let res;
+      var res;
       try {
         res = hook.fn.call(model, transaction)
       } catch (err) {
@@ -285,18 +278,18 @@ function runHooks(hooks, model, transaction, data) {
 }
 
 function create(entity, options, data) {
-  let record = _.pick(entity, data.propertiesList);
+  var record = _.pick(entity, data.propertiesList);
   debug('Creating ', data.key);
   return runHooks(['beforeCreate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
       return data.adapter.create(record, data, {transaction: options.transaction})
         .then(function(instance) {
-          let newEntity = _.pick(instance, data.propertiesList);
+          var newEntity = _.pick(instance, data.propertiesList);
           return _.reduce(data.associations, function(chain, association) {
             const associationKey = association.data.key;
-            let associatedEntity = entity[associationKey];
+            var associatedEntity = entity[associationKey];
             const recordIsArray = _.isArray(associatedEntity);
-            let hasMany = (recordIsArray && associatedEntity.length > 1) ||
+            var hasMany = (recordIsArray && associatedEntity.length > 1) ||
               association.type === 'hasMany';
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
@@ -335,7 +328,7 @@ function create(entity, options, data) {
 }
 
 function update(entity, was, options, data) {
-  let record = _.pick(entity, data.propertiesList);
+  var record = _.pick(entity, data.propertiesList);
   debug('Updating ', data.key);
   return runHooks(['beforeUpdate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
@@ -352,7 +345,7 @@ function update(entity, was, options, data) {
           assert(res[0] === 1 || (typeof res === 'object' && res[0] === void 0),
             'Record of ' + data.key + ' found ' + res[0] + ' times for update, expected 1.' +
             ' Check if your entity has two association with the same foreign key');
-          let modifiedEntity = record;
+          var modifiedEntity = record;
           return _.reduce(data.associations, function(chain, association) {
             const associationKey = association.data.key;
             const associationPrimaryKey = association.data.primaryKeyAttributes;
@@ -362,9 +355,10 @@ function update(entity, was, options, data) {
             }
 
             var hasEqualPrimaryKey = function(a, b) {
-              let same;
+              var same = false;
               _.forEach(associationPrimaryKey, function(name) {
-                return same = a[name] === b[name]
+                same = a[name] === b[name];
+                return same;
               });
               return same;
             };
@@ -382,8 +376,8 @@ function update(entity, was, options, data) {
               assert(false, 'Better call Gloria')
             };
 
-            let associatedIsEntity = entity[associationKey];
-            let hasMany = (_.isArray(associatedIsEntity) && associatedIsEntity.length > 1) ||
+            var associatedIsEntity = entity[associationKey];
+            var hasMany = (_.isArray(associatedIsEntity) && associatedIsEntity.length > 1) ||
               association.type === 'hasMany';
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
@@ -394,16 +388,16 @@ function update(entity, was, options, data) {
             associatedIsEntity = _.isArray(associatedIsEntity) ?
               associatedIsEntity.slice(0) : associatedIsEntity ? [associatedIsEntity] : void 0;
 
-            let associatedWasEntity = was[associationKey];
+            var associatedWasEntity = was[associationKey];
             associatedWasEntity = _.isArray(associatedWasEntity) ?
               associatedWasEntity.slice(0) : associatedWasEntity ? [associatedWasEntity] : void 0;
 
-            let toBeCreated = _.remove(associatedIsEntity, function(is) {
+            var toBeCreated = _.remove(associatedIsEntity, function(is) {
               return !exists(is)
             });
-            let toBeUpdated = associatedIsEntity;
-            let toBeDeleted = _.remove(associatedWasEntity, function(was) {
-              let hasIs = false;
+            var toBeUpdated = associatedIsEntity;
+            var toBeDeleted = _.remove(associatedWasEntity, function(was) {
+              var hasIs = false;
               _.forEach(toBeUpdated, function(is) {
                 if (hasEqualPrimaryKey(was, is)) {
                   hasIs = true;
@@ -471,7 +465,7 @@ function destroy(entity, options, data) {
     .then(function() {
       return _.reduce(data.associations, function(chain, association) {
         const associationKey = association.data.key;
-        let associatedEntity = entity[associationKey];
+        var associatedEntity = entity[associationKey];
         const recordIsArray = _.isArray(associatedEntity);
         associatedEntity = associatedEntity === void 0 || recordIsArray ? associatedEntity : [associatedEntity];
         return _.reduce(associatedEntity, function(chain, entity) {
@@ -496,8 +490,8 @@ function destroy(entity, options, data) {
 
 module.exports = function(schemaName, schema, config) {
 
-  let adapter = buildAdapter(config.db);
-  let entity = entityFactory(schemaName, schema, rebuild);
+  var adapter = buildAdapter(config.db);
+  var entity = entityFactory(schemaName, schema, rebuild);
 
   function entityFactory(schemaName, schema, rebuild) {
     const publicAssociationMethods = [
@@ -511,7 +505,7 @@ module.exports = function(schemaName, schema, config) {
       'foreignKey'
     ];
     const identity = splitAlias(schemaName);
-    let data = {
+    var data = {
       validator: config.validator,
       identity: identity,
       adapter: adapter,
@@ -552,7 +546,7 @@ module.exports = function(schemaName, schema, config) {
           return data.public;
         },
         hasMany: function(schemaName, schema) {
-          let association = entityFactory(schemaName, schema, rebuild);
+          var association = entityFactory(schemaName, schema, rebuild);
           association.isAssociation = true;
           data.methods[association.key] = association.methods;
           data.public[association.key] = association.public;
@@ -564,7 +558,7 @@ module.exports = function(schemaName, schema, config) {
           return data.public[association.key];
         },
         hasOne: function(schemaName, schema) {
-          let association = entityFactory(schemaName, schema, rebuild);
+          var association = entityFactory(schemaName, schema, rebuild);
           association.isAssociation = true;
           data.methods[association.key] = association.methods;
           data.public[association.key] = association.public;
@@ -583,9 +577,9 @@ module.exports = function(schemaName, schema, config) {
         getSchema: function() {
 
           function buildSchema(data) {
-            let schema = data.schema;
+            var schema = data.schema;
             _.forEach(data.associations, function(association) {
-              let key = association.data.key;
+              var key = association.data.key;
               if (association.type === 'hasOne') {
                 schema.properties[key] = buildSchema(association.data);
               } else {
@@ -604,7 +598,7 @@ module.exports = function(schemaName, schema, config) {
         findAll: function(criteria, options) {
           options = options || {};
           if (data.scope) {
-            let where = _.extend({}, criteria.where, data.scope);
+            var where = _.extend({}, criteria.where, data.scope);
             criteria = _.extend({}, criteria);
             criteria.where = where;
           }
@@ -640,7 +634,7 @@ module.exports = function(schemaName, schema, config) {
           }
           options = options || {};
           if (typeof key !== 'object') {
-            let id = key;
+            var id = key;
             key = {where: {}};
             key.where[data.primaryKeyAttributes[0]] = id;
           } else if (!key.where) {
@@ -686,7 +680,7 @@ module.exports = function(schemaName, schema, config) {
           }
           options = options || {};
           if (typeof key !== 'object') {
-            let id = key;
+            var id = key;
             key = {where: {}};
             key.where[data.primaryKeyAttributes[0]] = id;
           } else if (!key.where) {
@@ -723,7 +717,7 @@ module.exports = function(schemaName, schema, config) {
       }
     };
 
-    let methodId = 0;
+    var methodId = 0;
 
     function addHook(name, id, fn) {
       fn = fn || id;
@@ -752,7 +746,7 @@ module.exports = function(schemaName, schema, config) {
     data.validate = [];
     data.methods.validate = function(id, fn, options) {
       options = options || {};
-      let normalizedOptions = {
+      var normalizedOptions = {
         onCreate: true,
         onUpdate: true,
         onDestroy: false
@@ -792,7 +786,7 @@ module.exports = function(schemaName, schema, config) {
 };
 
 function getForeignKey(table, properties) {
-  let foreignKey;
+  var foreignKey;
   _.forEach(properties, function(property, name) {
     var $ref = property.$ref || (property.schema && property.schema.$ref);
     if ($ref) {
@@ -816,11 +810,11 @@ function getReferencedTableName($ref) {
 }
 
 function buildAdapter(db) {
-  let adapter = {};
+  var adapter = {};
   if (isNodeMssql(db)) {
     adapter.query = function(command, criteria, options) {
       var sentence = utils.embedCriteria(command, criteria);
-      let request = new db.Request(options.transaction);
+      var request = new db.Request(options.transaction);
       return request.query(sentence);
     };
     adapter.createInstance = function(record, name, data) {
@@ -888,12 +882,12 @@ function buildAdapter(db) {
         case 'integer':
           return db.Int;
         case 'number':
-          return db.Decimal(property.maxLength, property.decimals);
+          return new db.Decimal(property.maxLength, property.decimals);
         case 'date':
         case 'datetime':
           return db.DateTime;
         case 'string':
-          return db.NVarChar(property.maxLength);
+          return new db.NVarChar(property.maxLength);
         default:
           throw new Error('Adapter type not defined for type ' + property.type)
       }
@@ -927,9 +921,9 @@ function buildAdapter(db) {
 
       // '2015-08-10 20:44:55.751 +00:00');select * from @tmp
 
-      let fieldsWithType = [];
-      let fields = [];
-      //let fieldsToInsert = [];
+      var fieldsWithType = [];
+      var fields = [];
+      //var fieldsToInsert = [];
       _.forEach(data.properties, function(property, name) {
         if (property.autoIncrement) {
           fieldsWithType.push('[' + (property.field || name) + ']' + ' ' +
@@ -949,7 +943,7 @@ function buildAdapter(db) {
       if (fieldsWithType.length === 0) {
         data.insertCommand = 'INSERT INTO [' + data.identity.name + '] (<fields>) VALUES (<values>)';
       } else {
-        let commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
+        var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
         commands.push('INSERT INTO [' + data.identity.name + '] (<fields>) OUTPUT ' +
           fields.map(function(field) {
             return 'INSERTED.[' + field + ']'
@@ -986,16 +980,16 @@ function buildAdapter(db) {
     };
     adapter.create = function(record, data, options) {
       options = options || {};
-      let fields = [];
-      let fieldsToRead = [];
-      let defaultValues = {};
-      let save = {};
-      let ps = new db.PreparedStatement(options.transaction);
+      var fields = [];
+      var fieldsToRead = [];
+      var defaultValues = {};
+      var save = {};
+      var ps = new db.PreparedStatement(options.transaction);
       _.forEach(data.properties, function(property, name) {
         if (property.autoIncrement) {
           fieldsToRead.push({from: property.field || name, to: name})
         } else {
-          let value = record[name];
+          var value = record[name];
           if (!value && property.defaultValue) {
             value = property.defaultValue;
             defaultValues[name] = value;
@@ -1004,7 +998,7 @@ function buildAdapter(db) {
             value = value.substr(0, property.maxLength);
           }
           if (value) {
-            let field = property.field || name;
+            var field = property.field || name;
             fields.push(field);
             const key = _.camelCase(field);
             ps.input(key, adapter.toAdapterType(property));
@@ -1017,9 +1011,9 @@ function buildAdapter(db) {
         }
       });
       if (data.timestamps) {
-        let now = new Date();
-        ps.input('createdAt', db.DateTime2(3));
-        ps.input('updatedAt', db.VarChar(26));
+        var now = new Date();
+        ps.input('createdAt', new db.DateTime2(3));
+        ps.input('updatedAt', new db.VarChar(26));
         save.createdAt = now.toISOString();
         save.updatedAt = now.toISOString().substring(0, 23) + '000';
         fields.push('createdAt');
@@ -1027,7 +1021,7 @@ function buildAdapter(db) {
         fieldsToRead.push({from: 'createdAt', to: 'createdAt'});
         fieldsToRead.push({from: 'updatedAt', to: 'updatedAt'})
       }
-      let insertCommand = data.insertCommand.replace('<fields>',
+      var insertCommand = data.insertCommand.replace('<fields>',
         fields.reduce(function(fields, field) {
           return fields + (fields ? ',' : '') + '[' + field + ']';
         }, '')).replace('<values>',
@@ -1058,17 +1052,17 @@ function buildAdapter(db) {
     };
     adapter.update = function(record, data, options) {
       assert(options.where);
-      let fields = [];
-      let save = {};
-      let ps = new db.PreparedStatement(options.transaction);
+      var fields = [];
+      var save = {};
+      var ps = new db.PreparedStatement(options.transaction);
       _.forEach(data.properties, function(property, name) {
         if (!property.autoIncrement) {
-          let value = record[name];
+          var value = record[name];
           if (value && property.enum) {
             value = value.substr(0, property.maxLength);
           }
           if (value !== void 0) {
-            let field = property.field || name;
+            var field = property.field || name;
             fields.push(field);
             const key = _.camelCase(field);
             ps.input(key, adapter.toAdapterType(property));
@@ -1081,20 +1075,20 @@ function buildAdapter(db) {
         }
       });
 
-      let findKeys = data.primaryKeyFields.map(function(name, index) {
+      var findKeys = data.primaryKeyFields.map(function(name, index) {
         const attribute = data.primaryKeyAttributes[index];
-        let key = _.camelCase('pk' + name);
+        var key = _.camelCase('pk' + name);
         ps.input(key, adapter.toAdapterType(data.properties[attribute]));
         save[key] = options.where[attribute];
         return name;
       });
       if (data.timestamps) {
-        let now = new Date();
-        ps.input('updatedAt', db.VarChar(26));
+        var now = new Date();
+        ps.input('updatedAt', new db.VarChar(26));
         save.updatedAt = now.toISOString().substring(0, 23) + '000';
         fields.push('updatedAt');
 
-        ps.input('pkupdatedAt', db.VarChar(26));
+        ps.input('pkupdatedAt', new db.VarChar(26));
         save.pkupdatedAt = _.isDate(options.where.updatedAt) ?
           options.where.updatedAt.toISOString() : (options.where.updatedAt || null);
         findKeys.push('updatedAt')
@@ -1128,7 +1122,7 @@ function buildAdapter(db) {
       // INSERTED.[NUMLANORI2],INSERTED.[FKOUTRO],INSERTED.[createdAt],INSERTED.[updatedAt]
       // into @tmp WHERE [updatedAt] = '2015-08-11 14:16:10.870 +00:00' AND [NUMCAD] = 19;select * from @tmp
 
-      let updateCommand = data.updateCommand.replace('<fields-values>',
+      var updateCommand = data.updateCommand.replace('<fields-values>',
         fields.reduce(function(fields, field) {
           return fields + (fields ? ',' : '') + '[' + field + ']=@' + _.camelCase(field);
         }, '')).replace('<primary-keys>',
@@ -1157,29 +1151,29 @@ function buildAdapter(db) {
         })
         .catch(function(error) {
           return ps.unprepare().then(function() {
-            throw  error;
+            throw error;
           })
         })
     };
     adapter.destroy = function(data, options) {
       assert(options.where)
-      let ps = new db.PreparedStatement(options.transaction);
-      let params = {};
-      let findKeys = data.primaryKeyFields.map(function(name, index) {
+      var ps = new db.PreparedStatement(options.transaction);
+      var params = {};
+      var findKeys = data.primaryKeyFields.map(function(name, index) {
         const attribute = data.primaryKeyAttributes[index];
-        let key = _.camelCase('pk' + name);
+        var key = _.camelCase('pk' + name);
         ps.input(key, adapter.toAdapterType(data.properties[attribute]));
         params[key] = options.where[attribute]
         return name;
       });
       if (data.timestamps) {
-        ps.input('pkupdatedAt', db.VarChar(26));
+        ps.input('pkupdatedAt', new db.VarChar(26));
         params.pkupdatedAt = _.isDate(options.where.updatedAt) ?
           options.where.updatedAt.toISOString() : (options.where.updatedAt || null);
         findKeys.push('updatedAt')
       }
 
-      let deleteCommand = data.deleteCommand.replace('<find-keys>',
+      var deleteCommand = data.deleteCommand.replace('<find-keys>',
         findKeys.reduce(function(fields, field) {
           return fields + (fields ? ' AND ' : '') + '[' + field + ']=@' + _.camelCase('pk' + field);
         }, ''));
@@ -1201,9 +1195,9 @@ function buildAdapter(db) {
         })
         .catch(function(error) {
           return ps.unprepare().then(function() {
-            throw  error;
-          })
-        })
+            throw error;
+          });
+        });
     };
   } else {
     throw new Error('Adapter for this database is not implemented')
@@ -1216,9 +1210,9 @@ function isNodeMssql(db) {
 }
 
 function splitAlias(name) {
-  let res = {};
-  let re = /^(.+) as (.+)$/i;
-  let match = re.exec(name);
+  var res = {};
+  var re = /^(.+) as (.+)$/i;
+  var match = re.exec(name);
   if (match) {
     res.name = match[1];
     res.as = match[2];
@@ -1243,7 +1237,7 @@ function getCoercionFunction(type) {
 }
 
 function getPropertyByFieldName(properties, fieldName) {
-  let property;
+  var property;
   _.forEach(properties, function(prop) {
     if (prop.field === fieldName) {
       property = prop;
@@ -1261,56 +1255,16 @@ function getPropertyByFieldName(properties, fieldName) {
   return property;
 }
 
-function getAttributeName(attributes, properties, key) {
-  let attributeName;
-  _.forEach(attributes, function(attribute, name) {
-    if (name === key) {
-      attributeName = key;
-      return false;
-    }
-  });
-  if (attributeName === void 0) {
-    _.forEach(properties, function(prop, name) {
-      if (name === key) {
-        attributeName = prop.field;
-        return false;
-      }
-    });
-  }
-  return attributeName;
-}
-
-function getPropertyName(properties, key) {
-  let propertyName;
-  _.forEach(properties, function(attribute, name) {
-    if (name === key) {
-      propertyName = key;
-      return false;
-    }
-  });
-  if (propertyName === void 0) {
-    _.forEach(properties, function(prop, name) {
-      if (name === key) {
-        propertyName = prop.field;
-        return false;
-      }
-    });
-  }
-  return propertyName || key;
-}
-
 function buildTable(data) {
 
-  let attributes = data.adapter.getAttributes(data.identity.name);
+  var attributes = data.adapter.getAttributes(data.identity.name);
   data.schema = {
     type: 'object',
     properties: {}
   };
-  data.title &&
-  (data.schema.title = data.title);
-  data.description &&
-  (data.schema.description = data.description);
-  let hasRequestedProperties = data.requestedProperties !== void 0;
+  if (data.title) data.schema.title = data.title;
+  if (data.description) data.schema.description = data.description;
+  var hasRequestedProperties = data.requestedProperties !== void 0;
   data.properties = {};
   _.forEach(data.requestedProperties, function(property, name) {
     data.properties[name] = data.requestedProperties[name];
@@ -1382,11 +1336,11 @@ function buildTable(data) {
 }
 
 function buildQuery(data) {
-  let fields = [];
+  var fields = [];
   _.forEach(data.properties, function(property, name) {
     debug('Property', name);
-    let fieldName = property.field || name;
-    let alias = name.replace(/ /g, xmlSpaceToken);
+    var fieldName = property.field || name;
+    var alias = name.replace(/ /g, xmlSpaceToken);
     fields.push('[' + fieldName + ']' + (alias !== fieldName ? ' AS [' + alias + ']' : ''));
   });
   if (data.timestamps) {
@@ -1399,7 +1353,7 @@ function buildQuery(data) {
       return false;
     }
     buildQuery(association.data);
-    let foreignKey = association.data.properties[association.data.foreignKey].field ||
+    var foreignKey = association.data.properties[association.data.foreignKey].field ||
       association.data.foreignKey;
     fields.push(
       '(' + association.data.query +
@@ -1416,7 +1370,7 @@ function buildQuery(data) {
 }
 
 function toJsonSchemaField(attribute) {
-  let field = {};
+  var field = {};
   if (attribute.type.key === 'INTEGER') {
     field.type = 'integer';
   } else if (attribute.type.key === 'STRING') {
@@ -1439,10 +1393,8 @@ function toJsonSchemaField(attribute) {
   } else {
     throw new Error('Type ' + attribute.type.key + ' has no conversion defined')
   }
-  attribute.primaryKey &&
-  (field.primaryKey = attribute.primaryKey);
-  attribute.autoIncrement &&
-  (field.autoIncrement = attribute.autoIncrement);
+  if (attribute.primaryKey) field.primaryKey = attribute.primaryKey;
+  if (attribute.autoIncrement) field.autoIncrement = attribute.autoIncrement;
   if (attribute.field !== attribute.fieldName) {
     field.field = attribute.field;
   }

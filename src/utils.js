@@ -83,30 +83,27 @@ function buildSelectStatement(query, criteria) {
     statement = statement.slice(0, -2) + ' ';
 
     // Add FROM clause
-    return statement += 'FROM (' + query + ') t ';
+    statement += 'FROM (' + query + ') t ';
+    return statement;
   }
 
   //HANDLE SKIP
   if (criteria.skip) {
     var primaryKeySort = {};
-    primaryKeySort[criteria.__primaryKey__] = 1;
-    //@todo what to do with no primary key OR sort?
-    criteria.sort = criteria.sort || primaryKeySort;
     statement += 'ROW_NUMBER() OVER (' +
       buildOrderByStatement(criteria) +
       ') AS \'__rownum__\', ';
-  }
-  else if (criteria.limit) {
+  } else if (criteria.limit) {
     // SQL Server implementation of LIMIT
     statement += 'TOP ' + criteria.limit + ' ';
   }
 
-  return statement += '* FROM (' + query + ') t ';
+  statement += '* FROM (' + query + ') t ';
+  return statement;
 
 }
 
-
-function buildOrderByStatement(criteria){
+function buildOrderByStatement(criteria) {
 
   var queryPart = 'ORDER BY ';
 
@@ -125,12 +122,11 @@ function buildOrderByStatement(criteria){
   });
 
   // Remove trailing comma
-  if(queryPart.slice(-2) === ', ') {
+  if (queryPart.slice(-2) === ', ') {
     queryPart = queryPart.slice(0, -2) + ' ';
   }
   return queryPart;
 }
-
 
 function serializeOptions(query, options) {
 
@@ -144,7 +140,7 @@ function serializeOptions(query, options) {
     queryPart += 'GROUP BY ';
 
     // Normalize to array
-    if(!Array.isArray(options.groupBy)) options.groupBy = [options.groupBy];
+    if (!Array.isArray(options.groupBy)) options.groupBy = [options.groupBy];
     options.groupBy.forEach(function(key) {
       queryPart += key + ', ';
     });
@@ -172,7 +168,7 @@ function serializeOptions(query, options) {
     });
 
     // Remove trailing comma
-    if(queryPart.slice(-2) === ', ') {
+    if (queryPart.slice(-2) === ', ') {
       queryPart = queryPart.slice(0, -2) + ' ';
     }
   }
