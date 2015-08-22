@@ -5,8 +5,8 @@ var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
 
-const xmlSpaceToken = '_-_';
-const xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
+var xmlSpaceToken = '_-_';
+var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
 function EntityError(options) {
   options = options || {};
@@ -569,7 +569,7 @@ module.exports = function(schemaName, schema, config) {
           rebuild();
           return data.public[association.key];
         },
-        foreignKey(name) {
+        foreignKey: function(name) {
           data.foreignKey = name;
           rebuild();
           return data.public;

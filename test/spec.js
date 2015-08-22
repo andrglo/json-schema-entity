@@ -7,9 +7,6 @@ var _ = require('lodash');
 var validator = require('validator');
 var brV = require('br-validations');
 var gutil = require('gulp-util');
-var pretty = require('pretty-hrtime');
-
-var log = console.log;
 
 var entity = require('../src');
 
@@ -113,7 +110,7 @@ module.exports = function(db) {
         })
     });
     it('record should be created', function(done) {
-      let now = Date.now();
+      var now = Date.now();
       start = process.hrtime();
       tableCadastro
         .create({
@@ -138,7 +135,7 @@ module.exports = function(db) {
         })
     });
     it('then can have only one field updated', function(done) {
-      let now = new Date(Date.now());
+      var now = new Date(Date.now());
       tableCadastro
         .findAll({where: {id: joao.id, updatedAt: joao.updatedAt}})
         .then(function(record) {
@@ -213,21 +210,21 @@ module.exports = function(db) {
 
     describe('check structure', function() {
       it('should have property destino', function() {
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('destino');
         schema.properties.destino.should.have.property('items');
         schema.properties.destino.items.should.have.property('properties');
         expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(3);
       });
       it('should have property outroDestino', function() {
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('outroDestino');
         schema.properties.outroDestino.should.have.property('items');
         schema.properties.outroDestino.items.should.have.property('properties');
         expect(Object.keys(schema.properties.outroDestino.items.properties).length).to.equal(3);
       });
       it('should have a customized title for property TipoSimplesNacional', function() {
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         var properties = Object.keys(schema.properties);
         expect(properties.length).to.equal(30);
         expect(properties.indexOf('FAX')).to.equal(-1);
@@ -236,7 +233,7 @@ module.exports = function(db) {
         expect(schema.properties.TSN.title).to.equal('TSN')
       });
       it('should have property fornecedor', function() {
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('fornecedor');
         schema.properties.fornecedor.should.have.property('type');
         schema.properties.fornecedor.type.should.equal('object');
@@ -245,7 +242,7 @@ module.exports = function(db) {
       });
       it('should have property cliente', function() {
         cadAtivo.should.have.property('cliente');
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('cliente');
         schema.properties.cliente.should.have.property('type');
         schema.properties.cliente.type.should.equal('object');
@@ -258,21 +255,21 @@ module.exports = function(db) {
         expect(Object.keys(schema.properties.cliente.properties).length).to.equal(66);
       });
       it('should have property classificacaocad', function() {
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('ClassificaçãoCad');
         schema.properties.ClassificaçãoCad.should.have.property('items');
         schema.properties.ClassificaçãoCad.items.should.have.property('properties');
         expect(Object.keys(schema.properties.ClassificaçãoCad.items.properties).length).to.equal(1);
       });
       it('should have property docpagvc', function() {
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('docpagvc');
         schema.properties.docpagvc.should.have.property('items');
         schema.properties.docpagvc.items.should.have.property('properties');
         expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(4);
       });
       it('should have property docpagvc in fornecedor', function() {
-        let schema = cadAtivo.getSchema();
+        var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('fornecedor');
         schema.properties.fornecedor.properties.should.have.property('docpagvc');
         schema.properties.fornecedor.properties.docpagvc.should.have.property('items');
@@ -312,7 +309,7 @@ module.exports = function(db) {
 
     describe('create cadastro', function() {
       it('should create a new cadastro', function(done) {
-        let now = new Date(Date.now());
+        var now = new Date(Date.now());
         cadAtivo
           .create({
             NOMECAD: 'João',
@@ -746,7 +743,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = recordset[0];
+            var record = recordset[0];
             record.should.have.property('ClassificaçãoCad');
             expect(record.ClassificaçãoCad).to.be.a('array');
             expect(record.cliente).to.be.a('object');
@@ -765,13 +762,13 @@ module.exports = function(db) {
     describe('update cadastro', function() {
 
       it('should update João to be a client', function(done) {
-        let now = new Date(Date.now());// - 1000); // sequelize truncates milliseconds todo: fix in node_modules/sequelize/lib/utils.js
+        var now = new Date(Date.now());// - 1000); // sequelize truncates milliseconds todo: fix in node_modules/sequelize/lib/utils.js
         cadAtivo
           .findAll({where: {id: joao.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let entity = recordset[0];
+            var entity = recordset[0];
             _.extend(entity, {
               ClassificaçãoCad: [
                 {
@@ -807,7 +804,7 @@ module.exports = function(db) {
                   .then(function(recordset) {
                     expect(recordset).to.be.a('array');
                     expect(recordset.length).to.equal(1);
-                    let record = recordset[0];
+                    var record = recordset[0];
                     record.should.have.property('cliente');
                     expect(record.cliente.SIGLACLI).to.equal('Sigla');
                     record.should.have.property('ClassificaçãoCad');
@@ -1062,7 +1059,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = recordset[0];
+            var record = recordset[0];
             expect(record.COMPLEMENTO).to.equal(null);
             done();
           })
@@ -1088,7 +1085,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = joana = recordset[0];
+            var record = joana = recordset[0];
             record.should.have.property('destino');
             expect(record.destino.length).to.equal(2);
             record.should.have.property('outroDestino');
@@ -1147,7 +1144,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = joana = recordset[0];
+            var record = joana = recordset[0];
             record.should.have.property('destino');
             expect(record.destino.length).to.equal(2);
             record.should.have.property('outroDestino');
@@ -1431,7 +1428,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let geralda = recordset[0];
+            var geralda = recordset[0];
             expect(geralda.Inativo).to.equal('Sim');
             done();
           })
@@ -1485,7 +1482,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = mario = recordset[0];
+            var record = mario = recordset[0];
             record.should.have.property('fornecedor');
             record.should.not.have.property('docpagvc');
             record.fornecedor.should.have.property('docpagvc');
@@ -1524,7 +1521,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = mario = recordset[0];
+            var record = mario = recordset[0];
             record.should.have.property('fornecedor');
             record.fornecedor.should.have.property('docpagvc');
             record.should.not.have.property('docpagvc');
@@ -1563,7 +1560,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = mario = recordset[0];
+            var record = mario = recordset[0];
             record.should.have.property('fornecedor');
             record.fornecedor.should.have.property('docpagvc');
             record.should.not.have.property('docpagvc');
@@ -1683,7 +1680,7 @@ module.exports = function(db) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            let record = recordset[0];
+            var record = recordset[0];
             record.should.have.property('fornecedor');
             record.should.not.have.property('docpagvc');
             record.fornecedor.should.have.property('docpagvc');
