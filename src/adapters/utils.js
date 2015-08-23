@@ -89,7 +89,6 @@ function buildSelectStatement(query, criteria) {
 
   //HANDLE SKIP
   if (criteria.skip) {
-    var primaryKeySort = {};
     statement += 'ROW_NUMBER() OVER (' +
       buildOrderByStatement(criteria) +
       ') AS \'__rownum__\', ';
@@ -140,7 +139,9 @@ function serializeOptions(query, options) {
     queryPart += 'GROUP BY ';
 
     // Normalize to array
-    if (!Array.isArray(options.groupBy)) options.groupBy = [options.groupBy];
+    if (!Array.isArray(options.groupBy)) {
+      options.groupBy = [options.groupBy];
+    }
     options.groupBy.forEach(function(key) {
       queryPart += key + ', ';
     });
