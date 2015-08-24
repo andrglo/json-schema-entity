@@ -762,7 +762,7 @@ module.exports = function(db) {
     describe('update cadastro', function() {
 
       it('should update João to be a client', function(done) {
-        var now = new Date(Date.now());// - 1000); // sequelize truncates milliseconds todo: fix in node_modules/sequelize/lib/utils.js
+        var now = new Date(Date.now());
         cadAtivo
           .findAll({where: {id: joao.id}})
           .then(function(recordset) {
@@ -2027,19 +2027,19 @@ module.exports = function(db) {
           })
           .catch(function(error) {
             done(error);
-          })
+          });
       });
     });
 
     describe('querying', function() {
-
-      it('should create 100 records in an minimum time', function(done) {
-        gutil.log('Is generating 100 entities...');
-        var minSecsToGenerate = 3;
+      var numberOfRecordsToGenerate = 10;
+      var minMiliSecsToGenerate = 300;
+      it('should create ' + numberOfRecordsToGenerate + ' records in an minimum time', function(done) {
+        gutil.log('Is generating ' + numberOfRecordsToGenerate + ' entities...');
         var duration = process.hrtime();
         var promise = Promise.resolve();
         var i = 1;
-        _.times(100, function() {
+        _.times(numberOfRecordsToGenerate, function() {
           var order = i++;
           promise = promise.then(function() {
             return cadAtivo
@@ -2078,7 +2078,8 @@ module.exports = function(db) {
         promise
           .then(function() {
             duration = process.hrtime(duration);
-            expect(duration[0] < minSecsToGenerate).to.equal(true); // Macbook  iMac retina ?
+            duration = (duration[0] * 1000) + (duration[1] / 1000000);
+            expect(duration < minMiliSecsToGenerate).to.equal(true);
             done();
           })
           .catch(function(error) {
@@ -2086,12 +2087,12 @@ module.exports = function(db) {
           });
       });
 
-      it('should read the 100 records', function(done) {
+      it('should read the records', function(done) {
         cadAtivo
           .findAll({where: {NUMERO: 'QRYTST'}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
-            expect(recordset.length).to.equal(100);
+            expect(recordset.length).to.equal(numberOfRecordsToGenerate);
             done();
           })
           .catch(function(err) {
@@ -2099,12 +2100,12 @@ module.exports = function(db) {
           });
       });
 
-      it('should read the 100 records using like', function(done) {
+      it('should read the records using like', function(done) {
         cadAtivo
           .findAll({where: {NUMERO: {like: '%YTST'}}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
-            expect(recordset.length).to.equal(100);
+            expect(recordset.length).to.equal(numberOfRecordsToGenerate);
             done();
           })
           .catch(function(err) {
@@ -2112,7 +2113,7 @@ module.exports = function(db) {
           });
       });
 
-      it('should read the 100 records using or', function(done) {
+      it('should read the records using or', function(done) {
         cadAtivo
           .findAll({
             where: {
@@ -2124,7 +2125,7 @@ module.exports = function(db) {
           })
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
-            expect(recordset.length).to.equal(100);
+            expect(recordset.length).to.equal(numberOfRecordsToGenerate);
             done();
           })
           .catch(function(err) {
@@ -2132,20 +2133,20 @@ module.exports = function(db) {
           });
       });
 
-      it('should read the 10 records in the expected page', function(done) {
+      it('should read the 3 records in the expected page', function(done) {
         cadAtivo
           .findAll({
             where: {
               NUMERO: 'QRYTST'
             },
-            limit: 10,
-            skip: 10,
+            limit: 3,
+            skip: 3,
             sort: ['NOMECAD']
           })
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
-            expect(recordset.length).to.equal(10);
-            var i = 11;
+            expect(recordset.length).to.equal(3);
+            var i = 4;
             recordset.map(function(record) {
               expect(i++).to.equal(Number(record.NOMECAD));
             });

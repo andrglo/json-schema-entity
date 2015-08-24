@@ -75,16 +75,16 @@ before(function(done) {
     .then(function() {
       return tasks.createTables(mssql);
     })
-    //.then(function() {
-    //  return createPostgresDb();
-    //})
     .then(function() {
-      //pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
-      //pgDb = pg(pgConfig);
+      return createPostgresDb();
     })
-    //.then(function() {
-    //  return tasks.createTables(pgDb);
-    //})
+    .then(function() {
+      pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
+      pgDb = pg(pgConfig);
+    })
+    .then(function() {
+      return tasks.createTables(pgDb);
+    })
     .then(function() {
       done();
     })
@@ -93,17 +93,17 @@ before(function(done) {
     });
 });
 
-//describe('postgres', function() {
-//  var duration;
-//  before(function() {
-//    duration = process.hrtime();
-//  });
-//  spec(pgDb);
-//  after(function() {
-//    duration = process.hrtime(duration);
-//    gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
-//  });
-//});
+describe('postgres', function() {
+  var duration;
+  before(function() {
+    duration = process.hrtime();
+  });
+  spec(pgDb);
+  after(function() {
+    duration = process.hrtime(duration);
+    gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
+  });
+});
 
 describe('mssql', function() {
   if (process.env.CI) {

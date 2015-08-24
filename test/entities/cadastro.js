@@ -3,16 +3,17 @@
 var _ = require('lodash');
 var co = require('co');
 var entity = require('../../src');
-var CADASTRO = require('../schemas/CADASTRO.json');
-var FORNEC = require('../schemas/FORNEC.json');
-var Classe = require('../schemas/Classificação.json');
-var CLIENTE = require('../schemas/CLIENTE.json');
-var ClassificacaoCad = require('../schemas/ClassificaçãoCad.json');
-var DOCPAGVC = require('../schemas/DOCPAGVC.json');
 
 var log = console.log;
 
 module.exports = function(config) {
+
+  var CADASTRO = _.cloneDeep(require('../schemas/CADASTRO.json'));
+  var FORNEC = require('../schemas/FORNEC.json');
+  var Classe = require('../schemas/Classificação.json');
+  var CLIENTE = _.cloneDeep(require('../schemas/CLIENTE.json'));
+  var ClassificacaoCad = require('../schemas/ClassificaçãoCad.json');
+  var DOCPAGVC = require('../schemas/DOCPAGVC.json');
 
   let classificacao = entity('Classificação', Classe, config);
 
