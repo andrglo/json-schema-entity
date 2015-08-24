@@ -2,6 +2,8 @@ var _ = require('lodash');
 var assert = require('assert');
 var debug = require('debug')('json-schema-entity');
 
+var log = console.log;
+
 function EntityError(options) {
   options = options || {};
   this.name = options.name || 'EntityError';

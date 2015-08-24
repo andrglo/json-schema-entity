@@ -6,7 +6,7 @@ _.str = require('underscore.string');
 var sql = {
 
   escapeId: function(val) {
-    return '[' + val.replace(/'/g, '\'\'') + ']';
+    return sql.cl.wrap(val.replace(/'/g, '\'\''));
   },
 
   escape: function(val, stringifyObjects, timeZone) {
@@ -187,7 +187,7 @@ var sql = {
   },
 
   prepareAttribute: function(collectionName, value, attrName) {
-    return '[' + attrName + ']';
+    return sql.cl.wrap(attrName);
   },
 
   // Starting point for predicate evaluation

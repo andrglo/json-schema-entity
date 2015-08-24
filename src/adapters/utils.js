@@ -3,9 +3,9 @@
 var _ = require('lodash');
 var sql = require('./sql');
 
-exports.embedCriteria = function(query, criteria) {
-  var statement = buildSelectStatement(query, criteria);
-  statement += serializeOptions(query, criteria);
+exports.embedCriteria = function(query, criteria, cl) {
+  var statement = buildSelectStatement(query, criteria, cl);
+  statement += serializeOptions(query, criteria, cl);
   if (criteria.skip) {
     var outerOffsetQuery = 'SELECT ';
     if (criteria.limit) {
@@ -18,7 +18,7 @@ exports.embedCriteria = function(query, criteria) {
   return statement;
 };
 
-function buildSelectStatement(query, criteria) {
+function buildSelectStatement(query, criteria, cl) {
 
   var statement = 'SELECT ';
 
@@ -127,10 +127,11 @@ function buildOrderByStatement(criteria) {
   return queryPart;
 }
 
-function serializeOptions(query, options) {
+function serializeOptions(query, options, cl) {
 
   var queryPart = '';
 
+  sql.cl = cl;
   if (options.where) {
     queryPart += 'WHERE ' + sql.where(query, options.where) + ' ';
   }

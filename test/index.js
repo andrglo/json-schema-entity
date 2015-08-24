@@ -26,7 +26,10 @@ var pgConfig = {
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD
 };
-var pg = pgp();
+var pgOptions = {
+  promiseLib: Promise
+};
+var pg = pgp(pgOptions);
 var pgDb = pg(pgConfig);
 
 function createPostgresDb() {
@@ -105,20 +108,20 @@ describe('postgres', function() {
   });
 });
 
-describe('mssql', function() {
-  if (process.env.CI) {
-    return;
-  }
-  var duration;
-  before(function() {
-    duration = process.hrtime();
-  });
-  spec(mssql);
-  after(function() {
-    duration = process.hrtime(duration);
-    gutil.log('Mssql finished after', gutil.colors.magenta(pretty(duration)));
-  });
-});
+//describe('mssql', function() {
+//  if (process.env.CI) {
+//    return;
+//  }
+//  var duration;
+//  before(function() {
+//    duration = process.hrtime();
+//  });
+//  spec(mssql);
+//  after(function() {
+//    duration = process.hrtime(duration);
+//    gutil.log('Mssql finished after', gutil.colors.magenta(pretty(duration)));
+//  });
+//});
 
 after(function() {
   if (!process.env.CI) {

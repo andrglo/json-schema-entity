@@ -16,6 +16,8 @@ var FORNEC = require('./schemas/FORNEC.json');
 var EVENTO = require('./schemas/EVENTO.json');
 var DOCPAGEV = require('./schemas/DOCPAGEV.json');
 
+var log = console.log;
+
 function decimalPlaces(num) {
   var match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
   if (!match) {
@@ -144,7 +146,7 @@ module.exports = function(db) {
           return tableCadastro.update({
             IDENT: 'J',
             TipoSimplesNacional: '2 - Optante ME/EPP'
-          }, {where: {id: joao.id, updatedAt: joao.updatedAt}})
+          }, {where: {id: record.id, updatedAt: record.updatedAt}})
         })
         .then(function(record) {
           end = process.hrtime(start);
