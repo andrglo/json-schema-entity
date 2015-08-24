@@ -14,27 +14,66 @@ module.exports = function(config) {
   var CLIENTE = _.cloneDeep(require('../schemas/CLIENTE.json'));
   var ClassificacaoCad = require('../schemas/ClassificaçãoCad.json');
   var DOCPAGVC = require('../schemas/DOCPAGVC.json');
+  var DOCPAGEV = require('../schemas/DOCPAGEV.json');
 
   let classificacao = entity('Classificação', Classe, config);
+  let docpagev = entity('DOCPAGEV', DOCPAGEV, config);
 
   function createClasses(transaction) {
     let classcad = this.ClassificaçãoCad;
     return classcad && co(function*() {
-        try {
-          for (let i = 0; i < classcad.length; i++) {
-            let classe = classcad[i].Classe;
-            let recordset = yield classificacao.findAll({
-              where: {
-                id: classe
-              }
-            }, {transaction: transaction});
-            if (recordset.length == 0) {
-              yield classificacao.create({id: classe}, {transaction: transaction})
+        for (let i = 0; i < classcad.length; i++) {
+          let classe = classcad[i].Classe;
+          let recordset = yield classificacao.findAll({
+            where: {
+              id: classe
             }
+          }, {transaction: transaction});
+          if (recordset.length === 0) {
+            yield classificacao.create({id: classe}, {transaction: transaction})
           }
-        } catch (e) {
-          console.error('createClasses Error', e);
         }
+      });
+  }
+
+  function createEvs(t) {
+    var id = this.id;
+    var docpagvc = !this.docpagvc || _.isArray(this.docpagvc) ? this.docpagvc : [this.docpagvc];
+    var insertion = Promise.resolve();
+    _.forEach(docpagvc, function() {
+      insertion = insertion.then(function() {
+        return docpagev.create({
+          NUMDOC: id,
+          CONTAEV: 'any',
+          VALOR: 10
+        }, {transaction: t});
+      })
+    });
+    return insertion;
+  }
+
+  function updateEvs(t) {
+    var self = this;
+    return destroyEvs.call(self, t)
+      .then(function() {
+        return createEvs.call(self, t)
+      })
+  }
+
+  function destroyEvs(t) {
+    var id = this.id;
+    return docpagev
+      .findAll({where: {NUMDOC: id}}, {transaction: t})
+      .then(function(recordset) {
+        var deletion = Promise.resolve();
+        _.forEach(recordset, function(record) {
+          deletion = deletion.then(function() {
+            return docpagev.destroy({
+              where: {id: record.id}
+            }, {transaction: t})
+          })
+        });
+        return deletion;
       });
   }
 
@@ -251,6 +290,9 @@ module.exports = function(config) {
   cadAtivo.beforeDelete('Teste qualquer', function() {
   });
   cadAtivo.beforeSave(createClasses); //=> beforeCreate and beforeUpdate
+  cadAtivo.afterCreate(createEvs);
+  cadAtivo.afterUpdate(updateEvs);
+  cadAtivo.beforeDestroy(destroyEvs);
   cadAtivo.beforeSave('bairro', function() {
     //noinspection JSPotentiallyInvalidUsageOfThis
     if (this.BAIRRO === 'X') throw new Error('bairro cant be X')

@@ -14,6 +14,7 @@ var CADASTRO = require('./schemas/CADASTRO.json');
 var DOCPAGVC = require('./schemas/DOCPAGVC.json');
 var FORNEC = require('./schemas/FORNEC.json');
 var EVENTO = require('./schemas/EVENTO.json');
+var DOCPAGEV = require('./schemas/DOCPAGEV.json');
 
 function decimalPlaces(num) {
   var match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
@@ -186,6 +187,7 @@ module.exports = function(db) {
     var tableFornec;
     var tableEvento;
     var tableDocpagvc;
+    var tableDocpagev;
 
     var joao;
     var jose;
@@ -206,6 +208,7 @@ module.exports = function(db) {
       tableFornec = entity('FORNEC', FORNEC, {db: db});
       tableEvento = entity('EVENTO', EVENTO, {db: db});
       tableDocpagvc = entity('DOCPAGVC', DOCPAGVC, {db: db});
+      tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {db: db});
     });
 
     describe('check structure', function() {
@@ -694,6 +697,10 @@ module.exports = function(db) {
               NOMECAD: 'Gilda',
               IDENT: 'Jessica',
               NUMERO: '13'
+            },
+            docpagvc: {
+              VALOR: 700,
+              DATAVENC: '2015-08-23'
             }
           })
           .then(function(record) {
@@ -702,11 +709,28 @@ module.exports = function(db) {
             record.maisOutroDestino.NOMECAD.should.equal('Gilda');
             record.maisOutroDestino.IDENT.should.equal('Jessica');
             record.maisOutroDestino.NUMLANORI2.should.equal(record.id);
+
+            record.should.have.property('docpagvc');
+            expect(record.docpagvc).to.be.a('array');
+            expect(record.docpagvc.length).to.equal(1);
+
             done();
           })
           .catch(function(err) {
             done(err);
           })
+      });
+      it('check if the vctos array generate an external table', function(done) {
+        tableDocpagev
+          .findAll({where: {NUMDOC: geralda.id}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            done();
+          })
+          .catch(function(err) {
+            done(err);
+          });
       });
       it('should accept a new cliente/fornecedor', function(done) {
         cadAtivo
@@ -797,8 +821,6 @@ module.exports = function(db) {
                 expect(record.afterCreate).to.be.undefined;
                 expect(record.afterUpdate).to.be.true;
                 expect(record.afterPromise).to.be.true;
-              })
-              .then(function() {
                 return cadAtivo
                   .findAll({where: {id: joao.id}})
                   .then(function(recordset) {
@@ -903,6 +925,18 @@ module.exports = function(db) {
             done(err);
           })
       });
+      it('check if the added vctos array generate an external table', function(done) {
+        tableDocpagev
+          .findAll({where: {NUMDOC: joao.id}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            done();
+          })
+          .catch(function(err) {
+            done(err);
+          });
+      });
       it('replace vctos array', function(done) {
         cadAtivo
           .update({
@@ -984,6 +1018,18 @@ module.exports = function(db) {
           .catch(function(error) {
             done(error);
           })
+      });
+      it('check if the joao vctos array generate is equivalent to the external table', function(done) {
+        tableDocpagev
+          .findAll({where: {NUMDOC: joao.id}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(3);
+            done();
+          })
+          .catch(function(err) {
+            done(err);
+          });
       });
       it('finally lets try delete Joao without timestamp', function(done) {
         cadAtivo
@@ -1078,6 +1124,18 @@ module.exports = function(db) {
             console.error('---', error);
             done(error);
           })
+      });
+      it('check if the joao vctos array external table was deleted', function(done) {
+        tableDocpagev
+          .findAll({where: {NUMDOC: joao.id}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(0);
+            done();
+          })
+          .catch(function(err) {
+            done(err);
+          });
       });
       it('confirm Joana data after create', function(done) {
         cadAtivo
