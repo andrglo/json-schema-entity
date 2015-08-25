@@ -338,7 +338,6 @@ module.exports = function(db) {
             done();
           })
           .catch(function(err) {
-            console.error(err);
             done(err);
           })
       });
@@ -1124,7 +1123,6 @@ module.exports = function(db) {
             done();
           })
           .catch(function(error) {
-            console.error('---', error);
             done(error);
           })
       });
@@ -1284,7 +1282,6 @@ module.exports = function(db) {
             done();
           })
           .catch(function(err) {
-            console.error(err);
             done(err);
           })
       });

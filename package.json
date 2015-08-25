@@ -27,7 +27,6 @@
   "devDependencies": {
     "br-validations": "0.2.4",
     "chai": "^3.2.0",
-    "co": "^4.6.0",
     "glob": "^5.0.14",
     "gulp": "^3.6.0",
     "gulp-coveralls": "^0.1.0",

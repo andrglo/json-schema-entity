@@ -1,7 +1,6 @@
 'use strict';
 
 var _ = require('lodash');
-var co = require('co');
 var entity = require('../../src');
 
 var log = console.log;
@@ -16,24 +15,23 @@ module.exports = function(config) {
   var DOCPAGVC = require('../schemas/DOCPAGVC.json');
   var DOCPAGEV = require('../schemas/DOCPAGEV.json');
 
-  let classificacao = entity('Classificação', Classe, config);
-  let docpagev = entity('DOCPAGEV', DOCPAGEV, config);
+  var classificacao = entity('Classificação', Classe, config);
+  var docpagev = entity('DOCPAGEV', DOCPAGEV, config);
 
   function createClasses(transaction) {
-    let classcad = this.ClassificaçãoCad;
-    return classcad && co(function*() {
-        for (let i = 0; i < classcad.length; i++) {
-          let classe = classcad[i].Classe;
-          let recordset = yield classificacao.findAll({
-            where: {
-              id: classe
-            }
-          }, {transaction: transaction});
+    var insertion = Promise.resolve();
+    _.forEach(this.ClassificaçãoCad, function(classe) {
+      insertion = insertion
+        .then(function() {
+          return classificacao.findAll({where: {id: classe.Classe}}, {transaction: transaction});
+        })
+        .then(function(recordset) {
           if (recordset.length === 0) {
-            yield classificacao.create({id: classe}, {transaction: transaction})
+            return classificacao.create({id: classe.Classe}, {transaction: transaction});
           }
-        }
-      });
+        })
+    });
+    return insertion;
   }
 
   function createEvs(t) {
@@ -78,7 +76,7 @@ module.exports = function(config) {
   }
 
   // Schema
-  let cadAtivo = entity('CADASTRO as cadAtivo', {
+  var cadAtivo = entity('CADASTRO as cadAtivo', {
     title: 'Cadastro entity',
     description: 'Cadastro entity description',
     properties: _.pick(CADASTRO.properties, [
@@ -222,7 +220,7 @@ module.exports = function(config) {
   // Validation (before transaction, called in create(default), update(default)
   // and destroy(if options.onDelete or options.onDestroy set to true)
   cadAtivo.validate('Classes', function() {
-    let rules = {
+    var rules = {
       cliente: 'Cliente',
       fornec: 'Fornecedor'
     };
@@ -235,7 +233,7 @@ module.exports = function(config) {
   cadAtivo.validate('Teste qualquer', function() {
   });
   cadAtivo.validate('Teste de promise', function() {
-    let self = this;
+    var self = this;
     return Promise.resolve().then(function() {
       if (self.Suframa)
         throw new Error('Teste de promise');
@@ -243,7 +241,7 @@ module.exports = function(config) {
   });
 
   cadAtivo.validate('Duplicated CPF', function() {
-    let self = this;
+    var self = this;
     if (this.CGCCPF) {
       return cadAtivo.findAll({where: {CGCCPF: this.CGCCPF}})
         .then(function(recordset) {
@@ -281,7 +279,7 @@ module.exports = function(config) {
   cadAtivo.beforeDelete(function() {
   });
   cadAtivo.beforeDelete(function() {
-    let self = this;
+    var self = this;
     return Promise.resolve().then(function() {
       if (self.CELULAR)
         throw new Error('celular error');
@@ -299,7 +297,7 @@ module.exports = function(config) {
   });
   cadAtivo.beforeSave('pais', function() {
     //noinspection JSPotentiallyInvalidUsageOfThis
-    let self = this;
+    var self = this;
     return Promise.resolve().then(function() {
       if (self.PAIS === 'X') throw new Error('pais cant be X')
     })
@@ -311,7 +309,7 @@ module.exports = function(config) {
   cadAtivo.afterUpdate(function() {
     //noinspection JSPotentiallyInvalidUsageOfThis
     this.afterUpdate = true;
-    let self = this;
+    var self = this;
     return Promise.resolve().then(function() {
       self.afterPromise = true;
     })
