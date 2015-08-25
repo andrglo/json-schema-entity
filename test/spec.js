@@ -83,7 +83,7 @@ module.exports = function(db) {
 
     it('record should not exist', function(done) {
       tableCadastro
-        .findAll({where: {id: 8}})
+        .fetch({where: {id: 8}})
         .then(function(recordset) {
           expect(recordset).to.be.a('array');
           expect(recordset.length).to.equal(0);
@@ -140,7 +140,7 @@ module.exports = function(db) {
     it('then can have only one field updated', function(done) {
       var now = new Date(Date.now());
       tableCadastro
-        .findAll({where: {id: joao.id, updatedAt: joao.updatedAt}})
+        .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
         .then(function(recordset) {
           var record = recordset[0];
           start = process.hrtime();
@@ -283,13 +283,13 @@ module.exports = function(db) {
         expect(Object.keys(schema.properties.fornecedor.properties.docpagvc.items.properties).length).to.equal(4);
       });
       it('should not have entity methods in association', function() {
-        cadAtivo.fornecedor.should.not.have.property('findAll');
+        cadAtivo.fornecedor.should.not.have.property('fetch');
         cadAtivo.fornecedor.should.not.have.property('setScope');
         cadAtivo.fornecedor.should.not.have.property('getSchema');
         cadAtivo.fornecedor.should.not.have.property('create');
         cadAtivo.fornecedor.should.not.have.property('update');
         cadAtivo.fornecedor.should.not.have.property('destroy');
-        cadAtivo.fornecedor.docpagvc.should.not.have.property('findAll');
+        cadAtivo.fornecedor.docpagvc.should.not.have.property('fetch');
         cadAtivo.fornecedor.docpagvc.should.not.have.property('setScope');
         cadAtivo.fornecedor.docpagvc.should.not.have.property('getSchema');
         cadAtivo.fornecedor.docpagvc.should.not.have.property('create');
@@ -301,7 +301,7 @@ module.exports = function(db) {
     describe('get cadastro id 8', function() {
       it('should not exist', function(done) {
         cadAtivo
-          .findAll({where: {id: 8}})
+          .fetch({where: {id: 8}})
           .then(function(cadastro) {
             expect(cadastro).to.be.a('array');
             expect(cadastro.length).to.equal(0);
@@ -724,7 +724,7 @@ module.exports = function(db) {
       });
       it('check if the vctos array generate an external table', function(done) {
         tableDocpagev
-          .findAll({where: {NUMDOC: geralda.id}})
+          .fetch({where: {NUMDOC: geralda.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -765,7 +765,7 @@ module.exports = function(db) {
       });
       it('lets check the new cliente/fornecedor', function(done) {
         cadAtivo
-          .findAll({where: {id: any.id}})
+          .fetch({where: {id: any.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -790,7 +790,7 @@ module.exports = function(db) {
       it('should update João to be a client', function(done) {
         var now = new Date(Date.now());
         cadAtivo
-          .findAll({where: {id: joao.id}})
+          .fetch({where: {id: joao.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -824,7 +824,7 @@ module.exports = function(db) {
                 expect(record.afterUpdate).to.be.true;
                 expect(record.afterPromise).to.be.true;
                 return cadAtivo
-                  .findAll({where: {id: joao.id}})
+                  .fetch({where: {id: joao.id}})
                   .then(function(recordset) {
                     expect(recordset).to.be.a('array');
                     expect(recordset.length).to.equal(1);
@@ -929,7 +929,7 @@ module.exports = function(db) {
       });
       it('check if the added vctos array generate an external table', function(done) {
         tableDocpagev
-          .findAll({where: {NUMDOC: joao.id}})
+          .fetch({where: {NUMDOC: joao.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1023,7 +1023,7 @@ module.exports = function(db) {
       });
       it('check if the joao vctos array generate is equivalent to the external table', function(done) {
         tableDocpagev
-          .findAll({where: {NUMDOC: joao.id}})
+          .fetch({where: {NUMDOC: joao.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(3);
@@ -1103,7 +1103,7 @@ module.exports = function(db) {
       });
       it('and check COMPLEMENTO', function(done) {
         cadAtivo
-          .findAll({where: {id: joao.id, updatedAt: joao.updatedAt}})
+          .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1148,7 +1148,7 @@ module.exports = function(db) {
       });
       it('check if the joao vctos array external table was deleted', function(done) {
         tableDocpagev
-          .findAll({where: {NUMDOC: joao.id}})
+          .fetch({where: {NUMDOC: joao.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1160,7 +1160,7 @@ module.exports = function(db) {
       });
       it('confirm Joana data after create', function(done) {
         cadAtivo
-          .findAll({where: {id: joana.id}})
+          .fetch({where: {id: joana.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1219,7 +1219,7 @@ module.exports = function(db) {
       });
       it('confirm Joana data after update', function(done) {
         cadAtivo
-          .findAll({where: {id: joana.id}})
+          .fetch({where: {id: joana.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1322,9 +1322,9 @@ module.exports = function(db) {
     });
 
     describe('checking methods', function() {
-      it('joana should have quitar after findAll', function(done) {
+      it('joana should have quitar after fetch', function(done) {
         cadAtivo
-          .findAll({where: {id: joana.id}})
+          .fetch({where: {id: joana.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1384,7 +1384,7 @@ module.exports = function(db) {
       });
       it('so Joana does not exists', function(done) {
         tableCadastro
-          .findAll({where: {id: joana.id}})
+          .fetch({where: {id: joana.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1396,7 +1396,7 @@ module.exports = function(db) {
       });
       it('neither Maria...', function(done) {
         tableCadastro
-          .findAll({where: {id: joana.destino[0].id}})
+          .fetch({where: {id: joana.destino[0].id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1408,7 +1408,7 @@ module.exports = function(db) {
       });
       it('...Maria 2...', function(done) {
         tableCadastro
-          .findAll({where: {id: joana.destino[1].id}})
+          .fetch({where: {id: joana.destino[1].id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1420,7 +1420,7 @@ module.exports = function(db) {
       });
       it('...or Gilda', function(done) {
         tableCadastro
-          .findAll({where: {id: joana.outroDestino[0].id}})
+          .fetch({where: {id: joana.outroDestino[0].id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1460,7 +1460,7 @@ module.exports = function(db) {
       });
       it('then geralda disappears, cant be found...', function(done) {
         cadAtivo
-          .findAll({where: {id: geralda.id}})
+          .fetch({where: {id: geralda.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1502,7 +1502,7 @@ module.exports = function(db) {
       });
       it('but geralda still exists', function(done) {
         tableCadastro
-          .findAll({where: {id: geralda.id}})
+          .fetch({where: {id: geralda.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1556,7 +1556,7 @@ module.exports = function(db) {
       });
       it('lets check mario, the new fornecedor with two vctos', function(done) {
         cadAtivo
-          .findAll({where: {id: mario.id}})
+          .fetch({where: {id: mario.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1595,7 +1595,7 @@ module.exports = function(db) {
       });
       it('lets check mario, the new fornecedor with three vctos', function(done) {
         cadAtivo
-          .findAll({where: {id: mario.id}})
+          .fetch({where: {id: mario.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1634,7 +1634,7 @@ module.exports = function(db) {
       });
       it('lets check mario, the new fornecedor with two vctos again', function(done) {
         cadAtivo
-          .findAll({where: {id: mario.id}})
+          .fetch({where: {id: mario.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1664,7 +1664,7 @@ module.exports = function(db) {
       });
       it('so mario does not exists', function(done) {
         tableCadastro
-          .findAll({where: {id: mario.id}})
+          .fetch({where: {id: mario.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1676,7 +1676,7 @@ module.exports = function(db) {
       });
       it('nor mario fornecedor record', function(done) {
         tableFornec
-          .findAll({where: {id: mario.id}})
+          .fetch({where: {id: mario.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1688,7 +1688,7 @@ module.exports = function(db) {
       });
       it('nor any mario fornecedor docpgavc record', function(done) {
         tableDocpagvc
-          .findAll({where: {FORNEC: mario.id}})
+          .fetch({where: {FORNEC: mario.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1754,7 +1754,7 @@ module.exports = function(db) {
       });
       it('lets check lidia, the new fornecedor with two vctos and events', function(done) {
         cadAtivo
-          .findAll({where: {id: lidia.id}})
+          .fetch({where: {id: lidia.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
@@ -1787,7 +1787,7 @@ module.exports = function(db) {
       });
       it('so lidia does not exists', function(done) {
         tableCadastro
-          .findAll({where: {id: lidia.id}})
+          .fetch({where: {id: lidia.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1799,7 +1799,7 @@ module.exports = function(db) {
       });
       it('nor lidia fornecedor record', function(done) {
         tableFornec
-          .findAll({where: {id: lidia.id}})
+          .fetch({where: {id: lidia.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1811,7 +1811,7 @@ module.exports = function(db) {
       });
       it('nor any lidia fornecedor docpgavc record', function(done) {
         tableDocpagvc
-          .findAll({where: {FORNEC: lidia.id}})
+          .fetch({where: {FORNEC: lidia.id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -1823,12 +1823,12 @@ module.exports = function(db) {
       });
       it('nor any lidia fornecedor docpgavc event record', function(done) {
         tableEvento
-          .findAll({where: {VCTO: lidia.fornecedor.docpagvc[0].id}})
+          .fetch({where: {VCTO: lidia.fornecedor.docpagvc[0].id}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
             tableEvento
-              .findAll({where: {VCTO: lidia.fornecedor.docpagvc[1].id}})
+              .fetch({where: {VCTO: lidia.fornecedor.docpagvc[1].id}})
               .then(function(recordset) {
                 expect(recordset).to.be.a('array');
                 expect(recordset.length).to.equal(0);
@@ -2027,7 +2027,7 @@ module.exports = function(db) {
       });
       it('and then category 111 does not exists any longer', function(done) {
         tableEvento
-          .findAll({where: {id: '111'}})
+          .fetch({where: {id: '111'}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(0);
@@ -2169,7 +2169,7 @@ module.exports = function(db) {
 
       it('should read the records', function(done) {
         cadAtivo
-          .findAll({where: {NUMERO: 'QRYTST'}})
+          .fetch({where: {NUMERO: 'QRYTST'}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(numberOfRecordsToGenerate);
@@ -2182,7 +2182,7 @@ module.exports = function(db) {
 
       it('should read the records using like', function(done) {
         cadAtivo
-          .findAll({where: {NUMERO: {like: '%YTST'}}})
+          .fetch({where: {NUMERO: {like: '%YTST'}}})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(numberOfRecordsToGenerate);
@@ -2195,7 +2195,7 @@ module.exports = function(db) {
 
       it('should read the records using or', function(done) {
         cadAtivo
-          .findAll({
+          .fetch({
             where: {
               or: [
                 {NUMERO: 'QRYTST'},
@@ -2215,7 +2215,7 @@ module.exports = function(db) {
 
       it('should read the 3 records in the expected page', function(done) {
         cadAtivo
-          .findAll({
+          .fetch({
             where: {
               NUMERO: 'QRYTST'
             },

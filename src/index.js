@@ -565,7 +565,7 @@ module.exports = function(schemaName, schema, config) {
           return buildSchema(data);
 
         },
-        findAll: function(criteria, options) {
+        fetch: function(criteria, options) {
           options = options || {};
           if (data.scope) {
             var where = _.extend({}, criteria.where, data.scope);
@@ -618,7 +618,7 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
           }
-          return data.methods.findAll(key, options)
+          return data.methods.fetch(key, options)
             .then(function(was) {
               if (was.length === 0) {
                 throw new EntityError({
@@ -664,7 +664,7 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = key.where.updatedAt || null;
           }
-          return data.methods.findAll(key, options)
+          return data.methods.fetch(key, options)
             .then(function(was) {
               if (was.length === 0) {
                 throw new EntityError({

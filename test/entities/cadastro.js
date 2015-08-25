@@ -23,7 +23,7 @@ module.exports = function(config) {
     _.forEach(this.ClassificaçãoCad, function(classe) {
       insertion = insertion
         .then(function() {
-          return classificacao.findAll({where: {id: classe.Classe}}, {transaction: transaction});
+          return classificacao.fetch({where: {id: classe.Classe}}, {transaction: transaction});
         })
         .then(function(recordset) {
           if (recordset.length === 0) {
@@ -61,7 +61,7 @@ module.exports = function(config) {
   function destroyEvs(t) {
     var id = this.id;
     return docpagev
-      .findAll({where: {NUMDOC: id}}, {transaction: t})
+      .fetch({where: {NUMDOC: id}}, {transaction: t})
       .then(function(recordset) {
         var deletion = Promise.resolve();
         _.forEach(recordset, function(record) {
@@ -243,7 +243,7 @@ module.exports = function(config) {
   cadAtivo.validate('Duplicated CPF', function() {
     var self = this;
     if (this.CGCCPF) {
-      return cadAtivo.findAll({where: {CGCCPF: this.CGCCPF}})
+      return cadAtivo.fetch({where: {CGCCPF: this.CGCCPF}})
         .then(function(recordset) {
           recordset.map(function(record) {
             if (self.CGCCPF === record.CGCCPF && self.id !== record.id) {
