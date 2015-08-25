@@ -4,17 +4,19 @@ var xml2json = require('xml2json');
 var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
+var commonLayer = require('./commonLayer');
 
 var xmlSpaceToken = '_-_';
 var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
 module.exports = function(db) {
 
+  var cl = commonLayer(db);
+
   var adapter = {};
   adapter.query = function(command, criteria, options) {
-    var sentence = utils.embedCriteria(command, criteria);
-    var request = new db.Request(options.transaction);
-    return request.query(sentence);
+    var sentence = utils.embedCriteria(command, criteria, cl);
+    return cl.query(sentence, options.transaction);
   };
   adapter.createInstance = function(record, name, data) {
     _.forEach(data.properties, function(property, name) {
@@ -35,32 +37,7 @@ module.exports = function(db) {
   };
   adapter.getAttributes = function(name) {
   };
-  adapter.transaction = function(fn) {
-    var transaction = new db.Transaction();
-    var rolledBack = false;
-    transaction.on('rollback', function() {
-      rolledBack = true;
-    });
-    return transaction.begin()
-      .then(function() {
-        return fn(transaction);
-      })
-      .then(function(res) {
-        return transaction.commit()
-          .then(function() {
-            return res;
-          });
-      })
-      .catch(function(err) {
-        if (!rolledBack) {
-          return transaction.rollback()
-            .then(function() {
-              throw err;
-            });
-        }
-        throw err;
-      });
-  };
+  adapter.transaction = cl.transaction;
   adapter.toSqlType = function(property) {
     switch (property.type) {
       case 'integer':

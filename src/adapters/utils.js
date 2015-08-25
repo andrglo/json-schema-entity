@@ -7,13 +7,19 @@ exports.embedCriteria = function(query, criteria, cl) {
   var statement = buildSelectStatement(query, criteria, cl);
   statement += serializeOptions(query, criteria, cl);
   if (criteria.skip) {
-    var outerOffsetQuery = 'SELECT ';
-    if (criteria.limit) {
-      outerOffsetQuery += 'TOP ' + criteria.limit + ' ';
+    if (cl.dialect === 'postgres') {
+      var pos = statement.indexOf(' * FROM (');
+      statement = 'SELECT' + statement.substr(pos) +
+        ' LIMIT ' + criteria.limit + ' OFFSET ' + criteria.skip;
+    } else {
+      var outerOffsetQuery = 'SELECT ';
+      if (criteria.limit) {
+        outerOffsetQuery += 'TOP ' + criteria.limit + ' ';
+      }
+      outerOffsetQuery += '* FROM (' + statement + ') __outeroffset__ ' +
+        'WHERE __outeroffset__.__rownum__ > ' + criteria.skip + ' ';
+      statement = outerOffsetQuery;
     }
-    outerOffsetQuery += '* FROM (' + statement + ') __outeroffset__ ' +
-      'WHERE __outeroffset__.__rownum__ > ' + criteria.skip + ' ';
-    statement = outerOffsetQuery;
   }
   return statement;
 };

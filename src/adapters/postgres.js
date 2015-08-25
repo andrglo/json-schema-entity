@@ -1,15 +1,11 @@
 var _ = require('lodash');
 var assert = require('assert');
-var xml2json = require('xml2json');
 var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
 var commonLayer = require('./commonLayer');
 
 var log = console.log;
-
-var xmlSpaceToken = '_-_';
-var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
 module.exports = function(db) {
 
@@ -33,7 +29,7 @@ module.exports = function(db) {
         });
       }
       if ((property.type === 'date' || property.type === 'datetime') &&
-        record[name]) {
+        record[name] !== null) {
         record[name] = new Date(record[name])
       }
     });
@@ -76,19 +72,20 @@ module.exports = function(db) {
         fieldsToRead.push({from: property.field || name, to: name})
       } else {
         var value = record[name];
-        if (!value && property.defaultValue) {
+        if ((value === void 0 || value === null) && property.defaultValue) {
           value = property.defaultValue;
           defaultValues[name] = value;
         }
-        if (value && property.enum) {
-          value = value.substr(0, property.maxLength);
-        }
-        if (value) {
+        if (value !== void 0) {
           var field = property.field || name;
           fields.push(field);
-          if ((property.type === 'date' || property.type === 'datetime') && !_.isDate(value)) {
-            record[name] = new Date(value);
-            params.push(record[name]);
+          if (property.enum) {
+            value = value.substr(0, property.maxLength);
+          }
+          if (value !== null &&
+            (property.type === 'date' || property.type === 'datetime')) {
+            record[name] = _.isDate(value) ? value : new Date(value);
+            params.push(record[name].toISOString());
           } else {
             params.push(value);
           }
@@ -99,8 +96,8 @@ module.exports = function(db) {
       var now = new Date();
       record.createdAt = now;
       record.updatedAt = now;
-      params.push(record.createdAt.toISOString());
-      params.push(record.updatedAt.toISOString().substring(0, 23) + '000');
+      params.push(record.createdAt);
+      params.push(record.updatedAt);
       fields.push('createdAt');
       fields.push('updatedAt');
     }
@@ -131,15 +128,16 @@ module.exports = function(db) {
     _.forEach(data.properties, function(property, name) {
       if (!property.autoIncrement) {
         var value = record[name];
-        if (value && property.enum) {
-          value = value.substr(0, property.maxLength);
-        }
         if (value !== void 0) {
           var field = property.field || name;
           fields.push(field);
-          if ((property.type === 'date' || property.type === 'datetime') && !_.isDate(value)) {
-            record[name] = new Date(value);
-            params.push(record[name]);
+          if (property.enum) {
+            value = value.substr(0, property.maxLength);
+          }
+          if (value !== null &&
+            (property.type === 'date' || property.type === 'datetime')) {
+            record[name] = _.isDate(value) ? value : new Date(value);
+            params.push(record[name].toISOString());
           } else {
             params.push(value);
           }
@@ -147,18 +145,18 @@ module.exports = function(db) {
       }
     });
 
+    if (data.timestamps) {
+      record.updatedAt = new Date();
+      params.push(record.updatedAt);
+      fields.push('updatedAt');
+    }
     var findKeys = data.primaryKeyFields.map(function(name, index) {
       const attribute = data.primaryKeyAttributes[index];
       params.push(options.where[attribute]);
       return name;
     });
     if (data.timestamps) {
-      record.updatedAt = new Date();
-      params.push(record.updatedAt.toISOString().substring(0, 23) + '000');
-      fields.push('updatedAt');
-
-      params.push(_.isDate(options.where.updatedAt) ?
-        options.where.updatedAt.toISOString() : (options.where.updatedAt || null));
+      params.push(options.where.updatedAt || null);
       findKeys.push('updatedAt');
     }
 
@@ -185,8 +183,7 @@ module.exports = function(db) {
       return name;
     });
     if (data.timestamps) {
-      params.push(_.isDate(options.where.updatedAt) ?
-        options.where.updatedAt.toISOString() : (options.where.updatedAt || null));
+      params.push(options.where.updatedAt || null);
       findKeys.push('updatedAt')
     }
 
@@ -204,29 +201,8 @@ module.exports = function(db) {
   };
 
   adapter.extractRecordset = function(xmlField, coerce) {
-    var json = xml2json.toJson('<recordset>' + xmlField + '</recordset>', {
-      object: false,
-      reversible: false,
-      coerce: false,
-      sanitize: false,
-      trim: true,
-      arrayNotation: false
-    });
-    json = json.replace(xmlSpaceTokenRegExp, ' ');
-    json = JSON.parse(json);
-    json = json.recordset.row;
-    assert(json, 'Error converting xml to json: ' + xmlField);
-
-    const isArray = _.isArray(json);
-    _.forEach(isArray ? json : [json], function(record) {
-      coerce.map(function(coercion) {
-        debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
-        if (record[coercion.property]) record[coercion.property] = coercion.fn(record[coercion.property]);
-        debug('Coercion after', coercion.property, typeof record[coercion.property], record[coercion.property]);
-      });
-    });
-
-    return isArray ? json : [json];
+    assert(_.isArray(xmlField), 'XMLField is not an array');
+    return xmlField;
   };
 
   adapter.buildQuery = function buildQuery(data) {

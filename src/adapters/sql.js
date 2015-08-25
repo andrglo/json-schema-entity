@@ -174,7 +174,11 @@ var sql = {
   prepareValue: function(collectionName, value, attrName) {
     // Cast dates to SQL
     if (_.isDate(value)) {
-      value = toSqlDate(value);
+      if (sql.cl.dialect === 'mssql') {
+        value = toSqlDate(value);
+      } else {
+        value = value.toISOString();
+      }
     }
 
     // Cast functions to strings

@@ -1900,8 +1900,10 @@ module.exports = function(db) {
             done(new Error('Invalid record saved'));
           })
           .catch(function(error) {
-            expect(error.name).to.equal('RequestError');
-            expect(error.message.indexOf('invalid data length') !== -1).to.equal(true);
+            expect(error.name === 'RequestError' ||
+              error.name === 'error').to.equal(true); // todo The common layer
+            expect(error.message.indexOf('invalid data length') !== -1 ||
+              error.message.indexOf('value too long for type character') !== -1).to.equal(true);
             done();
           })
           .catch(function(error) {

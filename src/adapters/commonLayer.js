@@ -1,4 +1,5 @@
 var assert = require('assert');
+var debug = require('debug')('tiny-interface-layer');
 
 var log = console.log;
 
@@ -24,8 +25,10 @@ function postgresDbCommands(layer, db) {
       db.connect(function(err, client, done) {
         if (err) return reject(err);
         client.query('BEGIN', function(err) {
+          debug('BEGIN RESULT:', err);
           if (err) {
             client.query('ROLLBACK', function(err) {
+              debug('ROLLBACK RESULT:', err);
               done(err);
               reject(err);
             });
@@ -34,12 +37,14 @@ function postgresDbCommands(layer, db) {
           fn(client)
             .then(function(res) {
               client.query('COMMIT', function(err) {
+                debug('COMMIT RESULT:', err);
                 done(err);
                 resolve(res);
               });
             })
             .catch(function(fnError) {
               client.query('ROLLBACK', function(err) {
+                debug('ROLLBACK RESULT:', err);
                 done(err);
                 reject(fnError);
               });
@@ -53,11 +58,12 @@ function postgresDbCommands(layer, db) {
     return layer.query(command, options, params);
   };
   layer.query = function(command, options, params) {
-    //log('query', command);
+    debug('QUERY:', command, params);
     if (options && options.transaction) {
       return new Promise(function(resolve, reject) {
         options.transaction.query(command, params, function(err, result) {
           if (err) return reject(err);
+          debug('ROWS:', result.rows);
           resolve(result.rows);
         });
       });
@@ -72,6 +78,7 @@ function postgresDbCommands(layer, db) {
               return;
             }
             done();
+            debug('ROWS:', result.rows);
             resolve(result.rows);
           });
         });
@@ -85,12 +92,38 @@ function postgresDbCommands(layer, db) {
 
 function mssqlDbCommands(layer, db) {
   var delimiters = '[]';
+  layer.transaction = function(fn) {
+    var transaction = new db.Transaction();
+    var rolledBack = false;
+    transaction.on('rollback', function() {
+      rolledBack = true;
+    });
+    return transaction.begin()
+      .then(function() {
+        return fn(transaction);
+      })
+      .then(function(res) {
+        return transaction.commit()
+          .then(function() {
+            return res;
+          });
+      })
+      .catch(function(err) {
+        if (!rolledBack) {
+          return transaction.rollback()
+            .then(function() {
+              throw err;
+            });
+        }
+        throw err;
+      });
+  };
   layer.execute = function(command, options) {
-    //log('execute', command);
+    debug('EXECUTE:', command);
     return (new db.Request(options && options.transaction)).batch(command);
   };
   layer.query = function(command, options) {
-    //log('query', command);
+    debug('QUERY:', command);
     return (new db.Request(options && options.transaction)).query(command);
   };
   layer.wrap = function(name) {
