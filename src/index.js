@@ -599,8 +599,8 @@ module.exports = function(schemaName, schema, config) {
               throw new EntityError({
                 type: 'InvalidArgument',
                 message: 'Entity ' + data.key + ' need a primary key for update'
-              })
-            })
+              });
+            });
           }
           options = options || {};
           if (typeof key !== 'object') {
@@ -670,7 +670,7 @@ module.exports = function(schemaName, schema, config) {
                 throw new EntityError({
                   type: 'RecordModifiedOrDeleted',
                   message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for delete'
-                })
+                });
               }
               assert(was.length === 1);
               return runValidations(void 0, was[0], data)
@@ -681,8 +681,8 @@ module.exports = function(schemaName, schema, config) {
                       options.transaction = t;
                       return destroy(was[0], options, data);
                     });
-                })
-            })
+                });
+            });
         }
       }
     };
@@ -794,7 +794,7 @@ function isNodeMssql(db) {
 }
 
 function isPostgres(db) {
-  return db.oneOrNone !== void 0; //todo identify in a better way
+  return typeof db.defaults === 'object'; //todo identify in a better way
 }
 
 function splitAlias(name) {

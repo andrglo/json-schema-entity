@@ -18,19 +18,69 @@ function addCommands(layer, db) {
 
 function postgresDbCommands(layer, db) {
   var delimiters = '""';
+
+  layer.transaction = function(fn) {
+    return new Promise(function(resolve, reject) {
+      db.connect(function(err, client, done) {
+        if (err) return reject(err);
+        client.query('BEGIN', function(err) {
+          if (err) {
+            client.query('ROLLBACK', function(err) {
+              done(err);
+              reject(err);
+            });
+            return;
+          }
+          fn(client)
+            .then(function(res) {
+              client.query('COMMIT', function(err) {
+                done(err);
+                resolve(res);
+              });
+            })
+            .catch(function(fnError) {
+              client.query('ROLLBACK', function(err) {
+                done(err);
+                reject(fnError);
+              });
+            });
+        });
+      });
+    });
+  };
+
   layer.execute = function(command, options, params) {
-    log('execute', command);
-    db = (options && options.transaction) || db;
-    return db.any(command, params);
+    return layer.query(command, options, params);
   };
   layer.query = function(command, options, params) {
     //log('query', command);
-    db = (options && options.transaction) || db;
-    return db.query(command, params);
+    if (options && options.transaction) {
+      return new Promise(function(resolve, reject) {
+        options.transaction.query(command, params, function(err, result) {
+          if (err) return reject(err);
+          resolve(result.rows);
+        });
+      });
+    } else {
+      return new Promise(function(resolve, reject) {
+        db.connect(function(err, client, done) {
+          if (err) reject(err);
+          client.query(command, params, function(err, result) {
+            if (err) {
+              done();
+              reject(err);
+              return;
+            }
+            done();
+            resolve(result.rows);
+          });
+        });
+      });
+    }
   };
   layer.wrap = function(name) {
     return delimiters[0] + name + delimiters[1];
-  }
+  };
 }
 
 function mssqlDbCommands(layer, db) {
@@ -45,7 +95,7 @@ function mssqlDbCommands(layer, db) {
   };
   layer.wrap = function(name) {
     return delimiters[0] + name + delimiters[1];
-  }
+  };
 }
 
 function whichDialect(db) {
@@ -57,6 +107,6 @@ function isNodeMssql(db) {
 }
 
 function isPostgres(db) {
-  return db.oneOrNone !== void 0; //todo identify in a better way
+  return typeof db.defaults === 'object'; //todo identify in a better way
 }
 

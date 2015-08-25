@@ -91,7 +91,7 @@ module.exports = function(db) {
         })
         .catch(function(err) {
           done(err);
-        })
+        });
     });
     it('record should not be created due validation', function(done) {
       tableCadastro
@@ -110,7 +110,7 @@ module.exports = function(db) {
         })
         .catch(function(err) {
           done(err);
-        })
+        });
     });
     it('record should be created', function(done) {
       var now = Date.now();
@@ -135,18 +135,19 @@ module.exports = function(db) {
         })
         .catch(function(err) {
           done(err);
-        })
+        });
     });
     it('then can have only one field updated', function(done) {
       var now = new Date(Date.now());
       tableCadastro
         .findAll({where: {id: joao.id, updatedAt: joao.updatedAt}})
-        .then(function(record) {
+        .then(function(recordset) {
+          var record = recordset[0];
           start = process.hrtime();
           return tableCadastro.update({
             IDENT: 'J',
             TipoSimplesNacional: '2 - Optante ME/EPP'
-          }, {where: {id: record.id, updatedAt: record.updatedAt}})
+          }, {where: {id: record.id, updatedAt: record.updatedAt}});
         })
         .then(function(record) {
           end = process.hrtime(start);
@@ -163,7 +164,7 @@ module.exports = function(db) {
         })
         .catch(function(err) {
           done(err);
-        })
+        });
     });
     it('and can be deleted', function(done) {
       start = process.hrtime();

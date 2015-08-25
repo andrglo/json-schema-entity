@@ -1,4 +1,5 @@
 var pgp = require('pg-promise');
+var postgres = require('pg');
 var mssql = require('mssql');
 var gutil = require('gulp-util');
 var pretty = require('pretty-hrtime');
@@ -26,11 +27,17 @@ var pgConfig = {
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD
 };
-var pgOptions = {
-  promiseLib: Promise
-};
-var pg = pgp(pgOptions);
+
+var pg = pgp();
 var pgDb = pg(pgConfig);
+
+postgres.defaults.user = process.env.POSTGRES_USER || 'postgres';
+postgres.defaults.database = 'postgres';
+postgres.defaults.password = process.env.POSTGRES_PASSWORD;
+postgres.defaults.port = process.env.POSTGRES_PORT || 5432;
+postgres.defaults.host = process.env.POSTGRES_HOST || 'localhost';
+postgres.defaults.poolSize = 25;
+postgres.defaults.poolIdleTimeout = 30000;
 
 function createPostgresDb() {
   var dbName = process.env.POSTGRES_DATABASE || databaseName;
@@ -99,9 +106,11 @@ before(function(done) {
 describe('postgres', function() {
   var duration;
   before(function() {
+    pg.end();
+    postgres.defaults.database = process.env.POSTGRES_DATABASE || databaseName;
     duration = process.hrtime();
   });
-  spec(pgDb);
+  spec(postgres);
   after(function() {
     duration = process.hrtime(duration);
     gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
@@ -127,5 +136,5 @@ after(function() {
   if (!process.env.CI) {
     mssql.close();
   }
-  pg.end();
+  postgres.end();
 });
