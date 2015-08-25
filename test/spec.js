@@ -1115,7 +1115,27 @@ module.exports = function(db) {
             done(err);
           })
       });
+      it('should not save a smaller valor in vctos', function(done) {
+        joao.docpagvc[0].VALOR = 350;
+        cadAtivo
+          .update(joao)
+          .then(function() {
+            done(new Error('Invalid update'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('ValidationError');
+            expect(error.errors).to.be.a('array');
+            expect(error.errors.length).to.equal(1);
+            expect(error.errors[0].path).to.equal('Only greater or equal');
+            done();
+          })
+          .catch(function(err) {
+            done(err);
+          })
+      });
       it('then lets delete Joao', function(done) {
+        joao.docpagvc[0].VALOR = 350.01;
         cadAtivo
           .destroy({where: {id: joao.id, updatedAt: joao.updatedAt}})
           .then(function(record) {

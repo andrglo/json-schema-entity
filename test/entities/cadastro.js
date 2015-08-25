@@ -271,6 +271,12 @@ module.exports = function(config) {
     }
   });
 
+  cadAtivo.docpagvc.validate('Only greater or equal', function(was) {
+    if (this.VALOR < was.VALOR) {
+      throw new Error('New value should be greater or equal')
+    }
+  }, {onCreate: false});
+
   // Hooks (In transaction)
   cadAtivo.beforeDelete('Fax', function() {
     if (this.FAX)

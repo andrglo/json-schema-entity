@@ -39,7 +39,7 @@ function runValidations(is, was, data) {
                   return same;
                 });
                 return same;
-              }
+              };
 
               var findAndRemove = function(arr, obj) {       //todo refactor and more validation tests
                 var res = _.remove(arr, function(e) { //todo save and new in instance
@@ -53,8 +53,8 @@ function runValidations(is, was, data) {
 
               from.map(function(record) {
                 pairs.push({
-                  to: record,
-                  from: findAndRemove(to, record)
+                  from: record,
+                  to: findAndRemove(to, record)
                 });
               });
               to.map(function(record) {
