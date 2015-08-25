@@ -70,7 +70,7 @@ function postgresDbCommands(layer, db) {
     } else {
       return new Promise(function(resolve, reject) {
         db.connect(function(err, client, done) {
-          if (err) reject(err);
+          if (err) return reject(err);
           client.query(command, params, function(err, result) {
             if (err) {
               done();
