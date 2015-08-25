@@ -68,7 +68,7 @@ module.exports = function(db) {
     var tableCadastro;
     var joao;
 
-    var minNanoSecsToSave = 5 * 1000000; // 5 milliseconds (min min = 1)
+    var minNanoSecsToSave = 3 * 1000000; // 3 milliseconds (min min = 1)
 
     before(function() {
       delete CADASTRO.properties.createdAt; //todo its optional in the schema
@@ -127,7 +127,7 @@ module.exports = function(db) {
           record.should.have.property('id');
           record.should.have.property('createdAt');
           record.should.have.property('updatedAt');
-          expect(end[1] > minNanoSecsToSave).to.equal(true); // Macbook 33.700 iMac retina 22.786
+          expect(end[1] > minNanoSecsToSave).to.equal(true); // mssql Macbook 33.700 iMac retina 22.786
           record.createdAt.toISOString().should.equal(record.updatedAt.toISOString());
           expect(record.createdAt).to.be.a('date');
           expect(record.createdAt >= now).to.equal(true);
@@ -154,7 +154,7 @@ module.exports = function(db) {
           record.should.have.property('NOMECAD');
           record.should.have.property('IDENT');
           record.should.have.property('NUMERO');
-          expect(end[1] > minNanoSecsToSave).to.equal(true); // Macbook 20.320 iMac retina 13.110
+          expect(end[1] > minNanoSecsToSave).to.equal(true); // mssql Macbook 20.320 iMac retina 13.110
           expect(record.createdAt).to.be.a('date');
           expect(record.updatedAt >= now).to.equal(true);
           expect(record.updatedAt >= joao.updatedAt).to.equal(true);
@@ -172,7 +172,7 @@ module.exports = function(db) {
         .destroy({where: {id: joao.id, updatedAt: joao.updatedAt}})
         .then(function(res) {
           end = process.hrtime(start);
-          expect(end[1] > minNanoSecsToSave).to.equal(true); // Macbook 14.349 iMac retina 11.443
+          expect(end[1] > minNanoSecsToSave).to.equal(true); // mssql Macbook 14.349 iMac retina 11.443
           expect(res).to.equal(undefined);
           done();
         })

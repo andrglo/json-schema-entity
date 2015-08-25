@@ -1,5 +1,4 @@
-var pgp = require('pg-promise');
-var postgres = require('pg');
+var pg = require('pg');
 var mssql = require('mssql');
 var gutil = require('gulp-util');
 var pretty = require('pretty-hrtime');
@@ -20,31 +19,37 @@ var mssqlConfig = {
   }
 };
 
-var pgConfig = {
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: process.env.POSTGRES_PORT || 5432,
-  database: 'postgres',
-  user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD
-};
-
-var pg = pgp();
-var pgDb = pg(pgConfig);
-
-postgres.defaults.user = process.env.POSTGRES_USER || 'postgres';
-postgres.defaults.database = 'postgres';
-postgres.defaults.password = process.env.POSTGRES_PASSWORD;
-postgres.defaults.port = process.env.POSTGRES_PORT || 5432;
-postgres.defaults.host = process.env.POSTGRES_HOST || 'localhost';
-postgres.defaults.poolSize = 25;
-postgres.defaults.poolIdleTimeout = 30000;
+pg.defaults.user = process.env.POSTGRES_USER || 'postgres';
+pg.defaults.database = 'postgres';
+pg.defaults.password = process.env.POSTGRES_PASSWORD;
+pg.defaults.port = process.env.POSTGRES_PORT || 5432;
+pg.defaults.host = process.env.POSTGRES_HOST || 'localhost';
+pg.defaults.poolSize = 25;
+pg.defaults.poolIdleTimeout = 30000;
 
 function createPostgresDb() {
   var dbName = process.env.POSTGRES_DATABASE || databaseName;
-  return pgDb.none('DROP DATABASE IF EXISTS "' + dbName + '";')
-    .then(function() {
-      return pgDb.none('CREATE DATABASE "' + dbName + '"');
+  return new Promise(function(resolve, reject) {
+    pg.connect(function(err, client, done) {
+      if (err) return reject(err);
+      client.query('DROP DATABASE IF EXISTS "' + dbName + '";', function(err, result) {
+        if (err) {
+          done();
+          reject(err);
+          return;
+        }
+        client.query('CREATE DATABASE "' + dbName + '"', function(err, result) {
+          if (err) {
+            done();
+            reject(err);
+            return;
+          }
+          pg.end();
+          resolve();
+        });
+      });
     });
+  });
 }
 
 function createMssqlDb() {
@@ -60,9 +65,8 @@ before(function(done) {
   if (process.env.CI) {
     return createPostgresDb()
       .then(function() {
-        pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
-        pgDb = pg(pgConfig);
-        return tasks.createTables(pgDb);
+        pg.defaults.database = process.env.POSTGRES_DATABASE || databaseName;
+        return tasks.createTables(pg);
       })
       .then(function() {
         done();
@@ -89,11 +93,8 @@ before(function(done) {
       return createPostgresDb();
     })
     .then(function() {
-      pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
-      pgDb = pg(pgConfig);
-    })
-    .then(function() {
-      return tasks.createTables(pgDb);
+      pg.defaults.database = process.env.POSTGRES_DATABASE || databaseName;
+      return tasks.createTables(pg);
     })
     .then(function() {
       done();
@@ -106,11 +107,9 @@ before(function(done) {
 describe('postgres', function() {
   var duration;
   before(function() {
-    pg.end();
-    postgres.defaults.database = process.env.POSTGRES_DATABASE || databaseName;
     duration = process.hrtime();
   });
-  spec(postgres);
+  spec(pg);
   after(function() {
     duration = process.hrtime(duration);
     gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
@@ -136,5 +135,5 @@ after(function() {
   if (!process.env.CI) {
     mssql.close();
   }
-  postgres.end();
+  pg.end();
 });
