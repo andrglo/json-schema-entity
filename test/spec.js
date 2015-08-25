@@ -939,6 +939,22 @@ module.exports = function(db) {
             done(err);
           });
       });
+      it('and check the vctos array', function(done) {
+        cadAtivo
+          .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            var record = recordset[0];
+            record.should.have.property('docpagvc');
+            expect(record.docpagvc.length).to.equal(1);
+            expect(record.docpagvc[0].VALOR).to.equal(700);
+            done();
+          })
+          .catch(function(err) {
+            done(err);
+          })
+      });
       it('replace vctos array', function(done) {
         cadAtivo
           .update({

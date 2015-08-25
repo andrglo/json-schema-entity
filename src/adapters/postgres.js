@@ -200,9 +200,16 @@ module.exports = function(db) {
       });
   };
 
-  adapter.extractRecordset = function(xmlField, coerce) {
-    assert(_.isArray(xmlField), 'XMLField is not an array');
-    return xmlField;
+  adapter.extractRecordset = function(jsonset, coerce) {
+    assert(_.isArray(jsonset), 'XMLField is not an array');
+    _.forEach(jsonset, function(record) {
+      coerce.map(function(coercion) {
+        debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
+        if (record[coercion.property]) record[coercion.property] = coercion.fn(record[coercion.property]);
+        debug('Coercion after', coercion.property, typeof record[coercion.property], record[coercion.property]);
+      });
+    });
+    return jsonset;
   };
 
   adapter.buildQuery = function buildQuery(data) {
