@@ -94,7 +94,7 @@ function runFieldValidations(is, was, data, errors) {
     if (is[key]) {
       _.forEach(property.validations, function(validation, name) {
         var args = _.map(validation.args, function(arg) {
-          if (typeof arg === 'string' && arg.startsWith('this.')) {
+          if (typeof arg === 'string' && arg.substr(0, 5) === 'this.') {
             return is[arg.substring(5)]
           } else {
             return arg;

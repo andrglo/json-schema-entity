@@ -22,7 +22,7 @@ module.exports = function(db) {
     _.forEach(data.properties, function(property, name) {
       if (property.enum) {
         _.forEach(property.enum, function(value) {
-          if (value.startsWith(record[name])) {
+          if (value.substr(0, record[name].length) === record[name]) {
             record[name] = value;
             return false;
           }

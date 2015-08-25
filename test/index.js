@@ -44,6 +44,7 @@ function createPostgresDb() {
             reject(err);
             return;
           }
+          done();
           pg.end();
           resolve();
         });
@@ -112,6 +113,7 @@ describe('postgres', function() {
   spec(pg);
   after(function() {
     duration = process.hrtime(duration);
+    pg.end();
     gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
   });
 });
@@ -127,13 +129,8 @@ describe('mssql', function() {
   spec(mssql);
   after(function() {
     duration = process.hrtime(duration);
+    mssql.close();
     gutil.log('Mssql finished after', gutil.colors.magenta(pretty(duration)));
   });
 });
 
-after(function() {
-  if (!process.env.CI) {
-    mssql.close();
-  }
-  pg.end();
-});
