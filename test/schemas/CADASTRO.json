@@ -145,9 +145,13 @@
       "format": "cep"
     },
     "DATNASC": {
-      "title": "Nasc.",
-      "description": "Data de nascimento",
-      "type": "date",
+      "type": "date"
+    },
+    "DATNASCZ": {
+      "type": "datetime"
+    },
+    "DATNASCNOZ": {
+      "type": "datetime",
       "timezone": "ignore"
     },
     "PAIS": {
@@ -231,6 +235,14 @@
       ],
       "format": "select",
       "defaultValue": "1 - Não optante "
+    },
+    "VALORLCTO": {
+      "title": "Valor do lançamento",
+      "description": "Valor do lançamento",
+      "type": "number",
+      "format": "fixed",
+      "maxLength": 14,
+      "decimals": 2
     },
     "createdAt": {
       "type": "datetime"

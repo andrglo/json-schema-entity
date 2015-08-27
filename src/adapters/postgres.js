@@ -1,5 +1,6 @@
 var _ = require('lodash');
 var assert = require('assert');
+var parseDate = require('postgres-date');
 var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
@@ -19,21 +20,24 @@ module.exports = function(db) {
   };
 
   adapter.createInstance = function(record, name, data) {
+    var instance = {};
     _.forEach(data.properties, function(property, name) {
       if (property.enum) {
         _.forEach(property.enum, function(value) {
           if (value.substr(0, record[name].length) === record[name]) {
-            record[name] = value;
+            instance[name] = value;
             return false;
           }
         });
-      }
-      if ((property.type === 'date' || property.type === 'datetime') &&
-        record[name] !== null) {
-        record[name] = new Date(record[name])
+      } else if (record[name] && record[name] !== null) {
+        instance[name] = record[name];
       }
     });
-    return record;
+    if (data.timestamps) {
+      instance.createdAt = record.createdAt;
+      instance.updatedAt = record.updatedAt;
+    }
+    return instance;
   };
   adapter.getAttributes = function(name) {
   };
@@ -82,13 +86,7 @@ module.exports = function(db) {
           if (property.enum) {
             value = value.substr(0, property.maxLength);
           }
-          if (value !== null &&
-            (property.type === 'date' || property.type === 'datetime')) {
-            record[name] = _.isDate(value) ? value : new Date(value);
-            params.push(record[name].toISOString());
-          } else {
-            params.push(value);
-          }
+          params.push(value);
         }
       }
     });
@@ -134,13 +132,7 @@ module.exports = function(db) {
           if (property.enum) {
             value = value.substr(0, property.maxLength);
           }
-          if (value !== null &&
-            (property.type === 'date' || property.type === 'datetime')) {
-            record[name] = _.isDate(value) ? value : new Date(value);
-            params.push(record[name].toISOString());
-          } else {
-            params.push(value);
-          }
+          params.push(value);
         }
       }
     });
@@ -201,7 +193,7 @@ module.exports = function(db) {
   };
 
   adapter.extractRecordset = function(jsonset, coerce) {
-    assert(_.isArray(jsonset), 'XMLField is not an array');
+    assert(_.isArray(jsonset), 'jsonset is not an array');
     _.forEach(jsonset, function(record) {
       coerce.map(function(coercion) {
         debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
@@ -246,6 +238,29 @@ module.exports = function(db) {
     data.query = 'SELECT ' + fields.join(',') +
       ' FROM ' + cl.wrap(data.identity.name) + ' AS ' + cl.wrap(data.key);
     debug('Query:', data.query);
+  };
+
+  adapter.getCoercionFunction = function(type, timezone) {
+    switch (type) {
+      case 'date':
+        return function(value) {
+          return new Date(value + 'T00:00:00.000Z');
+        };
+      case 'datetime':
+        return function(value) {
+          log(value, timezone)
+          if (timezone === 'ignore') {
+            var d = new Date(value + 'Z');
+            return new Date(d.getTime() + (d.getTimezoneOffset() * 60000));
+          } else {
+            return new Date(value);
+          }
+        };
+      default:
+        return function(value) {
+          return value;
+        };
+    }
   };
 
   return adapter;

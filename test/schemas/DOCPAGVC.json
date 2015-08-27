@@ -25,10 +25,16 @@
     "DATAVENC": {
       "title": "Vencimento",
       "description": "Data de vencimento",
-      "type": "string",
-      "format": "date",
-      "timezone": "UTC",
+      "type": "date",
+      "timezone": "ignore",
       "required": true
+    },
+    "DATAVENCZ": {
+      "type": "datetime"
+    },
+    "DATAVENCNOZ": {
+      "type": "datetime",
+      "timezone": "ignore"
     },
     "CODDOC": {
       "title": "Documento",

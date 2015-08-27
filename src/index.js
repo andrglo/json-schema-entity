@@ -810,20 +810,6 @@ function splitAlias(name) {
   return res;
 }
 
-function getCoercionFunction(type) {
-  switch (type) {
-    case 'integer':
-      return Number.parseInt;
-    case 'number':
-      return Number.parseFloat;
-    case 'date':
-    case 'datetime':
-      return Date.parse;
-    default:
-      throw new Error('Coercion not defined for type ' + type)
-  }
-}
-
 function getPropertyByFieldName(properties, fieldName) {
   var property;
   _.forEach(properties, function(prop) {
@@ -884,7 +870,7 @@ function buildTable(data) {
       data.primaryKeyAttributes.push(name);
       data.primaryKeyFields.push(property.field || name);
     }
-  });
+  });           //todo look for primary key in the primary property too
   assert(data.primaryKeyAttributes.length > 0, 'Primary key not defined for table ' + data.key);
 
   data.adapter.buildInsertCommand(data);
@@ -904,7 +890,7 @@ function buildTable(data) {
     if (property.type !== 'string') {
       data.coerce.push({
         property: name,
-        fn: getCoercionFunction(property.type)
+        fn: data.adapter.getCoercionFunction(property.type, property.timezone)
       });
     }
   });
@@ -913,11 +899,11 @@ function buildTable(data) {
     data.propertiesList.push('createdAt');
     data.coerce.push({
       property: 'createdAt',
-      fn: getCoercionFunction('datetime')
+      fn: data.adapter.getCoercionFunction('datetime')
     });
     data.coerce.push({
       property: 'updatedAt',
-      fn: getCoercionFunction('datetime')
+      fn: data.adapter.getCoercionFunction('datetime')
     });
   }
 

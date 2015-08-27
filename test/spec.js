@@ -232,7 +232,7 @@ module.exports = function(db) {
       it('should have a customized title for property TipoSimplesNacional', function() {
         var schema = cadAtivo.getSchema();
         var properties = Object.keys(schema.properties);
-        expect(properties.length).to.equal(30);
+        expect(properties.length).to.equal(33);
         expect(properties.indexOf('FAX')).to.equal(-1);
         expect(properties.indexOf('IM')).to.above(-1);
         expect(properties.indexOf('TSN')).to.above(-1);
@@ -272,7 +272,7 @@ module.exports = function(db) {
         schema.properties.should.have.property('docpagvc');
         schema.properties.docpagvc.should.have.property('items');
         schema.properties.docpagvc.items.should.have.property('properties');
-        expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(4);
+        expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(6);
       });
       it('should have property docpagvc in fornecedor', function() {
         var schema = cadAtivo.getSchema();
@@ -716,6 +716,8 @@ module.exports = function(db) {
             expect(record.docpagvc).to.be.a('array');
             expect(record.docpagvc.length).to.equal(1);
 
+            record.should.not.have.property('DATNASC');
+
             done();
           })
           .catch(function(err) {
@@ -739,6 +741,9 @@ module.exports = function(db) {
           .create({
             NOMECAD: 'Cliente ok',
             NUMERO: '5',
+            DATNASC: '1999-12-31',
+            DATNASCZ: '1999-12-31T00:00:00Z',
+            DATNASCNOZ: new Date('1999-12-31T19:00:00'),
             fornecedor: {
               SIGLAFOR: 'Sigla',
               NUMERO: '99'
@@ -772,6 +777,12 @@ module.exports = function(db) {
             var record = recordset[0];
             record.should.have.property('ClassificaçãoCad');
             expect(record.ClassificaçãoCad).to.be.a('array');
+            record.should.have.property('DATNASC');
+            expect(record.DATNASC.toISOString().substr(0, 10)).to.equal('1999-12-31');
+            record.should.have.property('DATNASCZ');
+            expect(record.DATNASCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
+            record.should.have.property('DATNASCNOZ');
+            expect(record.DATNASCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString());
             expect(record.cliente).to.be.a('object');
             expect(record.fornecedor).to.be.a('object');
             expect(record.ClassificaçãoCad.length).to.equal(2);
@@ -814,8 +825,8 @@ module.exports = function(db) {
                 record.should.have.property('ClassificaçãoCad');
                 expect(record.ClassificaçãoCad.length).to.equal(1);
                 expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
-                expect(record.cliente.DATMAIA).to.be.a('date');
-                expect(record.cliente.DATMAIA.toISOString()).to.equal('2015-02-02T00:00:00.000Z');
+                expect(record.cliente.DATMAIA).to.be.a('string');
+                expect(record.cliente.DATMAIA).to.equal('2015-02-02');
                 record.should.have.property('updatedAt');
                 expect(record.updatedAt).to.be.a('date');
                 expect(record.updatedAt >= now).to.equal(true);
@@ -835,7 +846,7 @@ module.exports = function(db) {
                     expect(record.ClassificaçãoCad.length).to.equal(1);
                     expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
                     expect(record.cliente.DATMAIA).to.be.a('date');
-                    expect(record.cliente.DATMAIA.toISOString()).to.equal('2015-02-02T00:00:00.000Z');
+                    expect(record.cliente.DATMAIA.toISOString().substr(0, 10)).to.equal('2015-02-02');
                     record.should.have.property('updatedAt');
                     expect(record.updatedAt).to.be.a('date');
                     expect(record.updatedAt >= now).to.equal(true);
@@ -908,8 +919,11 @@ module.exports = function(db) {
             ],
             docpagvc: {
               VALOR: 700,
-              DATAVENC: '2015-08-23'
+              DATAVENC: '2015-08-23',
+              DATAVENCZ: '1999-12-31T00:00:00Z',
+              DATAVENCNOZ: new Date('1999-12-31T19:00:00')
             },
+            VALORLCTO: 700,
             updatedAt: joao.updatedAt
           }, joao.id)
           .then(function(record) {
@@ -921,6 +935,8 @@ module.exports = function(db) {
             record.should.have.property('docpagvc');
             expect(record.docpagvc.length).to.equal(1);
             expect(record.docpagvc[0].VALOR).to.equal(700);
+            record.should.have.property('VALORLCTO');
+            expect(record.VALORLCTO).to.equal(700);
             done();
           })
           .catch(function(err) {
@@ -948,7 +964,15 @@ module.exports = function(db) {
             var record = recordset[0];
             record.should.have.property('docpagvc');
             expect(record.docpagvc.length).to.equal(1);
-            expect(record.docpagvc[0].VALOR).to.equal(700);
+            expect(Number(record.docpagvc[0].VALOR)).to.equal(700);
+            record.should.have.property('VALORLCTO');
+            expect(Number(record.VALORLCTO)).to.equal(700);
+            record.docpagvc[0].should.have.property('DATAVENC');
+            expect(record.docpagvc[0].DATAVENC.toISOString().substr(0, 10)).to.equal('2015-08-23');
+            record.docpagvc[0].should.have.property('DATAVENCZ');
+            expect(record.docpagvc[0].DATAVENCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
+            record.docpagvc[0].should.have.property('DATAVENCNOZ');
+            expect(record.docpagvc[0].DATAVENCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString());
             done();
           })
           .catch(function(err) {
@@ -1124,7 +1148,7 @@ module.exports = function(db) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             var record = recordset[0];
-            expect(record.COMPLEMENTO).to.equal(null);
+            expect(record.COMPLEMENTO).to.equal(undefined);
             done();
           })
           .catch(function(err) {
@@ -1202,9 +1226,7 @@ module.exports = function(db) {
               }
             ],
             cliente: {
-              SIGLACLI: 'Sigla',
-              DATMAIA: '2015-02-02'
-            }
+              SIGLACLI: 'Sigla'}
           }, joana), joana.id)
           .then(function(record) {
             joana = record;
@@ -1222,8 +1244,9 @@ module.exports = function(db) {
             expect(record.ClassificaçãoCad.length).to.equal(1);
             expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
             record.should.have.property('updatedAt');
-            expect(record.cliente.DATMAIA).to.be.a('date');
-            expect(record.cliente.DATMAIA.toISOString()).to.equal('2015-02-02T00:00:00.000Z');
+
+            record.cliente.should.not.have.property('DATMAIA');
+
             expect(record.afterCreate).to.be.undefined;
             expect(record.afterUpdate).to.be.true;
             expect(record.afterPromise).to.be.true;
@@ -1251,8 +1274,7 @@ module.exports = function(db) {
             expect(record.ClassificaçãoCad.length).to.equal(1);
             expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
             record.should.have.property('updatedAt');
-            expect(record.cliente.DATMAIA).to.be.a('date');
-            expect(record.cliente.DATMAIA.toISOString()).to.equal('2015-02-02T00:00:00.000Z');
+            record.cliente.should.not.have.property('DATMAIA');
             done();
           })
           .catch(function(err) {
@@ -1287,10 +1309,13 @@ module.exports = function(db) {
             expect(record.ClassificaçãoCad.length).to.equal(2);
             expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
             record.should.have.property('updatedAt');
-            expect(record.cliente.DATMAIA).to.be.a('date');
-            expect(record.cliente.DATMAIA.toISOString()).to.equal('2015-02-02T00:00:00.000Z');
+            expect(record.cliente.DATMAIA).to.be.a('string');
+            expect(record.cliente.DATMAIA).to.equal('2015-02-02');
             expect(record.afterUpdate).to.be.true;
             expect(record.afterPromise).to.be.true;
+
+            record.should.not.have.property('DATNASC');
+
             done();
           })
           .catch(function(err) {
@@ -1465,7 +1490,7 @@ module.exports = function(db) {
             expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
             record.should.have.property('updatedAt');
             expect(record.cliente.DATMAIA).to.be.a('date');
-            expect(record.cliente.DATMAIA.toISOString()).to.equal('2015-02-02T00:00:00.000Z');
+            expect(record.cliente.DATMAIA.toISOString().substr(0, 10)).to.equal('2015-02-02');
             expect(record.afterUpdate).to.be.true;
             expect(record.afterPromise).to.be.true;
             done();

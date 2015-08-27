@@ -19,21 +19,24 @@ module.exports = function(db) {
     return cl.query(sentence, options.transaction);
   };
   adapter.createInstance = function(record, name, data) {
+    var instance = {};
     _.forEach(data.properties, function(property, name) {
       if (property.enum) {
         _.forEach(property.enum, function(value) {
           if (value.substr(0, record[name].length) === record[name]) {
-            record[name] = value;
+            instance[name] = value;
             return false;
           }
         });
-      }
-      if ((property.type === 'date' || property.type === 'datetime') &&
-        record[name]) {
-        record[name] = new Date(record[name])
+      } else if (record[name] && record[name] !== null) {
+        instance[name] = record[name];
       }
     });
-    return record;
+    if (data.timestamps) {
+      instance.createdAt = record.createdAt;
+      instance.updatedAt = record.updatedAt;
+    }
+    return instance;
   };
   adapter.getAttributes = function(name) {
   };
@@ -403,6 +406,25 @@ module.exports = function(db) {
   };
 
   adapter.buildQuery = buildQuery;
+
+  adapter.getCoercionFunction = function(type) {
+    switch (type) {
+      case 'integer':
+        return Number.parseInt;
+      case 'number':
+        return Number.parseFloat;
+      case 'date':
+      case 'datetime':
+        return function(value) {
+          return new Date(value);
+        };
+      default:
+        //return function(value) {
+        //  return value;
+        //};
+        throw new Error('Coercion not defined for type ' + type)
+    }
+  };
 
   return adapter;
 };

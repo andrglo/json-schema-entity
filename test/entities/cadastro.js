@@ -87,6 +87,8 @@ module.exports = function(config) {
       'INSCEST',
       'InscriçãoMunicipal',
       'DATNASC',
+      'DATNASCZ',
+      'DATNASCNOZ',
       'ENDERECO',
       'NUMERO',
       'COMPLEMENTO',
@@ -103,7 +105,8 @@ module.exports = function(config) {
       'CONTAEV',
       'CONTACC',
       'Suframa',
-      'Inativo'
+      'Inativo',
+      'VALORLCTO'
     ])
   }, config);
 
@@ -199,6 +202,8 @@ module.exports = function(config) {
         'id',
         'VALOR',
         'DATAVENC',
+        'DATAVENCZ',
+        'DATAVENCNOZ',
         'SITPGTO',
         'DATAPGTO'
       ])
