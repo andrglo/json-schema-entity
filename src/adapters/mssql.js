@@ -208,7 +208,7 @@ module.exports = function(db) {
         return fields + (fields ? ',' : '') + '@' + _.camelCase(field);
       }, ''));
     debug(insertCommand, params);
-        return     ps.prepare(insertCommand)
+    return ps.prepare(insertCommand)
       .then(function() {
         return ps.execute(params);
       })
@@ -281,7 +281,7 @@ module.exports = function(db) {
         return fields + (fields ? ' AND ' : '') + '[' + field + ']=@' + _.camelCase('pk' + field);
       }, ''));
     //console.log(updateCommand)
-        return     ps.prepare(updateCommand)
+    return ps.prepare(updateCommand)
       .then(function() {
         return ps.execute(params)
       })
@@ -381,20 +381,15 @@ module.exports = function(db) {
 
   adapter.getCoercionFunction = function(type) {
     switch (type) {
-      case 'integer':
-        return Number.parseInt;
-      case 'number':
-        return Number.parseFloat;
       case 'date':
       case 'datetime':
         return function(value) {
           return new Date(value);
         };
       default:
-        //return function(value) {
-        //  return value;
-        //};
-        throw new Error('Coercion not defined for type ' + type)
+        return function(value) {
+          return value;
+        };
     }
   };
 

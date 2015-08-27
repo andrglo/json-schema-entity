@@ -1232,12 +1232,12 @@ module.exports = function(db) {
             joana = record;
             record.should.have.property('destino');
             expect(record.destino.length).to.equal(2);
-            record.destino[0].NUMLANORI.should.equal(record.id);
-            record.destino[1].NUMLANORI.should.equal(record.id);
+            Number(record.destino[0].NUMLANORI).should.equal(record.id);
+            Number(record.destino[1].NUMLANORI).should.equal(record.id);
             record.should.have.property('outroDestino');
             record.outroDestino[0].NOMECAD.should.equal('Gilda');
             record.outroDestino[0].IDENT.should.equal('Jessica');
-            record.outroDestino[0].FKOUTRO.should.equal(record.id);
+            Number(record.outroDestino[0].FKOUTRO).should.equal(record.id);
             record.should.have.property('cliente');
             expect(record.cliente.SIGLACLI).to.equal('Sigla');
             record.should.have.property('ClassificaçãoCad');
@@ -1482,7 +1482,7 @@ module.exports = function(db) {
             record.should.have.property('maisOutroDestino');
             record.maisOutroDestino.NOMECAD.should.equal('Gilda');
             record.maisOutroDestino.IDENT.should.equal('Jessica');
-            record.maisOutroDestino.NUMLANORI2.should.equal(record.id);
+            Number(record.maisOutroDestino.NUMLANORI2).should.equal(record.id);
             record.should.have.property('cliente');
             expect(record.cliente.SIGLACLI).to.equal('Sigla');
             record.should.have.property('ClassificaçãoCad');
@@ -1606,8 +1606,8 @@ module.exports = function(db) {
             record.should.not.have.property('docpagvc');
             record.fornecedor.should.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             done();
           })
           .catch(function(error) {
@@ -1625,9 +1625,9 @@ module.exports = function(db) {
             record.fornecedor.should.have.property('docpagvc');
             record.should.not.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(3);
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
-            expect(record.fornecedor.docpagvc[2].VALOR).to.equal(10.99);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[2].VALOR)).to.equal(10.99);
             done();
           })
           .catch(function(err) {
@@ -1645,9 +1645,9 @@ module.exports = function(db) {
             record.fornecedor.should.have.property('docpagvc');
             record.should.not.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(3);
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
-            expect(record.fornecedor.docpagvc[2].VALOR).to.equal(10.99);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[2].VALOR)).to.equal(10.99);
             done();
           })
           .catch(function(error) {
@@ -1665,8 +1665,8 @@ module.exports = function(db) {
             record.fornecedor.should.have.property('docpagvc');
             record.should.not.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(250.02);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(10.99);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(10.99);
             done();
           })
           .catch(function(err) {
@@ -1684,8 +1684,8 @@ module.exports = function(db) {
             record.fornecedor.should.have.property('docpagvc');
             record.should.not.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(250.02);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(10.99);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(10.99);
             done();
           })
           .catch(function(error) {
@@ -1805,8 +1805,8 @@ module.exports = function(db) {
             record.fornecedor.should.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             expect(record.fornecedor.docpagvc[0].categoria.id).to.equal('111');
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222');
             done();

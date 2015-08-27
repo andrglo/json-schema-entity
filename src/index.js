@@ -35,7 +35,7 @@ function runValidations(is, was, data) {
               var hasEqualPrimaryKey = function(a, b) {
                 var same = false;
                 _.forEach(association.data.primaryKeyAttributes, function(name) {
-                  same = a[name] === b[name];
+                  same = a[name] === b[name] || Number(a[name]) === Number(b[name]);
                   return same;
                 });
                 return same;
@@ -47,7 +47,7 @@ function runValidations(is, was, data) {
                     return true;
                   }
                 });
-                assert(res.length < 2, 'Better call Gloria' + res.length);
+                assert(res.length < 2, 'Better call Gloria1' + res.length);
                 return res.length === 0 ? void 0 : res[0];
               };
 
@@ -327,7 +327,7 @@ function update(entity, was, options, data) {
             var hasEqualPrimaryKey = function(a, b) {
               var same = false;
               _.forEach(associationPrimaryKey, function(name) {
-                same = a[name] === b[name];
+                same = a[name] === b[name] || Number(a[name]) === Number(b[name]);
                 return same;
               });
               return same;
@@ -343,7 +343,7 @@ function update(entity, was, options, data) {
                   return obj;
                 }
               }
-              assert(false, 'Better call Gloria');
+              assert(false, 'Better call Gloria2');
             };
 
             var associatedIsEntity = entity[associationKey];
