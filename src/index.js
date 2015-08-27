@@ -486,6 +486,7 @@ module.exports = function(schemaName, schema, config) {
       requestedProperties: schema && schema.properties,
       propertiesList: [],
       schema: {},
+      primaryKey: schema.primaryKey,
       hooks: {},
       coerce: [],
       public: {},
@@ -865,12 +866,28 @@ function buildTable(data) {
 
   data.primaryKeyAttributes = [];
   data.primaryKeyFields = [];
-  _.forEach(data.properties, function(property, name) {
-    if (property.primaryKey === true) {
+  if (data.primaryKey) {
+    log('ok', data.primaryKey)
+    _.forEach(data.primaryKey, function(key) {
+      var property = findProperty(key, data.schema.properties);
+      var name;
+      _.forEach(data.properties, function(prop, key) {
+        if (property === prop) {
+          name = key;
+          return false;
+        }
+      });
       data.primaryKeyAttributes.push(name);
       data.primaryKeyFields.push(property.field || name);
-    }
-  });           //todo look for primary key in the primary property too
+    });
+  } else {
+    _.forEach(data.properties, function(property, name) {
+      if (property.primaryKey === true) {
+        data.primaryKeyAttributes.push(name);
+        data.primaryKeyFields.push(property.field || name);
+      }
+    });
+  }
   assert(data.primaryKeyAttributes.length > 0, 'Primary key not defined for table ' + data.key);
 
   data.adapter.buildInsertCommand(data);
@@ -907,6 +924,23 @@ function buildTable(data) {
     });
   }
 
+}
+
+//from json-schema-table
+function findProperty(name, properties) {
+  var property = properties[name];
+  if (property === void 0) {
+    property = _.reduce(properties, function(res, prop, propName) {
+        return res ? res : (name === propName ? prop : void 0);
+      }, void 0) ||
+      _.reduce(properties, function(res, prop) {
+        return res ? res : (prop.field && name === prop.field ? prop : void 0);
+      }, void 0);
+    if (property === void 0) {
+      throw new Error('Property "' + name + '" not found');
+    }
+  }
+  return property;
 }
 
 function toJsonSchemaField(attribute) {
