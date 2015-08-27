@@ -88,58 +88,78 @@ function runValidations(is, was, data) {
 
 function runFieldValidations(is, was, data, errors) {
   var validator = data.validator;
-  return _.reduce(is && validator && data.properties, function(chain, property, key) {
-
-    var validations = {};
-    if (is[key]) {
-      _.forEach(property.validations, function(validation, name) {
-        var args = _.map(validation.args, function(arg) {
-          if (typeof arg === 'string' && arg.substr(0, 5) === 'this.') {
-            return is[arg.substring(5)]
-          } else {
-            return arg;
-          }
-        });
-        validations[name] = {
-          id: key,
-          message: validation.message,
-          fn: validator[name],
-          args: [is[key]].concat(args)
-        };
-      });
-      if (property.format && !validations[property.format] && validator[property.format]) {
-        validations[property.format] = {
-          id: key,
-          fn: validator[property.format],
-          args: [is[key]]
-        };
-      }
-    }
-    return _.reduce(validations, function(chain, validation) {
-      return chain.then(function() {
-        debug('Running field validation:', validation.id, validation.args);
-        var res;
-        try {
-          res = validation.fn.apply(validator, validation.args)
-        } catch (err) {
-          errors.push({path: validation.id, message: err.message})
-        }             //todo change to field
-        if (res && res.then) {
-          return res.catch(function(err) {
-            errors.push({path: validation.id, message: err.message})
+  return Promise.resolve()
+    .then(function() {
+      _.forEach(is && data.properties, function(property, key) {
+        if (is[key] && is[key] !== null && property.enum &&
+          property.enum.indexOf(is[key]) === -1) {
+          var message = 'Value \'' + is[key] + '\' not valid for column ' + key +
+            '. Valid options are: ' + property.enum.join(',');
+          throw new EntityError({
+            type: 'ValidationError',
+            message: message,
+            errors: [
+              {path: key, message: message}
+            ]
           });
-        } else {
-          if (res === false) {
-            errors.push({
-              path: validation.id, message: validation.message ||
-              'Invalid ' + validation.id
+        }
+      })
+    })
+    .then(function() {
+      return _.reduce(is && validator && data.properties, function(chain, property, key) {
+
+        var validations = {};
+        if (is[key]) {
+          _.forEach(property.validations, function(validation, name) {
+            var args = _.map(validation.args, function(arg) {
+              if (typeof arg === 'string' && arg.substr(0, 5) === 'this.') {
+                return is[arg.substring(5)]
+              } else {
+                return arg;
+              }
             });
+            validations[name] = {
+              id: key,
+              message: validation.message,
+              fn: validator[name],
+              args: [is[key]].concat(args)
+            };
+          });
+          if (property.format && !validations[property.format] && validator[property.format]) {
+            validations[property.format] = {
+              id: key,
+              fn: validator[property.format],
+              args: [is[key]]
+            };
           }
         }
-      });
-    }, chain);
+        return _.reduce(validations, function(chain, validation) {
+          return chain.then(function() {
+            debug('Running field validation:', validation.id, validation.args);
+            var res;
+            try {
+              res = validation.fn.apply(validator, validation.args)
+            } catch (err) {
+              errors.push({path: validation.id, message: err.message})
+            }             //todo change to field
+            if (res && res.then) {
+              return res.catch(function(err) {
+                errors.push({path: validation.id, message: err.message})
+              });
+            } else {
+              if (res === false) {
+                errors.push({
+                  path: validation.id, message: validation.message ||
+                  'Invalid ' + validation.id
+                });
+              }
+            }
+          });
+        }, chain);
 
-  }, Promise.resolve());
+      }, Promise.resolve());
+    });
+
 }
 
 function runModelValidations(is, was, data, errors) {
@@ -867,7 +887,6 @@ function buildTable(data) {
   data.primaryKeyAttributes = [];
   data.primaryKeyFields = [];
   if (data.primaryKey) {
-    log('ok', data.primaryKey)
     _.forEach(data.primaryKey, function(key) {
       var property = findProperty(key, data.schema.properties);
       var name;

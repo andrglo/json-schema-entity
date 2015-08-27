@@ -248,7 +248,6 @@ module.exports = function(db) {
         };
       case 'datetime':
         return function(value) {
-          log(value, timezone)
           if (timezone === 'ignore') {
             var d = new Date(value + 'Z');
             return new Date(d.getTime() + (d.getTimezoneOffset() * 60000));

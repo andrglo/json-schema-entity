@@ -314,6 +314,31 @@ module.exports = function(db) {
     });
 
     describe('create cadastro', function() {
+      it('should not create a new cadastro with a partial enum', function(done) {
+        var now = new Date(Date.now());
+        cadAtivo
+          .create({
+            NOMECAD: 'João',
+            NUMERO: '1',
+            COMPLEMENTO: 'Do not exclude',
+            TSN: '1'
+          })
+          .then(function(record) {
+            done(new Error('Invalid record created'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('ValidationError');
+            expect(error.errors).to.be.a('array');
+            expect(error.errors.length).to.equal(1);
+            expect(error.errors[0].path).to.equal('TSN');
+            error.should.have.property('message');
+            done();
+          })
+          .catch(function(err) {
+            done(err);
+          })
+      });
       it('should create a new cadastro', function(done) {
         var now = new Date(Date.now());
         cadAtivo
@@ -1226,7 +1251,8 @@ module.exports = function(db) {
               }
             ],
             cliente: {
-              SIGLACLI: 'Sigla'}
+              SIGLACLI: 'Sigla'
+            }
           }, joana), joana.id)
           .then(function(record) {
             joana = record;
@@ -1476,7 +1502,7 @@ module.exports = function(db) {
     describe('scope handling', function() {
       it('update Geralda to be out of scope', function(done) {
         cadAtivo
-          .update({Inativo: 'S', updatedAt: geralda.updatedAt}, geralda.id)
+          .update({Inativo: 'Sim', updatedAt: geralda.updatedAt}, geralda.id)
           .then(function(record) {
             geralda = record;
             record.should.have.property('maisOutroDestino');
