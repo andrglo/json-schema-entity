@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var assert = require('assert');
-var parseDate = require('postgres-date');
 var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
