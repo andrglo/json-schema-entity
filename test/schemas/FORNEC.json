@@ -10,8 +10,7 @@
       "format": "list",
       "required": true,
       "$ref": "CADASTRO",
-      "field": "FORNECEDOR",
-      "primaryKey": true
+      "field": "FORNECEDOR"
     },
     "SIGLAFOR": {
       "title": "Identificação",
@@ -474,5 +473,8 @@
       "format": "checkbox",
       "defaultValue": "Sim"
     }
-  }
+  },
+  "primaryKey": [
+    "FORNECEDOR"
+  ]
 }

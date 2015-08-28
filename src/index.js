@@ -888,7 +888,7 @@ function buildTable(data) {
   data.primaryKeyFields = [];
   if (data.primaryKey) {
     _.forEach(data.primaryKey, function(key) {
-      var property = findProperty(key, data.schema.properties);
+      var property = findProperty(key, data.properties);
       var name;
       _.forEach(data.properties, function(prop, key) {
         if (property === prop) {
