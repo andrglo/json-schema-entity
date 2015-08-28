@@ -3,19 +3,16 @@ var assert = require('assert');
 var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
-var commonLayer = require('./commonLayer');
 
 var log = console.log;
 
 module.exports = function(db) {
 
-  var cl = commonLayer(db);
-
   var adapter = {};
 
   adapter.query = function(command, criteria, options) {
-    var sentence = utils.embedCriteria(command, criteria, cl);
-    return cl.query(sentence, options.transaction);
+    var sentence = utils.embedCriteria(command, criteria, db);
+    return db.query(sentence, null, {transaction: options.transaction});
   };
 
   adapter.createInstance = function(record, name, data) {
@@ -41,27 +38,27 @@ module.exports = function(db) {
   adapter.getAttributes = function(name) {
   };
 
-  adapter.transaction = cl.transaction;
+  adapter.transaction = db.transaction;
 
   adapter.buildInsertCommand = function(data) {
     var fieldsToReturn = [];
     _.forEach(data.properties, function(property, name) {
       if (property.autoIncrement) {
-        fieldsToReturn.push(cl.wrap(property.field || name));
+        fieldsToReturn.push(db.wrap(property.field || name));
       }
     });
-    data.insertCommand = 'INSERT INTO ' + cl.wrap(data.identity.name) + ' (<fields>) VALUES (<values>)';
+    data.insertCommand = 'INSERT INTO ' + db.wrap(data.identity.name) + ' (<fields>) VALUES (<values>)';
     if (fieldsToReturn.length > 0) {
       data.insertCommand += ' RETURNING ' + fieldsToReturn.join(',');
     }
     //console.log('insert command', data.insertCommand);
   };
   adapter.buildUpdateCommand = function(data) {
-    data.updateCommand = 'UPDATE ' + cl.wrap(data.identity.name) +
+    data.updateCommand = 'UPDATE ' + db.wrap(data.identity.name) +
       ' SET <fields-values> WHERE <primary-keys>';
   };
   adapter.buildDeleteCommand = function(data) {
-    data.deleteCommand = 'DELETE FROM ' + cl.wrap(data.identity.name) +
+    data.deleteCommand = 'DELETE FROM ' + db.wrap(data.identity.name) +
       ' WHERE <find-keys> RETURNING *';
   };
   adapter.create = function(record, data, options) {
@@ -101,13 +98,13 @@ module.exports = function(db) {
     var index = 1;
     var insertCommand = data.insertCommand.replace('<fields>',
       fields.reduce(function(fields, field) {
-        return fields + (fields ? ',' : '') + cl.wrap(field);
+        return fields + (fields ? ',' : '') + db.wrap(field);
       }, '')).replace('<values>',
       fields.reduce(function(fields, field) {
         return fields + (fields ? ',' : '') + '$' + index++;
       }, ''));
     debug(insertCommand, params);
-    return cl.execute(insertCommand, {transaction: options.transaction}, params)
+    return db.execute(insertCommand, params, {transaction: options.transaction})
       .then(function(recordset) {
         fieldsToRead.map(function(data) {
           record[data.to] = recordset[0][data.from];
@@ -154,13 +151,13 @@ module.exports = function(db) {
     var index = 1;
     var updateCommand = data.updateCommand.replace('<fields-values>',
       fields.reduce(function(fields, field) {
-        return fields + (fields ? ',' : '') + cl.wrap(field) + '=$' + index++;
+        return fields + (fields ? ',' : '') + db.wrap(field) + '=$' + index++;
       }, '')).replace('<primary-keys>',
       findKeys.reduce(function(fields, field) {
-        return fields + (fields ? ' AND ' : '') + cl.wrap(field) + '=$' + index++;
+        return fields + (fields ? ' AND ' : '') + db.wrap(field) + '=$' + index++;
       }, ''));
     //console.log(updateCommand)
-    return cl.execute(updateCommand, {transaction: options.transaction}, params)
+    return db.execute(updateCommand, params, {transaction: options.transaction})
       .then(function() {
         return record;
       });
@@ -181,10 +178,10 @@ module.exports = function(db) {
     var index = 1;
     var deleteCommand = data.deleteCommand.replace('<find-keys>',
       findKeys.reduce(function(fields, field) {
-        return fields + (fields ? ' AND ' : '') + cl.wrap(field) + '=$' + index++;
+        return fields + (fields ? ' AND ' : '') + db.wrap(field) + '=$' + index++;
       }, ''));
     //console.log(deleteCommand, params)
-    return cl.execute(deleteCommand, {transaction: options.transaction}, params)
+    return db.execute(deleteCommand, params, {transaction: options.transaction})
       .then(function(recordset) {
         assert(recordset.length === 1, 'No or more than 1 record deleted:', recordset);
         return recordset.length;
@@ -210,12 +207,12 @@ module.exports = function(db) {
       debug('Property', name);
       var fieldName = property.field || name;
       var alias = name;
-      fields.push(cl.wrap(fieldName) + (alias !== fieldName ? ' AS ' +
-        cl.wrap(alias) : ''));
+      fields.push(db.wrap(fieldName) + (alias !== fieldName ? ' AS ' +
+        db.wrap(alias) : ''));
     });
     if (data.timestamps) {
-      fields.push(cl.wrap('updatedAt'));
-      fields.push(cl.wrap('createdAt'));
+      fields.push(db.wrap('updatedAt'));
+      fields.push(db.wrap('createdAt'));
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {
@@ -228,14 +225,14 @@ module.exports = function(db) {
       fields.push(
         '(select array_to_json(array_agg(row_to_json(t))) from (' +
         association.data.query +
-        ' WHERE ' + cl.wrap(foreignKey) + '=' +
-        cl.wrap(data.key) + '.' + cl.wrap(data.primaryKeyFields[0]) +
+        ' WHERE ' + db.wrap(foreignKey) + '=' +
+        db.wrap(data.key) + '.' + db.wrap(data.primaryKeyFields[0]) +
         ') t) AS ' +
-        cl.wrap(association.data.key)
+        db.wrap(association.data.key)
       );
     });
     data.query = 'SELECT ' + fields.join(',') +
-      ' FROM ' + cl.wrap(data.identity.name) + ' AS ' + cl.wrap(data.key);
+      ' FROM ' + db.wrap(data.identity.name) + ' AS ' + db.wrap(data.key);
     debug('Query:', data.query);
   };
 

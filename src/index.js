@@ -801,21 +801,13 @@ function getReferencedTableName($ref) {
 }
 
 function getAdapter(db) {
-  if (isNodeMssql(db)) {
+  if (db.dialect === 'mssql') {
     return require('./adapters/mssql')(db);
-  } else if (isPostgres(db)) {
+  } else if (db.dialect === 'postgres') {
     return require('./adapters/postgres')(db);
   } else {
     throw new Error('Adapter for this conector is not implemented');
   }
-}
-
-function isNodeMssql(db) {
-  return db.DRIVERS !== void 0; //todo identify in a better way
-}
-
-function isPostgres(db) {
-  return typeof db.defaults === 'object'; //todo identify in a better way
 }
 
 function splitAlias(name) {

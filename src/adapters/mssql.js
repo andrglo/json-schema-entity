@@ -4,19 +4,16 @@ var xml2json = require('xml2json');
 var debug = require('debug')('json-schema-entity');
 
 var utils = require('./utils');
-var commonLayer = require('./commonLayer');
 
 var xmlSpaceToken = '_-_';
 var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
 module.exports = function(db) {
 
-  var cl = commonLayer(db);
-
   var adapter = {};
   adapter.query = function(command, criteria, options) {
-    var sentence = utils.embedCriteria(command, criteria, cl);
-    return cl.query(sentence, options.transaction);
+    var sentence = utils.embedCriteria(command, criteria, db);
+    return db.query(sentence, options.transaction);
   };
   adapter.createInstance = function(record, name, data) {
     var instance = {};
@@ -40,7 +37,7 @@ module.exports = function(db) {
   };
   adapter.getAttributes = function(name) {
   };
-  adapter.transaction = cl.transaction;
+  adapter.transaction = db.transaction;
   adapter.toSqlType = function(property) {
     switch (property.type) {
       case 'integer':
@@ -63,8 +60,13 @@ module.exports = function(db) {
       case 'number':
         return new db.Decimal(property.maxLength, property.decimals);
       case 'date':
+        return db.Date;
       case 'datetime':
-        return db.DateTime;
+        if (property.timezone === 'ignore') {
+          return db.DateTime2;
+        } else {
+          return db.DateTimeOffset;
+        }
       case 'string':
         return new db.NVarChar(property.maxLength);
       default:

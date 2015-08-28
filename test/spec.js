@@ -58,8 +58,9 @@ function addValidations(validator) {
   });
 }
 
-module.exports = function(db) {
+module.exports = function(options) {
 
+  var db;
   describe('single table', function() {
 
     var start;
@@ -70,7 +71,8 @@ module.exports = function(db) {
 
     var minNanoSecsToSave = 3 * 1000000; // 3 milliseconds (min min = 1)
 
-    before(function() {
+    before(function(done) {
+      db = options.db;
       delete CADASTRO.properties.createdAt; //todo its optional in the schema
       delete CADASTRO.properties.updatedAt;
       tableCadastro = entity('CADASTRO', CADASTRO, {db: db}).useTimestamps();
@@ -79,6 +81,7 @@ module.exports = function(db) {
           throw new Error('NUMERO must be informed');
         }
       });
+      done();
     });
 
     it('record should not exist', function(done) {
