@@ -38,7 +38,7 @@ module.exports = function(db) {
   adapter.getAttributes = function(name) {
   };
 
-  adapter.transaction = db.transaction;
+  adapter.transaction = db.transaction.bind(db);
 
   adapter.buildInsertCommand = function(data) {
     var fieldsToReturn = [];
