@@ -3,84 +3,20 @@ var assert = require('assert');
 var xml2json = require('xml2json');
 var debug = require('debug')('json-schema-entity');
 
-var utils = require('./utils');
-
 var xmlSpaceToken = '_-_';
 var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
 module.exports = function(db) {
 
   var adapter = {};
-  adapter.query = function(command, criteria, options) {
-    var sentence = utils.embedCriteria(command, criteria, db);
-    return db.query(sentence, null, {transaction: options.transaction});
-  };
-  adapter.createInstance = function(record, name, data) {
-    var instance = {};
-    _.forEach(data.properties, function(property, name) {
-      if (property.enum) {
-        _.forEach(property.enum, function(value) {
-          if (value.substr(0, record[name].length) === record[name]) {
-            instance[name] = value;
-            return false;
-          }
-        });
-      } else if (record[name] && record[name] !== null) {
-        instance[name] = record[name];
-      }
-    });
-    if (data.timestamps) {
-      instance.createdAt = record.createdAt;
-      instance.updatedAt = record.updatedAt;
-    }
-    return instance;
-  };
-  adapter.getAttributes = function(name) {
-  };
-  adapter.transaction = db.transaction.bind(db);
-  adapter.toSqlType = function(property) {
-    switch (property.type) {
-      case 'integer':
-        return 'INTEGER';
-      case 'number':
-        return 'DECIMAL(' + property.maxLength + ',' + property.decimals + ')';
-      case 'date':
-      case 'datetime':
-        return 'DATETIME';
-      case 'string':
-        return 'NVARCHAR(' + property.maxLength + ')';
-      default:
-        throw new Error('Coercion not defined for type ' + property.type)
-    }
-  };
-  adapter.toAdapterType = function(property) {
-    switch (property.type) {
-      case 'integer':
-        return db.Int;
-      case 'number':
-        return new db.Decimal(property.maxLength, property.decimals);
-      case 'date':
-        return db.Date;
-      case 'datetime':
-        if (property.timezone === 'ignore') {
-          return db.DateTime2;
-        } else {
-          return db.DateTimeOffset;
-        }
-      case 'string':
-        return new db.NVarChar(property.maxLength);
-      default:
-        throw new Error('Adapter type not defined for type ' + property.type)
-    }
-  };
+
   adapter.buildInsertCommand = function(data) {
 
     var fieldsWithType = [];
     var fields = [];
     _.forEach(data.properties, function(property, name) {
       if (property.autoIncrement) {
-        fieldsWithType.push('[' + (property.field || name) + ']' + ' ' +
-          adapter.toSqlType(property));
+        fieldsWithType.push('[' + (property.field || name) + ']' + ' INTEGER');
         fields.push(property.field || name);
       }
     });
@@ -102,8 +38,7 @@ module.exports = function(db) {
       commands.push('SELECT * FROM @tmp');
       data.insertCommand = commands.join(';');
     }
-    //console.log('insert command', data.insertCommand);
-
+    debug('insert command', data.insertCommand);
   };
   adapter.buildUpdateCommand = function(data) {
 
@@ -115,13 +50,14 @@ module.exports = function(db) {
     } else {
       data.updateCommand = 'UPDATE [' + data.identity.name +
         '] SET <fields-values> WHERE <primary-keys>';
-
     }
+    debug('update command', data.updateCommand);
 
   };
   adapter.buildDeleteCommand = function(data) {
     data.deleteCommand = 'DELETE FROM [' + data.identity.name +
       '] WHERE <find-keys>;SELECT @@ROWCOUNT AS rowsAffected';
+    debug('delete command', data.deleteCommand);
   };
   adapter.create = function(record, data, options) {
     options = options || {};
@@ -240,7 +176,7 @@ module.exports = function(db) {
       findKeys.reduce(function(fields, field) {
         return fields + (fields ? ' AND ' : '') + '[' + field + ']=@' + _.camelCase('pk' + field);
       }, ''));
-    //console.log(updateCommand)
+    debug(updateCommand);
     return db.execute(updateCommand, params, {transaction: options.transaction})
       .then(function() {
         return record;
@@ -265,7 +201,7 @@ module.exports = function(db) {
       findKeys.reduce(function(fields, field) {
         return fields + (fields ? ' AND ' : '') + '[' + field + ']=@' + _.camelCase('pk' + field);
       }, ''));
-    //console.log(deleteCommand, params)
+    debug(deleteCommand, params)
     return db.execute(deleteCommand, params, {transaction: options.transaction})
       .then(function(recordset) {
         assert(recordset.length === 1, 'No or more than 1 record deleted:', recordset);
@@ -299,7 +235,39 @@ module.exports = function(db) {
     return isArray ? json : [json];
   };
 
-  adapter.buildQuery = buildQuery;
+  adapter.buildQuery = function buildQuery(data) {
+    var fields = [];
+    _.forEach(data.properties, function(property, name) {
+      debug('Property', name);
+      var fieldName = property.field || name;
+      var alias = name.replace(/ /g, xmlSpaceToken);
+      fields.push('[' + fieldName + ']' + (alias !== fieldName ? ' AS [' + alias + ']' : ''));
+    });
+    if (data.timestamps) {
+      fields.push('updatedAt');
+      fields.push('createdAt');
+    }
+    _.forEach(data.associations, function(association) {
+      if (!association.data.foreignKey) {
+        debug('foreignKey yet not defined for', association.data.key);
+        return false;
+      }
+      buildQuery(association.data);
+      var foreignKey = association.data.properties[association.data.foreignKey].field ||
+        association.data.foreignKey;
+      fields.push(
+        '(' + association.data.query +
+        ' WHERE [' + foreignKey + ']=[' +
+        data.key + '].[' +
+        data.primaryKeyFields[0] +
+        '] FOR XML PATH) AS [' +
+        association.data.key + ']'
+      );
+    });
+    data.query = 'SELECT ' + fields.join(',') +
+      ' FROM [' + data.identity.name + '] AS [' + data.key + ']';
+    debug('Query:', data.query);
+  };
 
   adapter.getCoercionFunction = function(type) {
     switch (type) {
@@ -318,36 +286,3 @@ module.exports = function(db) {
   return adapter;
 };
 
-function buildQuery(data) {
-  var fields = [];
-  _.forEach(data.properties, function(property, name) {
-    debug('Property', name);
-    var fieldName = property.field || name;
-    var alias = name.replace(/ /g, xmlSpaceToken);
-    fields.push('[' + fieldName + ']' + (alias !== fieldName ? ' AS [' + alias + ']' : ''));
-  });
-  if (data.timestamps) {
-    fields.push('updatedAt');
-    fields.push('createdAt');
-  }
-  _.forEach(data.associations, function(association) {
-    if (!association.data.foreignKey) {
-      debug('foreignKey yet not defined for', association.data.key);
-      return false;
-    }
-    buildQuery(association.data);
-    var foreignKey = association.data.properties[association.data.foreignKey].field ||
-      association.data.foreignKey;
-    fields.push(
-      '(' + association.data.query +
-      ' WHERE [' + foreignKey + ']=[' +
-      data.key + '].[' +
-      data.primaryKeyFields[0] +
-      '] FOR XML PATH) AS [' +
-      association.data.key + ']'
-    );
-  });
-  data.query = 'SELECT ' + fields.join(',') +
-    ' FROM [' + data.identity.name + '] AS [' + data.key + ']';
-  debug('Query:', data.query);
-}

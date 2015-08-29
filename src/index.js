@@ -2,6 +2,8 @@ var _ = require('lodash');
 var assert = require('assert');
 var debug = require('debug')('json-schema-entity');
 
+var utils = require('./adapters/utils');
+
 var log = console.log;
 
 function EntityError(options) {
@@ -217,7 +219,7 @@ function newInstace(entity, data) {
 
 function buildEntity(record, data) {
   debug('Entity will be built:', data.key);
-  var entity = data.adapter.createInstance(_.pick(record, data.propertiesList), data.identity.name, data);
+  var entity = createInstance(_.pick(record, data.propertiesList), data.identity.name, data);
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
@@ -312,7 +314,7 @@ function create(entity, options, data) {
     }).then(function(entity) {
       return runHooks(['afterCreate', 'afterSave'], entity, options.transaction, data)
         .then(function() {
-          return newInstace(entity, data)
+          return newInstace(entity, data);
         });
     });
 }
@@ -481,6 +483,7 @@ function destroy(entity, options, data) {
 module.exports = function(schemaName, schema, config) {
 
   var adapter = getAdapter(config.db);
+  var db = config.db;
   var entity = entityFactory(schemaName, schema, rebuild);
 
   function entityFactory(schemaName, schema, rebuild) {
@@ -587,18 +590,22 @@ module.exports = function(schemaName, schema, config) {
 
         },
         fetch: function(criteria, options) {
-          options = options || {};
-          if (data.scope) {
-            var where = _.extend({}, criteria.where, data.scope);
-            criteria = _.extend({}, criteria);
-            criteria.where = where;
-          }
-          return adapter
-            .query(data.query, criteria, options)
-            .then(function(res) {
-              return res.map(function(record) {
-                return buildEntity(record, data)
-              });
+          return Promise.resolve()
+            .then(function() {
+              options = options || {};
+              if (data.scope) {
+                var where = _.extend({}, criteria.where, data.scope);
+                criteria = _.extend({}, criteria);
+                criteria.where = where;
+              }
+              var sentence = utils.embedCriteria(data.query, criteria, db);
+              return db
+                .query(sentence, null, {transaction: options.transaction})
+                .then(function(res) {
+                  return res.map(function(record) {
+                    return buildEntity(record, data)
+                  });
+                });
             });
         },
         create: function(entity, options) {
@@ -607,7 +614,7 @@ module.exports = function(schemaName, schema, config) {
             .then(function() {
               return options.transaction ?
                 create(entity, options, data) :
-                adapter.transaction(function(t) {
+                db.transaction(function(t) {
                   options.transaction = t;
                   return create(entity, options, data);
                 });
@@ -653,7 +660,7 @@ module.exports = function(schemaName, schema, config) {
                 .then(function() {
                   return options.transaction ?
                     update(entity, was[0], options, data) :
-                    adapter.transaction(function(t) {
+                    db.transaction(function(t) {
                       options.transaction = t;
                       return update(entity, was[0], options, data);
                     });
@@ -698,7 +705,7 @@ module.exports = function(schemaName, schema, config) {
                 .then(function() {
                   return options.transaction ?
                     destroy(was[0], options, data) :
-                    adapter.transaction(function(t) {
+                    db.transaction(function(t) {
                       options.transaction = t;
                       return destroy(was[0], options, data);
                     });
@@ -823,28 +830,8 @@ function splitAlias(name) {
   return res;
 }
 
-function getPropertyByFieldName(properties, fieldName) {
-  var property;
-  _.forEach(properties, function(prop) {
-    if (prop.field === fieldName) {
-      property = prop;
-      return false;
-    }
-  });
-  if (property === void 0) {
-    _.forEach(properties, function(prop, name) {
-      if (name === fieldName) {
-        property = prop;
-        return false;
-      }
-    });
-  }
-  return property;
-}
-
 function buildTable(data) {
 
-  var attributes = data.adapter.getAttributes(data.identity.name);
   data.schema = {
     type: 'object',
     properties: {}
@@ -858,16 +845,6 @@ function buildTable(data) {
     if (data.properties[name].format !== 'hidden' && !((data.properties[name].autoIncrement || data.foreignKey === name) &&
       data.isAssociation)) {
       data.schema.properties[name] = data.properties[name];
-    }
-  });
-  _.forEach(attributes, function(attribute, name) {
-    if (!hasRequestedProperties ||
-      ((name === data.foreignKey || attribute.required === true || attribute.primaryKey === true)
-      && !getPropertyByFieldName(data.properties, name))) {
-      data.properties[name] = attribute;
-      if (!hasRequestedProperties) {
-        data.schema.properties[name] = data.properties[name];
-      }
     }
   });
   if (data.foreignKey && !data.properties[data.foreignKey]) {
@@ -991,4 +968,25 @@ function toJsonSchemaField(attribute) {
     field.required = true;
   }
   return field;
+}
+
+function createInstance(record, name, data) {
+  var instance = {};
+  _.forEach(data.properties, function(property, name) {
+    if (property.enum) {
+      _.forEach(property.enum, function(value) {
+        if (value.substr(0, record[name].length) === record[name]) {
+          instance[name] = value;
+          return false;
+        }
+      });
+    } else if (record[name] && record[name] !== null) {
+      instance[name] = record[name];
+    }
+  });
+  if (data.timestamps) {
+    instance.createdAt = record.createdAt;
+    instance.updatedAt = record.updatedAt;
+  }
+  return instance;
 }

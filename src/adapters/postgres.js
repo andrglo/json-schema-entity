@@ -2,43 +2,11 @@ var _ = require('lodash');
 var assert = require('assert');
 var debug = require('debug')('json-schema-entity');
 
-var utils = require('./utils');
-
 var log = console.log;
 
 module.exports = function(db) {
 
   var adapter = {};
-
-  adapter.query = function(command, criteria, options) {
-    var sentence = utils.embedCriteria(command, criteria, db);
-    return db.query(sentence, null, {transaction: options.transaction});
-  };
-
-  adapter.createInstance = function(record, name, data) {
-    var instance = {};
-    _.forEach(data.properties, function(property, name) {
-      if (property.enum) {
-        _.forEach(property.enum, function(value) {
-          if (value.substr(0, record[name].length) === record[name]) {
-            instance[name] = value;
-            return false;
-          }
-        });
-      } else if (record[name] && record[name] !== null) {
-        instance[name] = record[name];
-      }
-    });
-    if (data.timestamps) {
-      instance.createdAt = record.createdAt;
-      instance.updatedAt = record.updatedAt;
-    }
-    return instance;
-  };
-  adapter.getAttributes = function(name) {
-  };
-
-  adapter.transaction = db.transaction.bind(db);
 
   adapter.buildInsertCommand = function(data) {
     var fieldsToReturn = [];
@@ -51,15 +19,19 @@ module.exports = function(db) {
     if (fieldsToReturn.length > 0) {
       data.insertCommand += ' RETURNING ' + fieldsToReturn.join(',');
     }
-    //console.log('insert command', data.insertCommand);
+    debug('insert command', data.insertCommand);
   };
+
   adapter.buildUpdateCommand = function(data) {
     data.updateCommand = 'UPDATE ' + db.wrap(data.identity.name) +
       ' SET <fields-values> WHERE <primary-keys>';
+    debug('update command', data.updateCommand);
   };
+
   adapter.buildDeleteCommand = function(data) {
     data.deleteCommand = 'DELETE FROM ' + db.wrap(data.identity.name) +
       ' WHERE <find-keys> RETURNING *';
+    debug('delete command', data.deleteCommand);
   };
   adapter.create = function(record, data, options) {
     options = options || {};
@@ -156,7 +128,7 @@ module.exports = function(db) {
       findKeys.reduce(function(fields, field) {
         return fields + (fields ? ' AND ' : '') + db.wrap(field) + '=$' + index++;
       }, ''));
-    //console.log(updateCommand)
+    debug(updateCommand);
     return db.execute(updateCommand, params, {transaction: options.transaction})
       .then(function() {
         return record;
@@ -172,7 +144,7 @@ module.exports = function(db) {
     });
     if (data.timestamps) {
       params.push(options.where.updatedAt || null);
-      findKeys.push('updatedAt')
+      findKeys.push('updatedAt');
     }
 
     var index = 1;
@@ -180,7 +152,7 @@ module.exports = function(db) {
       findKeys.reduce(function(fields, field) {
         return fields + (fields ? ' AND ' : '') + db.wrap(field) + '=$' + index++;
       }, ''));
-    //console.log(deleteCommand, params)
+    debug(deleteCommand, params)
     return db.execute(deleteCommand, params, {transaction: options.transaction})
       .then(function(recordset) {
         assert(recordset.length === 1, 'No or more than 1 record deleted:', recordset);
