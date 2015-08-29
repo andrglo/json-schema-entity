@@ -13,7 +13,7 @@ module.exports = function(db) {
   var adapter = {};
   adapter.query = function(command, criteria, options) {
     var sentence = utils.embedCriteria(command, criteria, db);
-    return db.query(sentence, options.transaction);
+    return db.query(sentence, null, {transaction: options.transaction});
   };
   adapter.createInstance = function(record, name, data) {
     var instance = {};
@@ -37,7 +37,7 @@ module.exports = function(db) {
   };
   adapter.getAttributes = function(name) {
   };
-  adapter.transaction = db.transaction;
+  adapter.transaction = db.transaction.bind(db);
   adapter.toSqlType = function(property) {
     switch (property.type) {
       case 'integer':
@@ -75,51 +75,20 @@ module.exports = function(db) {
   };
   adapter.buildInsertCommand = function(data) {
 
-    //declare @tmp table ([NUMCAD] INTEGER,[NOMECAD] NVARCHAR(60),[IDENT] NVARCHAR(30),
-    // [CGCCPF] NVARCHAR(14),[INSCEST] NVARCHAR(18),[InscriçãoMunicipal] NVARCHAR(20),
-    // [DATNASC] DATETIME2,[ENDERECO] NVARCHAR(45),[NUMERO] NVARCHAR(6),[COMPLEMENTO] NVARCHAR(22),
-    // [BAIRRO] NVARCHAR(30),[CEP] NVARCHAR(8),[CIDADE] NVARCHAR(30),[ESTADO] NVARCHAR(2),
-    // [PAIS] NVARCHAR(50),[TELEFONE] NVARCHAR(20),[FAX] NVARCHAR(20),
-    // [CELULAR] NVARCHAR(20),[EMAIL] NVARCHAR(100),[CONTAEV] NVARCHAR(20),
-    // [CONTACC] NVARCHAR(20),[Suframa] NVARCHAR(9),[TipoSimplesNacional] VARCHAR(255),
-    // [Inativo] VARCHAR(255),[NUMLANORI] INTEGER,[NUMLANORI2] INTEGER,
-    // [FKOUTRO] INTEGER,[createdAt] DATETIME2,[updatedAt] DATETIME2);
-
-    // INSERT INTO [CADASTRO] ([NOMECAD],[NUMERO],[TipoSimplesNacional],
-    // [Inativo],[updatedAt],[createdAt])
-    // OUTPUT
-    // INSERTED.[NUMCAD],INSERTED.[NOMECAD],
-    // INSERTED.[IDENT],INSERTED.[CGCCPF],
-    // INSERTED.[INSCEST],INSERTED.[InscriçãoMunicipal],
-    // INSERTED.[DATNASC],INSERTED.[ENDERECO],INSERTED.[NUMERO],
-    // INSERTED.[COMPLEMENTO],
-    // INSERTED.[BAIRRO],INSERTED.[CEP],INSERTED.[CIDADE],INSERTED.[ESTADO],
-    // INSERTED.[PAIS],INSERTED.[TELEFONE],INSERTED.[FAX],INSERTED.[CELULAR],
-    // INSERTED.[EMAIL],INSERTED.[CONTAEV],INSERTED.[CONTACC],INSERTED.[Suframa],
-    // INSERTED.[TipoSimplesNacional],INSERTED.[Inativo],INSERTED.[NUMLANORI],
-    // INSERTED.[NUMLANORI2],INSERTED.[FKOUTRO],INSERTED.[createdAt],INSERTED.[updatedAt]
-    // into @tmp VALUES ('João','1','1','N','2015-08-10 20:44:55.751 +00:00',
-
-    // '2015-08-10 20:44:55.751 +00:00');select * from @tmp
-
     var fieldsWithType = [];
     var fields = [];
-    //var fieldsToInsert = [];
     _.forEach(data.properties, function(property, name) {
       if (property.autoIncrement) {
         fieldsWithType.push('[' + (property.field || name) + ']' + ' ' +
           adapter.toSqlType(property));
         fields.push(property.field || name);
-        //fieldsToInsert.push(property.field || name);
       }
     });
     if (data.timestamps) {
       fieldsWithType.push('createdAt DATETIME2');
       fields.push('createdAt');
-      //fieldsToInsert.push('createdAt');
       fieldsWithType.push('updatedAt DATETIME2');
       fields.push('updatedAt');
-      //fieldsToInsert.push('updatedAt');
     }
     if (fieldsWithType.length === 0) {
       data.insertCommand = 'INSERT INTO [' + data.identity.name + '] (<fields>) VALUES (<values>)';
@@ -148,16 +117,11 @@ module.exports = function(db) {
         '] SET <fields-values> WHERE <primary-keys>';
 
     }
-    //UPDATE [ClassificaçãoCad] SET [Classe]='Fornecedor',[NUMCAD]=19
-    // OUTPUT INSERTED.* WHERE [Classe] = 'Fornecedor' AND [NUMCAD] = 19
 
   };
   adapter.buildDeleteCommand = function(data) {
     data.deleteCommand = 'DELETE FROM [' + data.identity.name +
       '] WHERE <find-keys>;SELECT @@ROWCOUNT AS rowsAffected';
-    //DELETE FROM [CADASTRO]
-    // WHERE [updatedAt] = '2015-08-10 20:44:55.792 +00:00' AND
-    // [NUMCAD] = 1; SELECT @@ROWCOUNT AS AFFECTEDROWS;
   };
   adapter.create = function(record, data, options) {
     options = options || {};
@@ -165,10 +129,9 @@ module.exports = function(db) {
     var fieldsToRead = [];
     var defaultValues = {};
     var params = {};
-    var ps = new db.PreparedStatement(options.transaction);
     _.forEach(data.properties, function(property, name) {
       if (property.autoIncrement) {
-        fieldsToRead.push({from: property.field || name, to: name})
+        fieldsToRead.push({from: property.field || name, to: name});
       } else {
         var value = record[name];
         if ((value === void 0 || value === null) && property.defaultValue) {
@@ -182,25 +145,28 @@ module.exports = function(db) {
             value = value.substr(0, property.maxLength);
           }
           const key = _.camelCase(field);
-          ps.input(key, adapter.toAdapterType(property));
-          if ((property.type === 'date' || property.type === 'datetime') && !_.isDate(value)) {
-            params[key] = new Date(value);
-          } else {
-            params[key] = value;
+          if (value !== null && (property.type === 'date' || property.type === 'datetime') && !_.isDate(value)) {
+            value = new Date(value);
           }
+          params[key] = {
+            value: value,
+            type: property.type,
+            maxLength: property.maxLength,
+            decimals: property.decimals,
+            timezone: property.timezone
+          };
         }
       }
     });
     if (data.timestamps) {
       var now = new Date();
-      ps.input('createdAt', new db.DateTime2(3));
-      ps.input('updatedAt', new db.VarChar(26));
-      params.createdAt = now.toISOString();
-      params.updatedAt = now.toISOString().substring(0, 23) + '000';
+      record.createdAt = now;
+      record.updatedAt = now;
+      now = now.toISOString().substring(0, 23) + '000';
+      params.createdAt = now;
+      params.updatedAt = now;
       fields.push('createdAt');
       fields.push('updatedAt');
-      fieldsToRead.push({from: 'createdAt', to: 'createdAt'});
-      fieldsToRead.push({from: 'updatedAt', to: 'updatedAt'})
     }
     var insertCommand = data.insertCommand.replace('<fields>',
       fields.reduce(function(fields, field) {
@@ -210,32 +176,22 @@ module.exports = function(db) {
         return fields + (fields ? ',' : '') + '@' + _.camelCase(field);
       }, ''));
     debug(insertCommand, params);
-    return ps.prepare(insertCommand)
-      .then(function() {
-        return ps.execute(params);
-      })
+    return db.execute(insertCommand, params, {transaction: options.transaction})
       .then(function(recordset) {
-        return ps.unprepare().then(function() {
-          fieldsToRead.map(function(data) {
-            record[data.to] = recordset[0][data.from]
-          });
-          _.forEach(defaultValues, function(value, key) {
-            record[key] = value;
-          });
-          return record;
+        fieldsToRead.map(function(data) {
+          record[data.to] = recordset[0][data.from];
         });
-      })
-      .catch(function(error) {
-        return ps.unprepare().then(function() {
-          throw error;
+        _.forEach(defaultValues, function(value, key) {
+          record[key] = value;
         });
+        return record;
       });
   };
+
   adapter.update = function(record, data, options) {
     assert(options.where);
     var fields = [];
     var params = {};
-    var ps = new db.PreparedStatement(options.transaction);
     _.forEach(data.properties, function(property, name) {
       if (!property.autoIncrement) {
         var value = record[name];
@@ -246,33 +202,35 @@ module.exports = function(db) {
             value = value.substr(0, property.maxLength);
           }
           const key = _.camelCase(field);
-          ps.input(key, adapter.toAdapterType(property));
-          if ((property.type === 'date' || property.type === 'datetime') && !_.isDate(value)) {
-            params[key] = new Date(value);
-          } else {
-            params[key] = value;
+          if (value !== null && (property.type === 'date' || property.type === 'datetime') && !_.isDate(value)) {
+            value = new Date(value);
           }
+          params[key] = {
+            value: value,
+            type: property.type,
+            maxLength: property.maxLength,
+            decimals: property.decimals,
+            timezone: property.timezone
+          };
         }
       }
     });
 
+    if (data.timestamps) {
+      record.updatedAt = new Date();
+      params.updatedAt = record.updatedAt.toISOString().substring(0, 23) + '000';
+      fields.push('updatedAt');
+    }
     var findKeys = data.primaryKeyFields.map(function(name, index) {
       const attribute = data.primaryKeyAttributes[index];
       var key = _.camelCase('pk' + name);
-      ps.input(key, adapter.toAdapterType(data.properties[attribute]));
       params[key] = options.where[attribute];
       return name;
     });
     if (data.timestamps) {
-      var now = new Date();
-      ps.input('updatedAt', new db.VarChar(26));
-      params.updatedAt = now.toISOString().substring(0, 23) + '000';
-      fields.push('updatedAt');
-
-      ps.input('pkupdatedAt', new db.VarChar(26));
       params.pkupdatedAt = _.isDate(options.where.updatedAt) ?
         options.where.updatedAt.toISOString() : (options.where.updatedAt || null);
-      findKeys.push('updatedAt')
+      findKeys.push('updatedAt');
     }
 
     var updateCommand = data.updateCommand.replace('<fields-values>',
@@ -283,47 +241,24 @@ module.exports = function(db) {
         return fields + (fields ? ' AND ' : '') + '[' + field + ']=@' + _.camelCase('pk' + field);
       }, ''));
     //console.log(updateCommand)
-    return ps.prepare(updateCommand)
+    return db.execute(updateCommand, params, {transaction: options.transaction})
       .then(function() {
-        return ps.execute(params)
-      })
-      .then(function(recordset) {
-        if (data.timestamps) {
-          if (!(recordset && recordset[0] && recordset[0].updatedAt)) {
-            console.log('Timestamp not saved', recordset, typeof params.pkupdatedAt, params.pkupdatedAt,
-              params,
-              updateCommand)
-          }
-          assert(recordset && recordset[0] && recordset[0].updatedAt,
-            'Timestamp not saved:', recordset);
-          record.updatedAt = recordset[0].updatedAt
-        }
-        return ps.unprepare().then(function() {
-          return record;
-        })
-      })
-      .catch(function(error) {
-        return ps.unprepare().then(function() {
-          throw error;
-        })
-      })
+        return record;
+      });
   };
   adapter.destroy = function(data, options) {
-    assert(options.where)
-    var ps = new db.PreparedStatement(options.transaction);
+    assert(options.where);
     var params = {};
     var findKeys = data.primaryKeyFields.map(function(name, index) {
       const attribute = data.primaryKeyAttributes[index];
       var key = _.camelCase('pk' + name);
-      ps.input(key, adapter.toAdapterType(data.properties[attribute]));
-      params[key] = options.where[attribute]
+      params[key] = options.where[attribute];
       return name;
     });
     if (data.timestamps) {
-      ps.input('pkupdatedAt', new db.VarChar(26));
       params.pkupdatedAt = _.isDate(options.where.updatedAt) ?
         options.where.updatedAt.toISOString() : (options.where.updatedAt || null);
-      findKeys.push('updatedAt')
+      findKeys.push('updatedAt');
     }
 
     var deleteCommand = data.deleteCommand.replace('<find-keys>',
@@ -331,25 +266,10 @@ module.exports = function(db) {
         return fields + (fields ? ' AND ' : '') + '[' + field + ']=@' + _.camelCase('pk' + field);
       }, ''));
     //console.log(deleteCommand, params)
-    return ps.prepare(deleteCommand)
-      .then(function() {
-        return ps.execute(params)
-      })
+    return db.execute(deleteCommand, params, {transaction: options.transaction})
       .then(function(recordset) {
-        if (!(recordset && recordset[0] && recordset[0].rowsAffected === 1)) {
-          console.log('No or more than 1 record deleted:',
-            recordset && recordset[0].rowsAffected, params, deleteCommand)
-        }
-        assert(recordset && recordset[0] && recordset[0].rowsAffected === 1,
-          'No or more than 1 record deleted:', recordset && recordset[0].rowsAffected);
-        return ps.unprepare().then(function() {
-          return recordset[0];
-        });
-      })
-      .catch(function(error) {
-        return ps.unprepare().then(function() {
-          throw error;
-        });
+        assert(recordset.length === 1, 'No or more than 1 record deleted:', recordset);
+        return recordset.length;
       });
   };
 
