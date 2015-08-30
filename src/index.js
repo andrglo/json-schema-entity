@@ -105,7 +105,7 @@ function runFieldValidations(is, was, data, errors) {
             ]
           });
         }
-      })
+      });
     })
     .then(function() {
       return _.reduce(is && validator && data.properties, function(chain, property, key) {
@@ -115,7 +115,7 @@ function runFieldValidations(is, was, data, errors) {
           _.forEach(property.validations, function(validation, name) {
             var args = _.map(validation.args, function(arg) {
               if (typeof arg === 'string' && arg.substr(0, 5) === 'this.') {
-                return is[arg.substring(5)]
+                return is[arg.substring(5)];
               } else {
                 return arg;
               }
@@ -140,13 +140,13 @@ function runFieldValidations(is, was, data, errors) {
             debug('Running field validation:', validation.id, validation.args);
             var res;
             try {
-              res = validation.fn.apply(validator, validation.args)
+              res = validation.fn.apply(validator, validation.args);
             } catch (err) {
-              errors.push({path: validation.id, message: err.message})
+              errors.push({path: validation.id, message: err.message});
             }             //todo change to field
             if (res && res.then) {
               return res.catch(function(err) {
-                errors.push({path: validation.id, message: err.message})
+                errors.push({path: validation.id, message: err.message});
               });
             } else {
               if (res === false) {
@@ -182,21 +182,17 @@ function runModelValidations(is, was, data, errors) {
       if (res && res.then) {
         return res.catch(function(err) {
           errors.push({path: validation.id, message: err.message});
-        })
+        });
       } else {
         if (res === false) {
           errors.push({
             path: validation.id,
             message: 'Invalid ' + validation.id
-          })
+          });
         }
       }
-    })
+    });
   }, Promise.resolve());
-}
-
-function Base(entity) {
-  _.extend(this, entity);
 }
 
 function newInstace(entity, data) {
@@ -929,45 +925,6 @@ function findProperty(name, properties) {
     }
   }
   return property;
-}
-
-function toJsonSchemaField(attribute) {
-  var field = {};
-  if (attribute.type.key === 'INTEGER') {
-    field.type = 'integer';
-  } else if (attribute.type.key === 'STRING') {
-    field.type = 'string';
-    field.maxLength = attribute.type.options.length;
-  } else if (attribute.type.key === 'DATE') {
-    field.type = 'date';
-  } else if (attribute.type.key === 'ENUM') {
-    field.type = 'string';
-    field.enum = attribute.values;
-    field.maxLength = attribute.values.reduce(function(length, value) {
-      return value.length > length ? value.length : length;
-    }, 0);
-  } else if (attribute.type.key === 'DECIMAL') {
-    field.type = 'number';
-    field.decimals = attribute.type.options.scale;
-    field.maxLength = attribute.type.options.precision;
-  } else if (attribute.type.key === 'TEXT') {
-    field.type = 'string';
-  } else {
-    throw new Error('Type ' + attribute.type.key + ' has no conversion defined')
-  }
-  if (attribute.primaryKey) {
-    field.primaryKey = attribute.primaryKey;
-  }
-  if (attribute.autoIncrement) {
-    field.autoIncrement = attribute.autoIncrement;
-  }
-  if (attribute.field !== attribute.fieldName) {
-    field.field = attribute.field;
-  }
-  if (attribute.allowNull === false) {
-    field.required = true;
-  }
-  return field;
 }
 
 function createInstance(record, name, data) {

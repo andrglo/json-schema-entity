@@ -42,18 +42,28 @@ function addValidations(validator) {
     return brV.cnpj.validate(value);
   });
   validator.extend('br-phone', function(value) {
-    return value.length >= 9;
+    return new Promise(function(resolve, reject) {
+      if (value.length >= 9) {
+        resolve();
+      } else {
+        reject(new Error('br-phone must be greater than nine'));
+      }
+    });
   });
-  validator.extend('cep', function(value) {
+  validator.extend('cep', function(value, p1, p2) {
+    expect(p1).to.equal('any string');
+    expect(p2).to.be.a('array');
+    expect(p2.length).to.equal(2);
+    expect(p2[0]).to.equal('a');
+    expect(p2[1]).to.equal('array');
     return value.length === 8;
   });
   validator.extend('decimals', function(value, max) {
     return decimalPlaces(value) <= max;
   });
-
   validator.extend('ie', function(value, estado) {
     if (value && !brV.ie(estado).validate(value)) {
-      throw new Error('Inscrição estadual inválida')
+      throw new Error('Inscrição estadual inválida');
     }
   });
 }
@@ -111,9 +121,7 @@ module.exports = function(options) {
           expect(error.errors[0].path).to.equal('TEST');
           done();
         })
-        .catch(function(err) {
-          done(err);
-        });
+        .catch(done);
     });
     it('record should be created', function(done) {
       var now = Date.now();
@@ -181,8 +189,8 @@ module.exports = function(options) {
         })
         .catch(function(err) {
           done(err);
-        })
-    })
+        });
+    });
 
   });
 
@@ -196,7 +204,6 @@ module.exports = function(options) {
     var tableDocpagev;
 
     var joao;
-    var jose;
     var joana;
     var geralda;
     var any;
@@ -218,6 +225,17 @@ module.exports = function(options) {
     });
 
     describe('check structure', function() {
+
+      it('should not accept a invalid db layer', function() {
+        try {
+          entity('CADASTRO', CADASTRO, {db: {}}).useTimestamps();
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid entity created');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.equal('Adapter for this conector is not implemented');
+        }
+      });
       it('should have property destino', function() {
         var schema = cadAtivo.getSchema();
         schema.properties.should.have.property('destino');
@@ -312,13 +330,12 @@ module.exports = function(options) {
           })
           .catch(function(err) {
             done(err);
-          })
-      })
+          });
+      });
     });
 
     describe('create cadastro', function() {
       it('should not create a new cadastro with a partial enum', function(done) {
-        var now = new Date(Date.now());
         cadAtivo
           .create({
             NOMECAD: 'João',
@@ -326,7 +343,7 @@ module.exports = function(options) {
             COMPLEMENTO: 'Do not exclude',
             TSN: '1'
           })
-          .then(function(record) {
+          .then(function() {
             done(new Error('Invalid record created'));
           })
           .catch(function(error) {
@@ -340,7 +357,7 @@ module.exports = function(options) {
           })
           .catch(function(err) {
             done(err);
-          })
+          });
       });
       it('should create a new cadastro', function(done) {
         var now = new Date(Date.now());
@@ -365,9 +382,56 @@ module.exports = function(options) {
             expect(record.afterPromise).to.be.undefined;
             done();
           })
-          .catch(function(err) {
-            done(err);
+          .catch(done);
+      });
+      it('should not create a new cadastro with wrong CPF', function(done) {
+        cadAtivo
+          .create({
+            NOMECAD: 'José',
+            NUMERO: '2',
+            CGCCPF: '18530249111'
           })
+          .then(function() {
+            done(new Error('Invalid record created'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('ValidationError');
+            expect(error.errors).to.be.a('array');
+            expect(error.errors.length).to.equal(1);
+            expect(error.errors[0].path).to.equal('CGCCPF');
+            error.should.have.property('message');
+            done();
+          })
+          .catch(done);
+      });
+      it('should not create a new cadastro with wrong br-phone', function(done) {
+        cadAtivo
+          .create({
+            NOMECAD: 'José',
+            NUMERO: '2',
+            ClassificaçãoCad: [
+              {
+                Classe: 'Cliente'
+              }
+            ],
+            cliente: {
+              FONECOB: '1'
+            }
+          })
+          .then(function() {
+            done(new Error('Invalid record created'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('ValidationError');
+            expect(error.errors).to.be.a('array');
+            expect(error.errors.length).to.equal(1);
+            expect(error.errors[0].path).to.equal('FONECOB');
+            error.should.have.property('message');
+            done();
+          })
+          .catch(done);
       });
       it('should create a new cadastro with CPF', function(done) {
         cadAtivo
@@ -377,13 +441,10 @@ module.exports = function(options) {
             CGCCPF: '18530249100'
           })
           .then(function(record) {
-            jose = record;
             record.should.have.property('CGCCPF');
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(done);
       });
       it('should reject create a new cadastro with the same CPF', function(done) {
         cadAtivo
@@ -453,7 +514,7 @@ module.exports = function(options) {
           })
           .catch(function(error) {
             done(error);
-          })
+          });
       });
       it('should create 3 new classes', function(done) {
         cadAtivo
@@ -1201,6 +1262,62 @@ module.exports = function(options) {
           .catch(function(err) {
             done(err);
           })
+      });
+      it('lets try a update without parameters', function(done) {
+        cadAtivo
+          .update({NOMECAD: 'joao'})
+          .then(function() {
+            done(new Error('Invalid destroy'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidArgument');
+            expect(error.message.indexOf('need a primary key') !== -1).to.equal(true);
+            done();
+          })
+          .catch(done);
+      });
+      it('lets try a update without where', function(done) {
+        cadAtivo
+          .update({NOMECAD: 'joao'}, {})
+          .then(function() {
+            done(new Error('Invalid destroy'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidArgument');
+            expect(error.message.indexOf('Where clause not defined') !== -1).to.equal(true);
+            done();
+          })
+          .catch(done);
+      });
+      it('lets try a delete without parameters', function(done) {
+        cadAtivo
+          .destroy()
+          .then(function() {
+            done(new Error('Invalid destroy'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidArgument');
+            expect(error.message.indexOf('need a primary key') !== -1).to.equal(true);
+            done();
+          })
+          .catch(done);
+      });
+      it('lets try a delete without where', function(done) {
+        cadAtivo
+          .destroy({})
+          .then(function() {
+            done(new Error('Invalid destroy'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidArgument');
+            expect(error.message.indexOf('Where clause not defined') !== -1).to.equal(true);
+            done();
+          })
+          .catch(done);
       });
       it('then lets delete Joao', function(done) {
         joao.docpagvc[0].VALOR = 350.01;

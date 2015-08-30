@@ -29,7 +29,7 @@ module.exports = function(config) {
           if (recordset.length === 0) {
             return classificacao.create({id: classe.Classe}, {transaction: transaction});
           }
-        })
+        });
     });
     return insertion;
   }
@@ -55,7 +55,7 @@ module.exports = function(config) {
     return destroyEvs.call(self, t)
       .then(function() {
         return createEvs.call(self, t)
-      })
+      });
   }
 
   function destroyEvs(t) {
@@ -112,6 +112,7 @@ module.exports = function(config) {
 
   cadAtivo
     .setTitle('Cadastro title changed')
+    .setDescription('Cadastro description changed')
     .setProperties(function(properties) {
       properties.CONTAEV = CADASTRO.properties.CONTAEV;
       properties.TSN = properties.TipoSimplesNacional;
@@ -178,7 +179,6 @@ module.exports = function(config) {
     .hasOne('CLIENTE as cliente', {
       properties: CLIENTE.properties
     })
-    .foreignKey('id')
     .setProperties(function(properties) {
       delete properties.ENDCOB;
       properties.RAMO.title = 'Ramo de atuação';
@@ -272,7 +272,7 @@ module.exports = function(config) {
 
   cadAtivo.fornecedor.validate('Only in fornecedor', function() {
     if (this.NUMERO !== '99') {
-      throw new Error('Fornecedor deve ter numero 99')
+      return false;
     }
   });
 
@@ -294,7 +294,7 @@ module.exports = function(config) {
     return Promise.resolve().then(function() {
       if (self.CELULAR)
         throw new Error('celular error');
-    })
+    });
   });
   cadAtivo.beforeDelete('Teste qualquer', function() {
   });

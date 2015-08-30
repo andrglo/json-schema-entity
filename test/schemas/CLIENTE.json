@@ -9,7 +9,7 @@
       "type": "integer",
       "format": "list",
       "required": true,
-      "$ref": "CADASTRO",
+      "$ref": "#/definitions/CADASTRO",
       "field": "CLIENTE",
       "primaryKey": true
     },

@@ -142,7 +142,12 @@
       "description": "CEP",
       "type": "string",
       "maxLength": 8,
-      "format": "cep"
+      "format": "cep",
+      "validations": {
+        "cep": {
+          "args": ["any string", ["a", "array"]]
+        }
+      }
     },
     "DATNASC": {
       "type": "date"

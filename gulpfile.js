@@ -18,8 +18,14 @@ gulp.task('nsp', function(cb) {
   nsp('package.json', cb);
 });
 
+var sources = ['src/index.js', 'src/adapters/postgres.js'];
+
+if (!process.env.CI) {
+  sources.push('src/adapters/mssql.js');
+}
+
 gulp.task('pre-test', function() {
-  return gulp.src('src/**/*.js')
+  return gulp.src(sources)
     .pipe(istanbul({includeUntested: true}))
     .pipe(istanbul.hookRequire());
 });
