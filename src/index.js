@@ -194,7 +194,7 @@ function runModelValidations(is, was, data, errors) {
   }, Promise.resolve());
 }
 
-function newInstace(entity, data) {
+function newInstace(entity, data, isNew) {
 
   var oldValues = _.cloneDeep(entity);
 
@@ -204,6 +204,45 @@ function newInstace(entity, data) {
 
   Instance.prototype.validate = function() {
     return runValidations(this, oldValues, data);
+  };
+
+  Instance.prototype.save = function(options) {
+    var self = this;
+    if (isNew) {
+      return data.methods.create(this, null, options)
+        .then(function(res) {
+          isNew = false;
+          _.extend(self, res);
+        });
+    }
+    return data.methods.update(this, null, options)
+      .then(function(res) {
+        _.extend(self, res);
+      });
+  };
+
+  Instance.prototype.destroy = function(options) {
+    if (isNew) {
+      return new Promise(function(resolve, reject) {
+        reject(new EntityError({
+          type: 'InvalidOperation',
+          message: 'Instance is new'
+        }));
+      });
+    }
+    var self = this;
+    var primaryKey = data.primaryKeyAttributes[0];
+    var key = {where: {}};
+    key.where[primaryKey] = this[primaryKey];
+    if (data.timestamps) {
+      key.where.updatedAt = this.updatedAt || null;
+    }
+    return data.methods.destroy(key, options)
+      .then(function() {
+        isNew = true;
+        delete self.createdAt;
+        delete self.updatedAt;
+      });
   };
 
   data.instanceMethods.map(function(method) {
@@ -709,6 +748,9 @@ module.exports = function(schemaName, schema, config) {
                     });
                 });
             });
+        },
+        createInstance: function(entity) {
+          return newInstace(entity, data, true);
         }
       }
     };

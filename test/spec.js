@@ -211,6 +211,7 @@ module.exports = function(options) {
     var mario;
     var lidia;
     var mariana;
+    var jessica;
 
     before(function() {
       addValidations(validator);
@@ -2279,7 +2280,7 @@ module.exports = function(options) {
           })
           .catch(function(error) {
             done(error);
-          })
+          });
       });
       it('should not be valid too when validating the entity', function(done) {
         lidia.validate()
@@ -2296,6 +2297,79 @@ module.exports = function(options) {
           .catch(function(error) {
             done(error);
           });
+      });
+      it('should create a new instance', function() {
+        jessica = cadAtivo
+          .createInstance({
+            NOMECAD: 'Jessica',
+            NUMERO: '1'
+          });
+        jessica.should.have.property('save');
+        jessica.should.have.property('destroy');
+      });
+      it('that cannot be destroyed due to not be saved', function(done) {
+        jessica
+          .destroy()
+          .then(function() {
+            done(new Error(('Invalid operation')));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidOperation');
+            expect(error.message).to.equal('Instance is new');
+            done();
+          });
+      });
+      it('should save to disk', function(done) {
+        jessica
+          .save()
+          .then(function() {
+            jessica.should.have.property('id');
+            jessica.should.have.property('updatedAt');
+            jessica.should.have.property('createdAt');
+            jessica.should.have.property('NOMECAD');
+            jessica.NOMECAD.should.equal('Jessica');
+            done();
+          })
+          .catch(done);
+      });
+      it('then be modified and saved again', function(done) {
+        jessica.NUMERO = '123';
+        var updatedAt = jessica.updatedAt;
+        jessica
+          .save()
+          .then(function() {
+            jessica.should.have.property('NUMERO');
+            jessica.NUMERO.should.equal('123');
+            expect(jessica.updatedAt > updatedAt).to.equal(true);
+            done();
+          })
+          .catch(done);
+      });
+      it('then can be destroyed', function(done) {
+        jessica
+          .destroy()
+          .then(function() {
+            jessica.should.have.property('id');
+            jessica.should.not.have.property('updatedAt');
+            jessica.should.not.have.property('createdAt');
+            done();
+          })
+          .catch(done);
+      });
+      it('then cannot be destroyed due to be new again', function(done) {
+        jessica
+          .destroy()
+          .then(function() {
+            done(new Error(('Invalid operation')));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidOperation');
+            expect(error.message).to.equal('Instance is new');
+            done();
+          })
+          .catch(done);
       });
     });
 
