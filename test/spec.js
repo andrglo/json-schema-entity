@@ -7,6 +7,7 @@ var _ = require('lodash');
 var validator = require('validator');
 var brV = require('br-validations');
 var gutil = require('gulp-util');
+var sqlView = require('sql-view');
 
 var entity = require('../src');
 
@@ -2424,6 +2425,27 @@ module.exports = function(options) {
           });
       });
 
+    });
+
+    describe('using the entity', function() {
+      before(function(done) {
+        var sv = sqlView(cadAtivo.db.dialect);
+        cadAtivo.getExternalData = function() {
+          var view = sv.build('Classificação', {limit: 1, select: 'Nome'});
+          return this.db.query(view.statement, view.params);
+        };
+        done();
+      });
+      it('should return one record with a column', function(done) {
+        cadAtivo.getExternalData()
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            recordset[0].should.have.property('Nome');
+            done();
+          })
+          .catch(done)
+      });
     });
 
   });

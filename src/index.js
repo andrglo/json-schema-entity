@@ -508,7 +508,9 @@ module.exports = function(schemaName, schema, config) {
       primaryKey: schema.primaryKey,
       hooks: {},
       coerce: [],
-      public: {},
+      public: {
+        db: db
+      },
       methods: {
         setTitle: function(title) {
           data.title = title;
