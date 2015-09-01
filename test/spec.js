@@ -2408,7 +2408,7 @@ module.exports = function(options) {
             },
             limit: 3,
             skip: 3,
-            sort: ['NOMECAD']
+            order: ['NOMECAD']
           })
           .then(function(recordset) {
             expect(recordset).to.be.a('array');

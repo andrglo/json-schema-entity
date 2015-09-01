@@ -1,8 +1,7 @@
 var _ = require('lodash');
 var assert = require('assert');
+var sqlView = require('sql-view');
 var debug = require('debug')('json-schema-entity');
-
-var utils = require('./adapters/utils');
 
 var log = console.log;
 
@@ -480,6 +479,7 @@ module.exports = function(schemaName, schema, config) {
 
   var adapter = getAdapter(config.db);
   var db = config.db;
+  var sv = sqlView(db.dialect);
   var entity = entityFactory(schemaName, schema, rebuild);
 
   function entityFactory(schemaName, schema, rebuild) {
@@ -594,9 +594,9 @@ module.exports = function(schemaName, schema, config) {
                 criteria = _.extend({}, criteria);
                 criteria.where = where;
               }
-              var sentence = utils.embedCriteria(data.query, criteria, db);
+              var view = sv.build(data.query, criteria);
               return db
-                .query(sentence, null, {transaction: options.transaction})
+                .query(view.statement, view.params, {transaction: options.transaction})
                 .then(function(res) {
                   return res.map(function(record) {
                     return buildEntity(record, data)
