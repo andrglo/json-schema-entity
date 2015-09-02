@@ -130,7 +130,7 @@
     "no-return-assign": 2,
     "no-script-url": 2,
     "no-sequences": 2,
-    "no-unused-expressions": 2,
+    "no-unused-expressions": 1,
     "yoda": 2,
     "no-delete-var": 2,
     "no-label-var": 2,
