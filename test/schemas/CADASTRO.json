@@ -41,7 +41,7 @@
       "type": "string",
       "maxLength": 18,
       "format": "ie",
-      "validations": {
+      "validate": {
         "ie": {
           "args": ["this.ESTADO"]
         }
@@ -91,30 +91,25 @@
       "description": "Endereco",
       "type": "string",
       "maxLength": 45,
-      "validations": {
+      "validate": {
         "isUppercase": {
-          "message": "ENDERECO must be uppercase"
+          "message": "Should be uppercase"
         },
         "isIn": {
-          "args": [["STREET", "AVENUE"]]
+          "args": [["STREET", "AVENUE"]],
+          "message": "Should be STREET or AVENUE"
         }
       }
     },
     "NUMERO": {
-      "title": "Número do Logradouro",
-      "description": "Número do logradouro",
       "type": "string",
       "maxLength": 6
     },
     "COMPLEMENTO": {
-      "title": "Complemento",
-      "description": "Complemento do logradouro",
       "type": "string",
       "maxLength": 22
     },
     "BAIRRO": {
-      "title": "Bairro",
-      "description": "Bairro",
       "type": "string",
       "maxLength": 30
     },
@@ -143,7 +138,7 @@
       "type": "string",
       "maxLength": 8,
       "format": "cep",
-      "validations": {
+      "validate": {
         "cep": {
           "args": ["any string", ["a", "array"]]
         }
@@ -242,11 +237,9 @@
       "defaultValue": "1 - Não optante "
     },
     "VALORLCTO": {
-      "title": "Valor do lançamento",
-      "description": "Valor do lançamento",
       "type": "number",
       "format": "fixed",
-      "maxLength": 14,
+      "maxLength": 8,
       "decimals": 2
     },
     "createdAt": {

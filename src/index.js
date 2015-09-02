@@ -87,22 +87,41 @@ function runValidations(is, was, data) {
   });
 }
 
+function decimalPlaces(num) {
+  var match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+  return (match && Math.max(
+    0,
+    // Number of digits right of decimal point.
+    (match[1] ? match[1].length : 0)
+      // Adjust for scientific notation.
+    - (match[2] ? +match[2] : 0))) || 0;
+}
+
 function runFieldValidations(is, was, data, errors) {
   var validator = data.validator;
   return Promise.resolve()
     .then(function() {
       _.forEach(is && data.properties, function(property, key) {
-        if (is[key] && is[key] !== null && property.enum &&
-          property.enum.indexOf(is[key]) === -1) {
-          var message = 'Value \'' + is[key] + '\' not valid for column ' + key +
-            '. Valid options are: ' + property.enum.join(',');
-          throw new EntityError({
-            type: 'ValidationError',
-            message: message,
-            errors: [
-              {path: key, message: message}
-            ]
-          });
+        if (is[key] && is[key] !== null) {
+          var value = is[key];
+          if (property.enum && property.enum.indexOf(value) === -1) {
+            errors.push({
+              path: key,
+              message: 'Value \'' + value + '\' not valid. Options are: ' + property.enum.join()
+            });
+          }
+          if (!property.enum && property.maxLength && String(value).length > property.maxLength) {
+            errors.push({
+              path: key,
+              message: 'Value \'' + value + '\' exceeds maximum length: ' + property.maxLength
+            });
+          }
+          if (property.decimals && decimalPlaces(value) > property.decimals) {
+            errors.push({
+              path: key,
+              message: 'Value \'' + value + '\' exceeds maximum decimals length: ' + property.decimals
+            });
+          }
         }
       });
     })
@@ -111,8 +130,8 @@ function runFieldValidations(is, was, data, errors) {
 
         var validations = {};
         if (is[key]) {
-          _.forEach(property.validations, function(validation, name) {
-            var args = _.map(validation.args, function(arg) {
+          _.forEach(property.validate, function(validate, name) {
+            var args = _.map(validate.args, function(arg) {
               if (typeof arg === 'string' && arg.substr(0, 5) === 'this.') {
                 return is[arg.substring(5)];
               } else {
@@ -121,7 +140,7 @@ function runFieldValidations(is, was, data, errors) {
             });
             validations[name] = {
               id: key,
-              message: validation.message,
+              message: validate.message,
               fn: validator[name],
               args: [is[key]].concat(args)
             };
@@ -142,7 +161,7 @@ function runFieldValidations(is, was, data, errors) {
               res = validation.fn.apply(validator, validation.args);
             } catch (err) {
               errors.push({path: validation.id, message: err.message});
-            }             //todo change to field
+            }
             if (res && res.then) {
               return res.catch(function(err) {
                 errors.push({path: validation.id, message: err.message});

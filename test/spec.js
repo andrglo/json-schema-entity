@@ -19,19 +19,6 @@ var DOCPAGEV = require('./schemas/DOCPAGEV.json');
 
 var log = console.log;
 
-function decimalPlaces(num) {
-  var match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
-  if (!match) {
-    return 0;
-  }
-  return Math.max(
-    0,
-    // Number of digits right of decimal point.
-    (match[1] ? match[1].length : 0)
-      // Adjust for scientific notation.
-    - (match[2] ? +match[2] : 0));
-}
-
 function addValidations(validator) {
   validator.extend('cpfcnpj', function(value) {
     return brV.cpf.validate(value) || brV.cnpj.validate(value);
@@ -58,9 +45,6 @@ function addValidations(validator) {
     expect(p2[0]).to.equal('a');
     expect(p2[1]).to.equal('array');
     return value.length === 8;
-  });
-  validator.extend('decimals', function(value, max) {
-    return decimalPlaces(value) <= max;
   });
   validator.extend('ie', function(value, estado) {
     if (value && !brV.ie(estado).validate(value)) {
@@ -518,6 +502,54 @@ module.exports = function(options) {
             done(error);
           });
       });
+      it('should throw a maxLength and a decimals validation error', function(done) {
+        cadAtivo
+          .create({
+            NOMECAD: 'Too many decimas',
+            NUMERO: '4',
+            VALORLCTO: 12345.678
+          })
+          .then(function() {
+            done(new Error('Saved with too many decimals'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('ValidationError');
+            expect(error.errors).to.be.a('array');
+            expect(error.errors.length).to.equal(2);
+            expect(error.errors[0].path).to.equal('VALORLCTO');
+            expect(error.errors[1].path).to.equal('VALORLCTO');
+            var message = error.errors[0].message + ' - ' + error.errors[1].message;
+            expect(message).to.contains('decimals');
+            expect(message).to.contains('exceeds maximum length');
+            done();
+          })
+          .catch(done);
+      });
+      it('should throw 2 ENDERECO validation error', function(done) {
+        cadAtivo
+          .create({
+            NOMECAD: 'Wrong',
+            NUMERO: '4',
+            ENDERECO: 'Road'
+          })
+          .then(function() {
+            done(new Error('Saved with wrong ENDERECO'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('ValidationError');
+            expect(error.errors).to.be.a('array');
+            expect(error.errors.length).to.equal(2);
+            expect(error.errors[0].path).to.equal('ENDERECO');
+            expect(error.errors[1].path).to.equal('ENDERECO');
+            var message = error.errors[0].message + ' - ' + error.errors[1].message;
+            expect(message).to.contains('STREET or AVENUE');
+            expect(message).to.contains('uppercase');
+            done();
+          })
+          .catch(done);
+      });
       it('should create 3 new classes', function(done) {
         cadAtivo
           .create({
@@ -585,7 +617,7 @@ module.exports = function(options) {
           .create({
             NOMECAD: 'Suframa is invalid',
             NUMERO: '5',
-            Suframa: 'not allowed'
+            Suframa: 'not allow'
           })
           .then(function() {
             done(new Error('Saved with Suframa'));
@@ -597,22 +629,20 @@ module.exports = function(options) {
             expect(error.errors[0].path).to.equal('Teste de promise');
             done();
           })
-          .catch(function(error) {
-            done(error);
-          })
+          .catch(done);
       });
       it('should not accept a new cliente without classe cliente and with Suframa and fornecedor with no NUMERO=99', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'Falta classe cliente and have suframa',
             NUMERO: '5',
-            Suframa: 'not allowed',
+            Suframa: 'not allow',
             fornecedor: {
               SIGLAFOR: 'Sigla'
             },
             ClassificaçãoCad: [
               {
-                "Classe": 'Fornecedor'
+                Classe: 'Fornecedor'
               }
             ],
             cliente: {
@@ -626,7 +656,9 @@ module.exports = function(options) {
             expect(error.name).to.equal('EntityError');
             expect(error.errors).to.be.a('array');
             expect(error.errors.length).to.equal(3);
-            var classes, suframa, fornecedor;
+            var classes;
+            var suframa;
+            var fornecedor;
             error.errors.forEach(function(detail) {
               if (detail.path === 'Classes') {
                 classes = true
@@ -1115,7 +1147,7 @@ module.exports = function(options) {
       it('should not accept a update joão without classe cliente and with Suframa', function(done) {
         cadAtivo
           .update({
-            Suframa: 'not allowed',
+            Suframa: 'not allow',
             fornecedor: {
               SIGLAFOR: 'Sigla',
               NUMERO: '99'
@@ -1871,9 +1903,7 @@ module.exports = function(options) {
             expect(recordset.length).to.equal(0);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(done);
       });
       it('nor any mario fornecedor docpgavc record', function(done) {
         tableDocpagvc
@@ -2071,50 +2101,41 @@ module.exports = function(options) {
             done(error);
           });
       });
-      it('should report a server error due to a long NUMERO', function(done) {
-        cadAtivo
-          .create({
-            NOMECAD: 'Lidia with two vctos one event each',
-            NUMERO: 'TOO LONG TO BE SAVE',
-            fornecedor: {
-              SIGLAFOR: 'Two vcts-event',
-              NUMERO: '99',
-              docpagvc: [{
-                VALOR: 350.01,
-                DATAVENC: '2015-08-23',
-                categoria: {
-                  id: '111',
-                  DESCEVENTO: 'Category 111'
-                }
-              },
-                {
-                  VALOR: 250.02,
-                  DATAVENC: '2015-09-23',
-                  categoria: {
-                    id: '222',
-                    DESCEVENTO: 'Category 222'
-                  }
-                }]
-            },
-            ClassificaçãoCad: [
-              {
-                Classe: 'Fornecedor'
-              }
-            ]
-          })
+      it('should report a server error', function(done) {
+        var command;
+        if (cadAtivo.db.dialect === 'mssql') {
+          command = 'CREATE TRIGGER reminder ON CADASTRO ' +
+            'AFTER INSERT ' +
+            'AS ' +
+            'IF (SELECT NUMERO FROM INSERTED)=\'INVLD\' RAISERROR (\'INVLD\', 11, 1)';
+        } else {
+          command = 'CREATE FUNCTION rec_insert() RETURNS trigger ' +
+            'AS $rec_insert$ BEGIN ' +
+            'IF new."NUMERO" =\'INVLD\' THEN RAISE EXCEPTION \'INVLD\'; END IF; ' +
+            'RETURN new; END; ' +
+            '$rec_insert$ LANGUAGE plpgsql; ' +
+            'CREATE TRIGGER reminder AFTER INSERT ON "CADASTRO" ' +
+            'FOR EACH ROW ' +
+            'EXECUTE PROCEDURE rec_insert();';
+        }
+        cadAtivo.db.execute(command)
           .then(function() {
-            done(new Error('Invalid record saved'));
+            return cadAtivo
+              .create({
+                NOMECAD: 'Any',
+                NUMERO: 'INVLD'
+              })
+              .then(function() {
+                done(new Error('Invalid record saved'));
+              })
+              .catch(function(error) {
+                expect(error.name === 'RequestError' ||
+                  error.name === 'error').to.equal(true);
+                expect(error.message).to.equal('INVLD');
+                done();
+              });
           })
-          .catch(function(error) {
-            expect(error.name === 'RequestError' ||
-              error.name === 'error').to.equal(true); // todo The common layer
-            expect(error.message.indexOf('invalid data length') !== -1 ||
-              error.message.indexOf('value too long for type character') !== -1).to.equal(true);
-            done();
-          })
-          .catch(function(error) {
-            done(error);
-          });
+          .catch(done);
       });
       it('then lets recreate lidia as the first time', function(done) {
         cadAtivo
@@ -2421,7 +2442,7 @@ module.exports = function(options) {
           .then(function() {
             duration = process.hrtime(duration);
             duration = (duration[0] * 1000) + (duration[1] / 1000000);
-            expect(duration < minMiliSecsToGenerate).to.equal(true);
+            expect(duration).to.below(minMiliSecsToGenerate);
             done();
           })
           .catch(function(error) {
@@ -2518,7 +2539,7 @@ module.exports = function(options) {
             recordset[0].should.have.property('Nome');
             done();
           })
-          .catch(done)
+          .catch(done);
       });
     });
 
