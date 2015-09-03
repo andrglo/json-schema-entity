@@ -9,14 +9,12 @@ module.exports = function(config) {
 
   var CADASTRO = _.cloneDeep(require('../schemas/CADASTRO.json'));
   var FORNEC = require('../schemas/FORNEC.json');
-  var Classe = require('../schemas/Classificação.json');
   var CLIENTE = _.cloneDeep(require('../schemas/CLIENTE.json'));
   var ClassificacaoCad = require('../schemas/ClassificaçãoCad.json');
   var DOCPAGVC = require('../schemas/DOCPAGVC.json');
-  var DOCPAGEV = require('../schemas/DOCPAGEV.json');
 
-  var classificacao = entity('Classificação', Classe, config);
-  var docpagev = entity('DOCPAGEV', DOCPAGEV, config);
+  var classificacao = config.classificacao;
+  var docpagev = config.docpagev;
 
   function createClasses(transaction) {
     var insertion = Promise.resolve();
@@ -200,6 +198,7 @@ module.exports = function(config) {
     .hasMany('DOCPAGVC as docpagvc', {
       properties: _.pick(DOCPAGVC.properties, [
         'id',
+        'NUMCAD',
         'VALOR',
         'DATAVENC',
         'DATAVENCZ',
@@ -214,6 +213,7 @@ module.exports = function(config) {
     .hasMany('DOCPAGVC as docpagvc', {
       properties: _.pick(DOCPAGVC.properties, [
         'id',
+        'FORNEC',
         'VALOR',
         'DATAVENC',
         'SITPGTO',

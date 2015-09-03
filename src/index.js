@@ -1,6 +1,7 @@
 var _ = require('lodash');
 var assert = require('assert');
 var sqlView = require('sql-view');
+var jst = require('json-schema-table');
 var debug = require('debug')('json-schema-entity');
 
 var log = console.log;
@@ -90,11 +91,11 @@ function runValidations(is, was, data) {
 function decimalPlaces(num) {
   var match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
   return (match && Math.max(
-    0,
-    // Number of digits right of decimal point.
-    (match[1] ? match[1].length : 0)
-      // Adjust for scientific notation.
-    - (match[2] ? +match[2] : 0))) || 0;
+      0,
+      // Number of digits right of decimal point.
+      (match[1] ? match[1].length : 0)
+        // Adjust for scientific notation.
+      - (match[2] ? +match[2] : 0))) || 0;
 }
 
 function runFieldValidations(is, was, data, errors) {
@@ -555,12 +556,13 @@ module.exports = function(schemaName, schema, config) {
     var data = {
       validator: config.validator,
       identity: identity,
+      table: schema || {},
       adapter: adapter,
       title: schema && schema.title,
       description: schema && schema.description,
       key: identity.as || identity.name,
       associations: [],
-      requestedProperties: schema && schema.properties,
+      requestedProperties: (schema && schema.properties) || {},
       propertiesList: [],
       schema: {},
       primaryKey: schema.primaryKey,
@@ -582,6 +584,7 @@ module.exports = function(schemaName, schema, config) {
         },
         setProperties: function(cb) {
           cb(data.requestedProperties);
+          data.table.properties = data.requestedProperties;
           rebuild();
           return data.public;
         },
@@ -770,6 +773,43 @@ module.exports = function(schemaName, schema, config) {
         },
         createInstance: function(entity) {
           return newInstace(entity, data, true);
+        },
+        createTables: function() {
+          return Promise.resolve()
+            .then(function() {
+              var tables = [];
+              getTables(data, tables);
+              var jsts = [];
+              tables.map(function(table) {
+                jsts.push(jst(table.name, table.schema, {db: db}));
+              });
+              return jsts.reduce(function(promise, jst) {
+                return promise.then(function() {
+                  return jst.create()
+                    .then(function() {
+                      if (data.timestamps) {
+                        return adapter.createTimestamps(data);
+                      }
+                    });
+                });
+              }, Promise.resolve());
+            });
+        },
+        syncTables: function() {
+          return Promise.resolve()
+            .then(function() {
+              var tables = [];
+              getTables(data, tables);
+              var jsts = [];
+              tables.map(function(table) {
+                jsts.push(jst(table.name, table.schema, {db: db}));
+              });
+              return jsts.reduce(function(promise, jst) {
+                return promise.then(function() {
+                  return jst.sync();
+                });
+              }, Promise.resolve());
+            });
         }
       }
     };
@@ -855,6 +895,17 @@ function getForeignKey(table, properties) {
     }
   });
   return foreignKey;
+}
+
+function getTables(data, tables) {
+  tables.push({
+    name: data.identity.name,
+    schema: data.table
+  });
+  data.associations
+    .map(function(association) {
+      getTables(association.data, tables);
+    });
 }
 
 function getReferencedTableName($ref) {

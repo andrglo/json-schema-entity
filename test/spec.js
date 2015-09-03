@@ -16,8 +16,9 @@ var DOCPAGVC = require('./schemas/DOCPAGVC.json');
 var FORNEC = require('./schemas/FORNEC.json');
 var EVENTO = require('./schemas/EVENTO.json');
 var DOCPAGEV = require('./schemas/DOCPAGEV.json');
+var CLASSE = require('./schemas/Classificação.json');
 
-var log = console.log;
+var log = gutil.log;
 
 function addValidations(validator) {
   validator.extend('cpfcnpj', function(value) {
@@ -76,7 +77,11 @@ module.exports = function(options) {
           throw new Error('NUMERO must be informed');
         }
       });
-      done();
+      tableCadastro.createTables()
+        .then(function() {
+          done();
+        })
+        .catch(done);
     });
 
     it('record should not exist', function(done) {
@@ -197,17 +202,52 @@ module.exports = function(options) {
     var mariana;
     var jessica;
 
-    before(function() {
+    before(function(done) {
       addValidations(validator);
+
+      var classificacao = entity('Classificação', CLASSE, {db: db});
+      var docpagev = entity('DOCPAGEV', DOCPAGEV, {db: db});
       cadAtivo = require('./entities/cadastro.js')({
         db: db,
-        validator: validator
+        validator: validator,
+        classificacao: classificacao,
+        docpagev: docpagev
       });
-      tableCadastro = entity('CADASTRO', CADASTRO, {db: db});
-      tableFornec = entity('FORNEC', FORNEC, {db: db});
-      tableEvento = entity('EVENTO', EVENTO, {db: db});
-      tableDocpagvc = entity('DOCPAGVC', DOCPAGVC, {db: db});
-      tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {db: db});
+      cadAtivo
+        .createTables()
+        .then(function() {
+          return cadAtivo.syncTables();
+        })
+        .then(function() {
+          tableEvento = entity('EVENTO', EVENTO, {db: db});
+          return tableEvento.createTables();
+        })
+        .then(function() {
+          tableCadastro = entity('CADASTRO', CADASTRO, {db: db});
+          return tableCadastro.syncTables();
+        })
+        .then(function() {
+          tableFornec = entity('FORNEC', FORNEC, {db: db});
+          return tableFornec.syncTables();
+        })
+        .then(function() {
+          tableDocpagvc = entity('DOCPAGVC', DOCPAGVC, {db: db});
+          return tableDocpagvc.syncTables();
+        })
+        .then(function() {
+          tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {db: db});
+          return tableDocpagev.createTables();
+        })
+        .then(function() {
+          return docpagev.syncTables();
+        })
+        .then(function() {
+          return classificacao.createTables();
+        })
+        .then(function() {
+          done();
+        })
+        .catch(done);
     });
 
     describe('check structure', function() {
@@ -576,9 +616,7 @@ module.exports = function(options) {
             expect(_.find(record.ClassificaçãoCad, 'Classe', 'Nadador')).to.be.a('object');
             done();
           })
-          .catch(function(err) {
-            done(err)
-          })
+          .catch(done);
       });
       it('should not accept a new cliente without classe cliente', function(done) {
         cadAtivo

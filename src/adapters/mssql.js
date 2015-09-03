@@ -7,9 +7,31 @@ var common = require('./common');
 var xmlSpaceToken = '_-_';
 var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
-module.exports = function() {
+module.exports = function(db) {
 
   var adapter = {};
+
+  adapter.createTimestamps = function(data) {
+    var table = db.wrap(data.identity.name);
+    return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+      'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\'')
+      .then(function(recordset) {
+        if (recordset.length === 0) {
+          return db.execute('ALTER TABLE ' + table + ' ADD ' +
+            db.wrap('createdAt') + ' datetime2');
+        }
+      })
+      .then(function() {
+        return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\'');
+      })
+      .then(function(recordset) {
+        if (recordset.length === 0) {
+          return db.execute('ALTER TABLE ' + table + ' ADD ' +
+            db.wrap('updatedAt') + ' datetime2');
+        }
+      });
+  };
 
   adapter.buildInsertCommand = function(data) {
 

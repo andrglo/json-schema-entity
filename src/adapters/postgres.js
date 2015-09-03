@@ -9,6 +9,28 @@ module.exports = function(db) {
 
   var adapter = {};
 
+  adapter.createTimestamps = function(data) {
+    var table = db.wrap(data.identity.name);
+    return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+      'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\'')
+      .then(function(recordset) {
+        if (recordset.length === 0) {
+          return db.execute('ALTER TABLE ' + table + ' ADD ' +
+            db.wrap('createdAt') + ' TIMESTAMP');
+        }
+      })
+      .then(function() {
+        return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\'');
+      })
+      .then(function(recordset) {
+        if (recordset.length === 0) {
+          return db.execute('ALTER TABLE ' + table + ' ADD ' +
+            db.wrap('updatedAt') + ' TIMESTAMP');
+        }
+      });
+  };
+
   adapter.buildInsertCommand = function(data) {
     var fieldsToReturn = [];
     _.forEach(data.properties, function(property, name) {

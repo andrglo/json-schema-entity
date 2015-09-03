@@ -35,7 +35,6 @@
     "gulp-mocha": "^2.0.0",
     "gulp-nsp": "^0.4.5",
     "gulp-util": "^3.0.6",
-    "json-schema-table": "^0.1.4",
     "mssql-cr-layer": "^0.0.5",
     "pg-cr-layer": "^0.0.4",
     "pretty-hrtime": "^1.0.0",
@@ -50,6 +49,7 @@
   "dependencies": {
     "debug": "^2.2.0",
     "lodash": "^3.10.1",
+    "json-schema-table": "^0.1.4",
     "sql-view": "^0.0.1",
     "xml2json": "^0.8.2"
   }

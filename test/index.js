@@ -69,9 +69,6 @@ before(function(done) {
           gutil.log('Postgres will connect to', pgConfig.database);
           pgOptions.db = new PgCrLayer(pgConfig);
           return pgOptions.db.connect();
-        })
-        .then(function() {
-          return tasks.createTables(pgOptions.db);
         });
     })
     .then(function() {
@@ -89,9 +86,6 @@ before(function(done) {
                 gutil.log('Mssql will connect to', mssqlConfig.database);
                 mssqlOptions.db = new MssqlCrLayer(mssqlConfig);
                 return mssqlOptions.db.connect();
-              })
-              .then(function() {
-                return tasks.createTables(mssqlOptions.db);
               });
           });
       }
