@@ -1331,9 +1331,29 @@ module.exports = function(options) {
             expect(error.errors[0].path).to.equal('Only greater or equal');
             done();
           })
-          .catch(function(err) {
-            done(err);
+          .catch(done);
+      });
+      it('should delete joao vctos', function(done) {
+        joao.docpagvc = null;
+        cadAtivo
+          .update(joao)
+          .then(function(record) {
+            record.should.not.have.property('docpagvc');
+            done();
           })
+          .catch(done);
+      });
+      it('lets check joao vctos', function(done) {
+        cadAtivo
+          .fetch({where: {id: joao.id}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            var record = joao = recordset[0];
+            record.should.not.have.property('docpagvc');
+            done();
+          })
+          .catch(done);
       });
       it('lets try a update without parameters', function(done) {
         cadAtivo
@@ -1392,7 +1412,6 @@ module.exports = function(options) {
           .catch(done);
       });
       it('then lets delete Joao', function(done) {
-        joao.docpagvc[0].VALOR = 350.01;
         cadAtivo
           .destroy({where: {id: joao.id, updatedAt: joao.updatedAt}})
           .then(function(record) {
