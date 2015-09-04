@@ -16,7 +16,7 @@ module.exports = function(db) {
       .then(function(recordset) {
         if (recordset.length === 0) {
           return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('createdAt') + ' TIMESTAMP');
+            db.wrap('createdAt') + ' TIMESTAMP WITH TIME ZONE');
         }
       })
       .then(function() {
@@ -26,7 +26,7 @@ module.exports = function(db) {
       .then(function(recordset) {
         if (recordset.length === 0) {
           return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('updatedAt') + ' TIMESTAMP');
+            db.wrap('updatedAt') + ' TIMESTAMP WITH TIME ZONE');
         }
       });
   };
