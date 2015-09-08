@@ -267,7 +267,7 @@ module.exports = function(options) {
         schema.properties.should.have.property('destino');
         schema.properties.destino.should.have.property('items');
         schema.properties.destino.items.should.have.property('properties');
-        expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(3);
+        expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(4);
       });
       it('should have property outroDestino', function() {
         var schema = cadAtivo.getSchema();
@@ -279,7 +279,7 @@ module.exports = function(options) {
       it('should have a customized title for property TipoSimplesNacional', function() {
         var schema = cadAtivo.getSchema();
         var properties = Object.keys(schema.properties);
-        expect(properties.length).to.equal(33);
+        expect(properties.length).to.equal(34);
         expect(properties.indexOf('FAX')).to.equal(-1);
         expect(properties.indexOf('IM')).to.above(-1);
         expect(properties.indexOf('TSN')).to.above(-1);
@@ -2577,6 +2577,17 @@ module.exports = function(options) {
           });
       });
 
+      it('should fetch all the records', function(done) {
+        cadAtivo
+          .fetch()
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.above(0);
+            done();
+          })
+          .catch(done);
+      });
+
     });
 
     describe('using the entity', function() {
@@ -2594,6 +2605,56 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             recordset[0].should.have.property('Nome');
+            done();
+          })
+          .catch(done);
+      });
+    });
+
+    describe('null enum handling', function() {
+      var beth;
+      before(function(done) {
+        cadAtivo
+          .create({
+            NOMECAD: 'Beth',
+            NUMERO: '10',
+            destino: {
+              nome: 'any',
+              IDENT: 'any',
+              NUMERO: '13'
+            }
+          })
+          .then(function(record) {
+            beth = record;
+            cadAtivo
+              .setProperties(function(properties) {
+                properties.futureEnum.enum = [
+                  'A',
+                  'B',
+                  'C'
+                ];
+              });
+            cadAtivo
+              .destino
+              .setProperties(function(properties) {
+                properties.futureEnum.enum = [
+                  'A',
+                  'B',
+                  'C'
+                ];
+              });
+            done();
+          })
+          .catch(done);
+      });
+      it('should fetch undefined from those later defined enum columns', function(done) {
+        cadAtivo
+          .fetch({where: {id: beth.id}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            expect(recordset[0].futureEnum).to.equal(undefined);
+            expect(recordset[0].destino.futureEnum).to.equal(undefined);
             done();
           })
           .catch(done);

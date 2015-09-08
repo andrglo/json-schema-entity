@@ -104,7 +104,8 @@ module.exports = function(config) {
       'CONTACC',
       'Suframa',
       'Inativo',
-      'VALORLCTO'
+      'VALORLCTO',
+      'futureEnum'
     ])
   }, config);
 
@@ -134,7 +135,8 @@ module.exports = function(config) {
         'id',
         'NOMECAD',
         'IDENT',
-        'NUMERO'
+        'NUMERO',
+        'futureEnum'
       ])
     })
     .foreignKey('NUMLANORI')

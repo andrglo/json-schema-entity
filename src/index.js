@@ -1045,15 +1045,17 @@ function findProperty(name, properties) {
 function createInstance(record, name, data) {
   var instance = {};
   _.forEach(data.properties, function(property, name) {
-    if (property.enum) {
-      _.forEach(property.enum, function(value) {
-        if (value.substr(0, record[name].length) === record[name]) {
-          instance[name] = value;
-          return false;
-        }
-      });
-    } else if (record[name] && record[name] !== null) {
-      instance[name] = record[name];
+    if (record[name] && record[name] !== null) {
+      if (property.enum) {
+        _.forEach(property.enum, function(value) {
+          if (value.substr(0, record[name].length) === record[name]) {
+            instance[name] = value;
+            return false;
+          }
+        });
+      } else {
+        instance[name] = record[name];
+      }
     }
   });
   if (data.timestamps) {

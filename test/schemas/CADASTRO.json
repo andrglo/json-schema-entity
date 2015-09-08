@@ -242,6 +242,10 @@
       "maxLength": 8,
       "decimals": 2
     },
+    "futureEnum": {
+      "type": "string",
+      "maxLength": 1
+    },
     "createdAt": {
       "type": "datetime"
     },
