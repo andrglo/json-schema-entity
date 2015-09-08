@@ -649,6 +649,7 @@ module.exports = function(schemaName, schema, config) {
 
         },
         fetch: function(criteria, options) {
+          criteria = criteria || {};
           return Promise.resolve()
             .then(function() {
               options = options || {};
