@@ -2709,6 +2709,21 @@ module.exports = function(options) {
           })
           .catch(done);
       });
+      it('should throw an error when updating beth with destino already deleted', function(done) {
+        beth.save()
+          .then(function() {
+            done(new Error('Invalid record updated'));
+          })
+          .catch(function(error) {
+            log(error)
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidOperation');
+            expect(error.message).to.equal('Record modified');
+            done();
+          })
+          .catch(done);
+      }); //todo the return of a update/insert/delete should be as an fetch
+      //todo check if criteria is working for nulls
     });
 
   });
