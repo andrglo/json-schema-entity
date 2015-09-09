@@ -136,7 +136,8 @@ module.exports = function(config) {
         'NOMECAD',
         'IDENT',
         'NUMERO',
-        'futureEnum'
+        'futureEnum',
+        'Inativo'
       ])
     })
     .foreignKey('NUMLANORI')

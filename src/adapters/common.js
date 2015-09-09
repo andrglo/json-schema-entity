@@ -102,13 +102,15 @@ exports.update = function(record, data, options) {
     findKeys.push('updatedAt');
   }
 
-  var index = 1;
+  var index = 0;
   var updateCommand = data.updateCommand.replace('<fields-values>',
     fields.reduce(function(fields, field) {
-      return fields + (fields ? ',' : '') + data.public.db.wrap(field) + '=$' + index++;
+      return fields + (fields ? ',' : '') + data.public.db.wrap(field) + '=$' + ++index;
     }, '')).replace('<primary-keys>',
     findKeys.reduce(function(fields, field) {
-      return fields + (fields ? ' AND ' : '') + data.public.db.wrap(field) + '=$' + index++;
+      return fields + (fields ? ' AND ' : '') +
+        data.public.db.wrap(field) +
+        (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
   debug(updateCommand);
   return data.public.db.execute(updateCommand, params, {transaction: options.transaction})
@@ -130,10 +132,12 @@ exports.destroy = function(data, options) {
     findKeys.push('updatedAt');
   }
 
-  var index = 1;
+  var index = 0;
   var deleteCommand = data.deleteCommand.replace('<find-keys>',
     findKeys.reduce(function(fields, field) {
-      return fields + (fields ? ' AND ' : '') + data.public.db.wrap(field) + '=$' + index++;
+      return fields + (fields ? ' AND ' : '') +
+        data.public.db.wrap(field) +
+        (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
   debug(deleteCommand, params);
   return data.public.db.execute(deleteCommand, params, {transaction: options.transaction})

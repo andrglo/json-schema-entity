@@ -32,7 +32,7 @@ var mssqlConfig = {
 };
 var mssql = new MssqlCrLayer(mssqlConfig);
 
-var databaseName = 'tests-json-schema-entity';
+var databaseName = 'test-json-schema-entity';
 
 function createPostgresDb() {
   var dbName = process.env.POSTGRES_DATABASE || databaseName;

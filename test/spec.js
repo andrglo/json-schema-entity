@@ -267,7 +267,7 @@ module.exports = function(options) {
         schema.properties.should.have.property('destino');
         schema.properties.destino.should.have.property('items');
         schema.properties.destino.items.should.have.property('properties');
-        expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(4);
+        expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(5);
       });
       it('should have property outroDestino', function() {
         var schema = cadAtivo.getSchema();
@@ -2611,7 +2611,7 @@ module.exports = function(options) {
       });
     });
 
-    describe('null enum handling', function() {
+    describe('null enum and timestamp handling', function() {
       var beth;
       before(function(done) {
         cadAtivo
@@ -2621,7 +2621,8 @@ module.exports = function(options) {
             destino: {
               nome: 'any',
               IDENT: 'any',
-              NUMERO: '13'
+              NUMERO: '13',
+              Inativo: 'Não'
             }
           })
           .then(function(record) {
@@ -2653,11 +2654,65 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            expect(recordset[0].futureEnum).to.equal(undefined);
-            expect(recordset[0].destino.futureEnum).to.equal(undefined);
+            var record = beth = recordset[0];
+            expect(record.futureEnum).to.equal(undefined);
+            expect(record.destino).to.be.a('array');
+            expect(record.destino.length).to.equal(1);
+            expect(record.destino[0].futureEnum).to.equal(undefined);
             done();
           })
           .catch(done);
+      });
+      it('should update destino all alone', function(done) {
+        cadAtivo
+          .fetch({where: {id: beth.destino[0].id}})
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            var record = recordset[0];
+            record.NUMERO = '14';
+            return record
+              .save()
+              .then(function() {
+                expect(record.updatedAt).to.be.a('date');
+                return cadAtivo
+                  .fetch({where: {id: record.id}})
+                  .then(function(recordset) {
+                    expect(recordset).to.be.a('array');
+                    expect(recordset.length).to.equal(1);
+                    expect(recordset[0].NUMERO).to.equal('14');
+                    done();
+                  });
+              });
+          })
+          .catch(done);
+      });
+      it('should delete destino all alone', function(done) {
+        beth.destino[0] = { //todo try to save with the id and after delete the destino[id] field only
+          nome: 'any',
+            IDENT: 'any',
+            NUMERO: '13',
+            Inativo: 'Não'
+        };
+        beth.save()
+          .then(function() {
+            cadAtivo
+              .fetch({where: {id: beth.destino[0].id}})
+              .then(function(recordset) {
+                expect(recordset).to.be.a('array');
+                expect(recordset.length).to.equal(1);
+                var record = recordset[0];
+                return record
+                  .destroy()
+                  .then(function() {
+                    record.should.have.property('id');
+                    record.should.not.have.property('updatedAt');
+                    record.should.not.have.property('createdAt');
+                    done();
+                  })
+                  .catch(done);
+              });
+          });
       });
     });
 
