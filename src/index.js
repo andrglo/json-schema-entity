@@ -396,8 +396,18 @@ function update(entity, was, options, data) {
             const associationKey = association.data.key;
             const associationPrimaryKey = association.data.primaryKeyAttributes;
 
+            var hasPrimaryKey = function(a) {
+              var has = false;
+              _.forEach(associationPrimaryKey, function(name) {
+                has = a[name];
+                return has;
+              });
+              return has;
+            };
+
             function exists(a) {
-              return a[association.data.foreignKey] !== void 0;
+              return a[association.data.foreignKey] &&
+                hasPrimaryKey(a);
             }
 
             var hasEqualPrimaryKey = function(a, b) {

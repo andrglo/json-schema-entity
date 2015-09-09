@@ -2688,15 +2688,10 @@ module.exports = function(options) {
           .catch(done);
       });
       it('should delete destino all alone', function(done) {
-        beth.destino[0] = { //todo try to save with the id and after delete the destino[id] field only
-          nome: 'any',
-            IDENT: 'any',
-            NUMERO: '13',
-            Inativo: 'Não'
-        };
+        delete beth.destino[0].id;
         beth.save()
           .then(function() {
-            cadAtivo
+            return cadAtivo
               .fetch({where: {id: beth.destino[0].id}})
               .then(function(recordset) {
                 expect(recordset).to.be.a('array');
@@ -2709,10 +2704,10 @@ module.exports = function(options) {
                     record.should.not.have.property('updatedAt');
                     record.should.not.have.property('createdAt');
                     done();
-                  })
-                  .catch(done);
+                  });
               });
-          });
+          })
+          .catch(done);
       });
     });
 
