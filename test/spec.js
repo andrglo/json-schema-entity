@@ -19,6 +19,9 @@ var DOCPAGEV = require('./schemas/DOCPAGEV.json');
 var CLASSE = require('./schemas/Classificação.json');
 
 var log = gutil.log;
+var logObj = function(name, obj) {
+  console.log(name, JSON.stringify(obj, null, '  '));
+};
 
 function addValidations(validator) {
   validator.extend('cpfcnpj', function(value) {
@@ -2716,7 +2719,7 @@ module.exports = function(options) {
         delete beth.destino[0].id;
         beth.save()
           .then(function() {
-            done(new Error('Invalid record saved'));
+            done(new Error('Invalid record saved, you cannot use the primary key presence to verify if a record exists'));
           })
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
@@ -2749,8 +2752,11 @@ module.exports = function(options) {
           .catch(done);
       });
       //it('should throw an error when updating beth with destino already deleted', function(done) {
+      //  logObj('beth', beth)
       //  beth.save()
       //    .then(function() {
+      //      logObj('beth after', beth)
+      //
       //      done(new Error('Invalid record updated'));
       //    })
       //    .catch(function(error) {
