@@ -257,7 +257,7 @@ function newInstace(entity, data, isNew) {
     if (data.timestamps) {
       key.where.updatedAt = this.updatedAt || null;
     }
-    return data.methods.destroy(key, options)
+    return data.methods.destroy(key, options, this)
       .then(function() {
         isNew = true;
         delete self.createdAt;
@@ -727,7 +727,7 @@ module.exports = function(schemaName, schema, config) {
                 throw new EntityError({
                   type: 'RecordModifiedOrDeleted',
                   message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for update'
-                })
+                });
               }
               assert(was.length === 1);
               entity = _.extend({}, was[0], entity);
@@ -742,7 +742,7 @@ module.exports = function(schemaName, schema, config) {
                 });
             });
         },
-        destroy: function(key, options) {
+        destroy: function(key, options, entity) {
           if (!key) {
             return Promise.resolve().then(function() {
               throw new EntityError({
@@ -776,13 +776,14 @@ module.exports = function(schemaName, schema, config) {
                 });
               }
               assert(was.length === 1);
-              return runValidations(void 0, was[0], data)
+              entity = _.extend({}, was[0], entity);
+              return runValidations(void 0, entity, data)
                 .then(function() {
                   return options.transaction ?
-                    destroy(was[0], options, data) :
+                    destroy(entity, options, data) :
                     db.transaction(function(t) {
                       options.transaction = t;
-                      return destroy(was[0], options, data);
+                      return destroy(entity, options, data);
                     });
                 });
             });

@@ -14,7 +14,7 @@ module.exports = function(db) {
   adapter.createTimestamps = function(data) {
     var table = db.wrap(data.identity.name);
     return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-      'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\'')
+        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\'')
       .then(function(recordset) {
         if (recordset.length === 0) {
           return db.execute('ALTER TABLE ' + table + ' ADD ' +
@@ -33,15 +33,26 @@ module.exports = function(db) {
       });
   };
 
-  adapter.buildInsertCommand = function(data) {
+  function toSqlType(property) {
+    switch (property.type) {
+      case 'integer':
+        return 'INTEGER';
+      case 'number':
+        return property.decimals > 0 ? 'DECIMAL(' + property.maxLength + ',' + property.decimals + ')' : 'INTEGER';
+      case 'date':
+        return 'DATE';
+      case 'datetime':
+        return property.timezone === 'ignore' ? 'DATETIME2' : 'DATETIMEOFFSET';
+      default:
+        return 'NVARCHAR(' + (property.maxLength || 'MAX') + ')';
+    }
+  }
 
-    var fieldsWithType = [];
-    var fields = [];
+  function buildReturningFields(fields, fieldsWithType, data) {
     _.forEach(data.properties, function(property, name) {
-      if (property.autoIncrement) {
-        fieldsWithType.push('[' + (property.field || name) + ']' + ' INTEGER');
-        fields.push(property.field || name);
-      }
+      fieldsWithType.push('[' + (property.field || name) + ']' + ' ' +
+        toSqlType(property));
+      fields.push(property.field || name);
     });
     if (data.timestamps) {
       fieldsWithType.push('createdAt DATETIME2');
@@ -49,37 +60,48 @@ module.exports = function(db) {
       fieldsWithType.push('updatedAt DATETIME2');
       fields.push('updatedAt');
     }
-    if (fieldsWithType.length === 0) {
-      data.insertCommand = 'INSERT INTO [' + data.identity.name + '] (<fields>) VALUES (<values>)';
-    } else {
-      var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
-      commands.push('INSERT INTO [' + data.identity.name + '] (<fields>) OUTPUT ' +
-        fields.map(function(field) {
-          return 'INSERTED.[' + field + ']'
-        }).join(',') +
-        ' INTO @tmp VALUES (<values>)');
-      commands.push('SELECT * FROM @tmp');
-      data.insertCommand = commands.join(';');
-    }
+  }
+
+  adapter.buildInsertCommand = function(data) {
+    var fieldsWithType = [];
+    var fields = [];
+    buildReturningFields(fields, fieldsWithType, data);
+    var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
+    commands.push('INSERT INTO [' + data.identity.name + '] (<fields>) OUTPUT ' +
+      fields.map(function(field) {
+        return 'INSERTED.[' + field + ']';
+      }).join(',') +
+      ' INTO @tmp VALUES (<values>)');
+    commands.push('SELECT * FROM @tmp');
+    data.insertCommand = commands.join(';');
     debug('insert command', data.insertCommand);
   };
   adapter.buildUpdateCommand = function(data) {
-
-    if (data.timestamps) {
-      data.updateCommand = 'declare @tmp table (updatedAt DATETIME2);' +
-        '' +
-        'UPDATE [' + data.identity.name + '] SET <fields-values> ' +
-        'OUTPUT INSERTED.updatedAt into @tmp WHERE <primary-keys>;SELECT * from @tmp';
-    } else {
-      data.updateCommand = 'UPDATE [' + data.identity.name +
-        '] SET <fields-values> WHERE <primary-keys>';
-    }
+    var fieldsWithType = [];
+    var fields = [];
+    buildReturningFields(fields, fieldsWithType, data);
+    var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
+    commands.push('UPDATE [' + data.identity.name + '] SET <fields-values> OUTPUT ' +
+      fields.map(function(field) {
+        return 'INSERTED.[' + field + ']';
+      }).join(',') +
+      ' INTO @tmp WHERE <primary-keys>');
+    commands.push('SELECT * FROM @tmp');
+    data.updateCommand = commands.join(';');
     debug('update command', data.updateCommand);
-
   };
   adapter.buildDeleteCommand = function(data) {
-    data.deleteCommand = 'DELETE FROM [' + data.identity.name +
-      '] WHERE <find-keys>;SELECT @@ROWCOUNT AS rowsAffected';
+    var fieldsWithType = [];
+    var fields = [];
+    buildReturningFields(fields, fieldsWithType, data);
+    var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
+    commands.push('DELETE FROM [' + data.identity.name + '] OUTPUT ' +
+      fields.map(function(field) {
+        return 'DELETED.[' + field + ']';
+      }).join(',') +
+      ' INTO @tmp WHERE <find-keys>');
+    commands.push('SELECT * FROM @tmp');
+    data.deleteCommand = commands.join(';');
     debug('delete command', data.deleteCommand);
   };
   adapter.create = common.create;

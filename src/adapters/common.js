@@ -5,17 +5,12 @@ var debug = require('debug')('json-schema-entity');
 exports.create = function(record, data, options) {
   options = options || {};
   var fields = [];
-  var fieldsToRead = [];
-  var defaultValues = {};
   var params = [];
   _.forEach(data.properties, function(property, name) {
-    if (property.autoIncrement) {
-      fieldsToRead.push({from: property.field || name, to: name})
-    } else {
+    if (!property.autoIncrement) {
       var value = record[name];
       if ((value === void 0 || value === null) && property.defaultValue) {
         value = property.defaultValue;
-        defaultValues[name] = value;
       }
       if (value !== void 0) {
         var field = property.field || name;
@@ -53,12 +48,28 @@ exports.create = function(record, data, options) {
   debug(insertCommand, params);
   return data.public.db.execute(insertCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
-      fieldsToRead.map(function(data) {
-        record[data.to] = recordset[0][data.from];
+      assert(recordset.length === 1, 'One and only one record should have been inserted');
+      var inserted = recordset[0];
+      _.forEach(data.properties, function(property, name) {
+        var fieldName = property.field || name;
+        var insertedValue = inserted[fieldName];
+        if (insertedValue !== null || record[name] !== void 0) {
+          if (property.enum && property.maxLength) {
+            record[name] = property.enum.reduce(function(result, value) {
+              return result ||
+                (value.substr(0, property.maxLength) === insertedValue ? value : null);
+            }, null);
+          } else if (property.type === 'date') {
+            record[name] = insertedValue.toISOString().substr(0, 10);
+          } else {
+            record[name] = insertedValue;
+          }
+        }
       });
-      _.forEach(defaultValues, function(value, key) {
-        record[key] = value;
-      });
+      if (data.timestamps) {
+        record.createdAt = inserted.createdAt;
+        record.updatedAt = inserted.updatedAt;
+      }
       return record;
     });
 };
@@ -114,7 +125,29 @@ exports.update = function(record, data, options) {
     }, ''));
   debug(updateCommand);
   return data.public.db.execute(updateCommand, params, {transaction: options.transaction})
-    .then(function() {
+    .then(function(recordset) {
+      assert(recordset.length === 1, 'One and only one record should have been updated');
+      var updated = recordset[0];
+      _.forEach(data.properties, function(property, name) {
+        var fieldName = property.field || name;
+        var updatedValue = updated[fieldName];
+        if (updatedValue !== null || record[name] !== void 0) {
+          if (property.enum && property.maxLength) {
+            record[name] = property.enum.reduce(function(result, value) {
+              return result ||
+                (value.substr(0, property.maxLength) === updatedValue ? value : null);
+            }, null);
+          } else if (property.type === 'date') {
+            record[name] = updatedValue.toISOString().substr(0, 10);
+          } else {
+            record[name] = updatedValue;
+          }
+        }
+      });
+      if (data.timestamps) {
+        record.createdAt = updated.createdAt;
+        record.updatedAt = updated.updatedAt;
+      }
       return record;
     });
 };
@@ -142,7 +175,7 @@ exports.destroy = function(data, options) {
   debug(deleteCommand, params);
   return data.public.db.execute(deleteCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
-      assert(recordset.length === 1, 'No or more than 1 record deleted:', recordset);
+      assert(recordset.length === 1, 'One and only one record should have been deleted');
       return recordset.length;
     });
 };

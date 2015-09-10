@@ -942,7 +942,7 @@ module.exports = function(options) {
             record.should.have.property('ClassificaçãoCad');
             expect(record.ClassificaçãoCad).to.be.a('array');
             record.should.have.property('DATNASC');
-            expect(record.DATNASC.toISOString().substr(0, 10)).to.equal('1999-12-31');
+            expect(record.DATNASC).to.equal('1999-12-31');
             record.should.have.property('DATNASCZ');
             expect(record.DATNASCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
             record.should.have.property('DATNASCNOZ');
@@ -1009,8 +1009,8 @@ module.exports = function(options) {
                     record.should.have.property('ClassificaçãoCad');
                     expect(record.ClassificaçãoCad.length).to.equal(1);
                     expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
-                    expect(record.cliente.DATMAIA).to.be.a('date');
-                    expect(record.cliente.DATMAIA.toISOString().substr(0, 10)).to.equal('2015-02-02');
+                    expect(record.cliente.DATMAIA).to.be.a('string');
+                    expect(record.cliente.DATMAIA).to.equal('2015-02-02');
                     record.should.have.property('updatedAt');
                     expect(record.updatedAt).to.be.a('date');
                     expect(record.updatedAt >= now).to.equal(true);
@@ -1098,9 +1098,9 @@ module.exports = function(options) {
             expect(record.ClassificaçãoCad.length).to.equal(1);
             record.should.have.property('docpagvc');
             expect(record.docpagvc.length).to.equal(1);
-            expect(record.docpagvc[0].VALOR).to.equal(700);
+            expect(Number(record.docpagvc[0].VALOR)).to.equal(700);
             record.should.have.property('VALORLCTO');
-            expect(record.VALORLCTO).to.equal(700);
+            expect(Number(record.VALORLCTO)).to.equal(700);
             done();
           })
           .catch(function(err) {
@@ -1132,7 +1132,7 @@ module.exports = function(options) {
             record.should.have.property('VALORLCTO');
             expect(Number(record.VALORLCTO)).to.equal(700);
             record.docpagvc[0].should.have.property('DATAVENC');
-            expect(record.docpagvc[0].DATAVENC.toISOString().substr(0, 10)).to.equal('2015-08-23');
+            expect(record.docpagvc[0].DATAVENC).to.equal('2015-08-23');
             record.docpagvc[0].should.have.property('DATAVENCZ');
             expect(record.docpagvc[0].DATAVENCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
             record.docpagvc[0].should.have.property('DATAVENCNOZ');
@@ -1160,13 +1160,11 @@ module.exports = function(options) {
             joao = record;
             record.should.have.property('docpagvc');
             expect(record.docpagvc.length).to.equal(2);
-            expect(record.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.docpagvc[1].VALOR).to.equal(250.02);
+            expect(Number(record.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.docpagvc[1].VALOR)).to.equal(250.02);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(done);
       });
       it('add more one vcto', function(done) {
         joao.docpagvc.push({VALOR: 10, DATAVENC: '2015-09-24'});
@@ -1176,14 +1174,12 @@ module.exports = function(options) {
             joao = record;
             record.should.have.property('docpagvc');
             expect(record.docpagvc.length).to.equal(3);
-            expect(record.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.docpagvc[1].VALOR).to.equal(250.02);
-            expect(record.docpagvc[2].VALOR).to.equal(10);
+            expect(Number(record.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.docpagvc[1].VALOR)).to.equal(250.02);
+            expect(Number(record.docpagvc[2].VALOR)).to.equal(10);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(done);
       });
       it('should not accept a update joão without classe cliente and with Suframa', function(done) {
         cadAtivo
@@ -1526,10 +1522,10 @@ module.exports = function(options) {
           .update(_.extend({
             ClassificaçãoCad: [
               {
-                "Classe": 'Cliente'
+                Classe: 'Cliente'
               },
               {
-                "Classe": 'Outra'
+                Classe: 'Outra'
               }
             ],
             cliente: {
@@ -1729,15 +1725,13 @@ module.exports = function(options) {
             expect(record.ClassificaçãoCad.length).to.equal(2);
             expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
             record.should.have.property('updatedAt');
-            expect(record.cliente.DATMAIA).to.be.a('date');
-            expect(record.cliente.DATMAIA.toISOString().substr(0, 10)).to.equal('2015-02-02');
+            expect(record.cliente.DATMAIA).to.be.a('string');
+            expect(record.cliente.DATMAIA).to.equal('2015-02-02');
             expect(record.afterUpdate).to.be.true;
             expect(record.afterPromise).to.be.true;
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(done);
       });
       it('then geralda disappears, cant be found...', function(done) {
         cadAtivo
@@ -1827,13 +1821,11 @@ module.exports = function(options) {
             record.should.not.have.property('docpagvc');
             record.fornecedor.should.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             done();
           })
-          .catch(function(error) {
-            done(error);
-          })
+          .catch(done)
       });
       it('lets check mario, the new fornecedor with two vctos', function(done) {
         cadAtivo
@@ -2021,8 +2013,8 @@ module.exports = function(options) {
             record.fornecedor.should.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             expect(record.fornecedor.docpagvc[0].categoria.id).to.equal('111');
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222');
             done();
@@ -2235,8 +2227,8 @@ module.exports = function(options) {
             record.fornecedor.should.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             expect(record.fornecedor.docpagvc[0].categoria.id).to.equal('111');
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222');
             done();
@@ -2285,8 +2277,8 @@ module.exports = function(options) {
             record.fornecedor.should.have.property('docpagvc');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
-            expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
-            expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
+            expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
+            expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             expect(record.fornecedor.docpagvc[0].categoria.id).to.equal('333');
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222');
             done();
@@ -2456,7 +2448,7 @@ module.exports = function(options) {
 
     describe('querying', function() {
       var numberOfRecordsToGenerate = 10;
-      var minMiliSecsToGenerate = 300;
+      var minMiliSecsToGenerate = 500;
       it('should create ' + numberOfRecordsToGenerate + ' records in an minimum time', function(done) {
         gutil.log('Is generating ' + numberOfRecordsToGenerate + ' entities...');
         var duration = process.hrtime();
@@ -2751,24 +2743,30 @@ module.exports = function(options) {
           })
           .catch(done);
       });
-      //it('should throw an error when updating beth with destino already deleted', function(done) {
-      //  logObj('beth', beth)
-      //  beth.save()
-      //    .then(function() {
-      //      logObj('beth after', beth)
-      //
-      //      done(new Error('Invalid record updated'));
-      //    })
-      //    .catch(function(error) {
-      //      log(error)
-      //      expect(error.name).to.equal('EntityError');
-      //      expect(error.type).to.equal('InvalidOperation');
-      //      expect(error.message).to.equal('Record modified');
-      //      done();
-      //    })
-      //    .catch(done);
-      //}); //todo the return of a update/insert/delete should be as an fetch
-
+      it('should throw an error when updating beth with destino already deleted', function(done) {
+        beth.save()
+          .then(function() {
+            done(new Error('Invalid record updated'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('AssertionError');
+            expect(error.message).to.contains('One and only one record');
+            done();
+          })
+          .catch(done);
+      });
+      it('should throw an error when deleting beth with destino already deleted', function(done) {
+        beth.destroy()
+          .then(function() {
+            done(new Error('Invalid record deletion'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('AssertionError');
+            expect(error.message).to.contains('One and only one record');
+            done();
+          })
+          .catch(done);
+      });
     });
 
   });

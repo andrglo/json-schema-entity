@@ -12,7 +12,7 @@ module.exports = function(db) {
   adapter.createTimestamps = function(data) {
     var table = db.wrap(data.identity.name);
     return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-      'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\'')
+        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\'')
       .then(function(recordset) {
         if (recordset.length === 0) {
           return db.execute('ALTER TABLE ' + table + ' ADD ' +
@@ -32,22 +32,14 @@ module.exports = function(db) {
   };
 
   adapter.buildInsertCommand = function(data) {
-    var fieldsToReturn = [];
-    _.forEach(data.properties, function(property, name) {
-      if (property.autoIncrement) {
-        fieldsToReturn.push(db.wrap(property.field || name));
-      }
-    });
-    data.insertCommand = 'INSERT INTO ' + db.wrap(data.identity.name) + ' (<fields>) VALUES (<values>)';
-    if (fieldsToReturn.length > 0) {
-      data.insertCommand += ' RETURNING ' + fieldsToReturn.join(',');
-    }
+    data.insertCommand = 'INSERT INTO ' + db.wrap(data.identity.name) +
+      ' (<fields>) VALUES (<values>) RETURNING *';
     debug('insert command', data.insertCommand);
   };
 
   adapter.buildUpdateCommand = function(data) {
     data.updateCommand = 'UPDATE ' + db.wrap(data.identity.name) +
-      ' SET <fields-values> WHERE <primary-keys>';
+      ' SET <fields-values> WHERE <primary-keys> RETURNING *';
     debug('update command', data.updateCommand);
   };
 
