@@ -1067,7 +1067,9 @@ function createInstance(record, name, data) {
           }
         });
       } else {
-        instance[name] = record[name];
+        instance[name] = property.type === 'date' ?
+          record[name].toISOString().substr(0, 10) :
+          record[name];
       }
     }
   });
