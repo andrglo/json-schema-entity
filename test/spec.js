@@ -2687,8 +2687,47 @@ module.exports = function(options) {
           })
           .catch(done);
       });
-      it('should delete destino all alone', function(done) {
+      it('should be saved as a new record if you remove the foreign key', function(done) {
+        var destinoId = beth.destino[0].id;
+        delete beth.destino[0].NUMLANORI;
+        beth.save()
+          .then(function() {
+            expect(beth.destino[0].id).to.above(destinoId);
+            done();
+          })
+          .catch(done);
+      });
+      it('should not be saved if you change the the foreign key', function(done) {
+        beth.destino[0].NUMLANORI = 0;
+        beth.save()
+          .then(function() {
+            done(new Error('Invalid record saved'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidData');
+            expect(error.message).to.contains('does not match primary key');
+            done();
+          })
+          .catch(done);
+      });
+      it('should not be saved if you remove the id', function(done) {
+        beth.destino[0].NUMLANORI = beth.id;
         delete beth.destino[0].id;
+        beth.save()
+          .then(function() {
+            done(new Error('Invalid record saved'));
+          })
+          .catch(function(error) {
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('InvalidData');
+            expect(error.message).to.contains('has no previous data');
+            done();
+          })
+          .catch(done);
+      });
+      it('should delete destino all alone', function(done) {
+        delete beth.destino[0].NUMLANORI;
         beth.save()
           .then(function() {
             return cadAtivo
@@ -2709,21 +2748,21 @@ module.exports = function(options) {
           })
           .catch(done);
       });
-      it('should throw an error when updating beth with destino already deleted', function(done) {
-        beth.save()
-          .then(function() {
-            done(new Error('Invalid record updated'));
-          })
-          .catch(function(error) {
-            log(error)
-            expect(error.name).to.equal('EntityError');
-            expect(error.type).to.equal('InvalidOperation');
-            expect(error.message).to.equal('Record modified');
-            done();
-          })
-          .catch(done);
-      }); //todo the return of a update/insert/delete should be as an fetch
-      //todo check if criteria is working for nulls
+      //it('should throw an error when updating beth with destino already deleted', function(done) {
+      //  beth.save()
+      //    .then(function() {
+      //      done(new Error('Invalid record updated'));
+      //    })
+      //    .catch(function(error) {
+      //      log(error)
+      //      expect(error.name).to.equal('EntityError');
+      //      expect(error.type).to.equal('InvalidOperation');
+      //      expect(error.message).to.equal('Record modified');
+      //      done();
+      //    })
+      //    .catch(done);
+      //}); //todo the return of a update/insert/delete should be as an fetch
+
     });
 
   });

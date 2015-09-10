@@ -43,13 +43,13 @@ function runValidations(is, was, data) {
                 return same;
               };
 
-              var findAndRemove = function(arr, obj) {       //todo refactor and more validation tests
-                var res = _.remove(arr, function(e) { //todo save and new in instance
+              var findAndRemove = function(arr, obj) {
+                var res = _.remove(arr, function(e) {
                   if (hasEqualPrimaryKey(e, obj)) {
                     return true;
                   }
                 });
-                assert(res.length < 2, 'Better call Gloria1' + res.length);
+                assert(res.length < 2, 'Pair this was for validation should be 1 but found ' + res.length);
                 return res.length === 0 ? void 0 : res[0];
               };
 
@@ -396,18 +396,8 @@ function update(entity, was, options, data) {
             const associationKey = association.data.key;
             const associationPrimaryKey = association.data.primaryKeyAttributes;
 
-            var hasPrimaryKey = function(a) {
-              var has = false;
-              _.forEach(associationPrimaryKey, function(name) {
-                has = a[name];
-                return has;
-              });
-              return has;
-            };
-
             function exists(a) {
-              return a[association.data.foreignKey] &&
-                hasPrimaryKey(a);
+              return a[association.data.foreignKey];
             }
 
             var hasEqualPrimaryKey = function(a, b) {
@@ -429,7 +419,11 @@ function update(entity, was, options, data) {
                   return obj;
                 }
               }
-              assert(false, 'Better call Gloria2');
+              throw new EntityError({
+                type: 'InvalidData',
+                message: 'Record ' + JSON.stringify(entity) + ' in association ' +
+                associationKey + ' has no previous data'
+              });
             };
 
             var associatedIsEntity = entity[associationKey];
@@ -439,7 +433,7 @@ function update(entity, was, options, data) {
               throw new EntityError({
                 type: 'InvalidData',
                 message: 'Association ' + associationKey + ' can not be an array'
-              })
+              });
             }
             associatedIsEntity = _.isArray(associatedIsEntity) ?
               associatedIsEntity.slice(0) : associatedIsEntity ? [associatedIsEntity] : void 0;
@@ -448,8 +442,19 @@ function update(entity, was, options, data) {
             associatedWasEntity = _.isArray(associatedWasEntity) ?
               associatedWasEntity.slice(0) : associatedWasEntity ? [associatedWasEntity] : void 0;
 
+            var primaryKeyValue = entity[data.primaryKeyAttributes[0]];
             var toBeCreated = _.remove(associatedIsEntity, function(is) {
-              return !exists(is)
+              if (is[association.data.foreignKey] !== void 0) {
+                // Should convert to string before comparing
+                if (is[association.data.foreignKey] != primaryKeyValue) { // eslint-disable-line
+                  throw new EntityError({
+                    type: 'InvalidData',
+                    message: 'Foreign key in ' + association.data.key +
+                    ' does not match primary key of ' + data.key
+                  });
+                }
+              }
+              return !exists(is);
             });
             var toBeUpdated = associatedIsEntity;
             var toBeDeleted = _.remove(associatedWasEntity, function(was) {
@@ -467,7 +472,7 @@ function update(entity, was, options, data) {
               debug('ForeignKey in update/delete', association.data.foreignKey, 'key', data.primaryKeyAttributes[0]);
               return chain.then(function() {
                 return destroy(entity, options, association.data)
-              })
+              });
             }, chain).then(function() {
               return _.reduce(toBeUpdated, function(chain, entity) {
                 debug('ForeignKey in update/update', association.data.foreignKey, 'key', data.primaryKeyAttributes[0]);
@@ -527,7 +532,7 @@ function destroy(entity, options, data) {
         return _.reduce(associatedEntity, function(chain, entity) {
           return chain.then(function() {
             return destroy(entity, {transaction: options.transaction}, association.data)
-          })
+          });
         }, chain);
       }, Promise.resolve()).then(function() {
         options = {where: {}, transaction: options.transaction};
@@ -847,8 +852,8 @@ module.exports = function(schemaName, schema, config) {
     ].map(function(name) {
         data.hooks[name] = [];
         data.methods[name] = function(id, fn) {
-          addHook(name, id, fn)
-        }
+          addHook(name, id, fn);
+        };
       });
 
     data.validate = [];
@@ -870,14 +875,14 @@ module.exports = function(schemaName, schema, config) {
       }
       fn = fn || id;
       id = typeof id === 'string' ? id : (methodId++).toString();
-      data.validate.push({id: id, fn: fn, options: normalizedOptions})
+      data.validate.push({id: id, fn: fn, options: normalizedOptions});
     };
 
     data.instanceMethods = [];
     data.methods.method = function(id, fn) {
       assert(id, 'Methods should have an identification');
       assert(fn, 'Method missing');
-      data.instanceMethods.push({id: id, fn: fn})
+      data.instanceMethods.push({id: id, fn: fn});
     };
 
     return data;
@@ -1045,10 +1050,8 @@ function findProperty(name, properties) {
       _.reduce(properties, function(res, prop) {
         return res ? res : (prop.field && name === prop.field ? prop : void 0);
       }, void 0);
-    if (property === void 0) {
-      throw new Error('Property "' + name + '" not found');
-    }
   }
+  assert(property, 'Property "' + name + '" not found');
   return property;
 }
 
