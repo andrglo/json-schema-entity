@@ -271,22 +271,24 @@ function newInstace(entity, data, isNew) {
   return new Instance(entity);
 }
 
-function buildEntity(record, data) {
+function buildEntity(record, data, isNew) {
   debug('Entity will be built:', data.key);
   var entity = createInstance(_.pick(record, data.propertiesList), data.identity.name, data);
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
     if (record[key]) {
-      var recordset = data.adapter.extractRecordset(record[key], association.data.coerce)
-        .map(function(record) {
-          return buildEntity(record, association.data)
+      var recordset = isNew ?
+        _.isArray(record[key]) ? record[key] : [record[key]] :
+        data.adapter.extractRecordset(record[key], association.data.coerce);
+      recordset = recordset.map(function(record) {
+          return buildEntity(record, association.data, isNew);
         });
       entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
         recordset[0] : recordset;
     }
   });
-  return newInstace(entity, data);
+  return newInstace(entity, data, isNew);
 }
 
 function runHooks(hooks, model, transaction, data) {
@@ -678,7 +680,7 @@ module.exports = function(schemaName, schema, config) {
                 .query(view.statement, view.params, {transaction: options.transaction})
                 .then(function(res) {
                   return res.map(function(record) {
-                    return buildEntity(record, data)
+                    return buildEntity(record, data);
                   });
                 });
             });
@@ -789,7 +791,7 @@ module.exports = function(schemaName, schema, config) {
             });
         },
         createInstance: function(entity) {
-          return newInstace(entity, data, true);
+          return buildEntity(entity, data, true);
         },
         createTables: function() {
           return Promise.resolve()
