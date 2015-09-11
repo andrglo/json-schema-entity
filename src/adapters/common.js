@@ -53,7 +53,7 @@ exports.create = function(record, data, options) {
       _.forEach(data.properties, function(property, name) {
         var fieldName = property.field || name;
         var insertedValue = inserted[fieldName];
-        if (insertedValue !== null || record[name] !== void 0) {
+        if (insertedValue !== null) {
           if (property.enum && property.maxLength) {
             record[name] = property.enum.reduce(function(result, value) {
               return result ||
@@ -64,6 +64,8 @@ exports.create = function(record, data, options) {
           } else {
             record[name] = insertedValue;
           }
+        } else {
+          delete record[name];
         }
       });
       if (data.timestamps) {
@@ -131,7 +133,7 @@ exports.update = function(record, data, options) {
       _.forEach(data.properties, function(property, name) {
         var fieldName = property.field || name;
         var updatedValue = updated[fieldName];
-        if (updatedValue !== null || record[name] !== void 0) {
+        if (updatedValue !== null) {
           if (property.enum && property.maxLength) {
             record[name] = property.enum.reduce(function(result, value) {
               return result ||
@@ -142,6 +144,8 @@ exports.update = function(record, data, options) {
           } else {
             record[name] = updatedValue;
           }
+        } else {
+          delete record[name];
         }
       });
       if (data.timestamps) {
