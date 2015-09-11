@@ -214,6 +214,14 @@ function runModelValidations(is, was, data, errors) {
   }, Promise.resolve());
 }
 
+
+
+function isInstance(entity) {
+  if (entity.save) { //todo refactor
+    return entity;
+  }
+}
+
 function newInstace(entity, data, isNew) {
 
   var oldValues = _.cloneDeep(entity);
@@ -221,6 +229,10 @@ function newInstace(entity, data, isNew) {
   function Instance(values) {
     _.extend(this, values);
   }
+
+  Instance.prototype.saveOld = function() {
+    oldValues = _.cloneDeep(this);
+  };
 
   Instance.prototype.validate = function() {
     return runValidations(this, oldValues, data);
@@ -235,17 +247,19 @@ function newInstace(entity, data, isNew) {
   Instance.prototype.save = function(options) {
     var self = this;
     if (isNew) {
-      return data.methods.create(this, null, options)
+      return data.entity.methods.create(this, null, options)
         .then(function(res) {
           isNew = false;
-          clear(self);
-          _.extend(self, res);
+          oldValues = _.cloneDeep(res); // todo should be in master table
+          //clear(self);
+          //_.extend(self, res);
         });
     }
-    return data.methods.update(this, null, options)
+    return data.entity.methods.update(this, null, options)
       .then(function(res) {
-        clear(self);
-        _.extend(self, res);
+        oldValues = _.cloneDeep(res);
+        //clear(self);
+        //_.extend(self, res);
       });
   };
 
@@ -265,7 +279,7 @@ function newInstace(entity, data, isNew) {
     if (data.timestamps) {
       key.where.updatedAt = this.updatedAt || null;
     }
-    return data.methods.destroy(key, options, this)
+    return data.entity.methods.destroy(key, options, this)
       .then(function() {
         isNew = true;
         delete self.createdAt;
@@ -279,9 +293,9 @@ function newInstace(entity, data, isNew) {
   return new Instance(entity);
 }
 
-function buildEntity(record, data, isNew, fromFetch) {
+function buildEntity(record, data, isNew, fromFetch, instance) {
   debug('Entity will be built:', data.key);
-  var entity = createInstance(_.pick(record, data.propertiesList), data.identity.name, data);
+  var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data);
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
@@ -290,12 +304,40 @@ function buildEntity(record, data, isNew, fromFetch) {
         data.adapter.extractRecordset(record[key], association.data.coerce) :
         _.isArray(record[key]) ? record[key] : [record[key]];
       recordset = recordset.map(function(record) {
-        return buildEntity(record, association.data, isNew, fromFetch);
+        return buildEntity(record, association.data, isNew, fromFetch, instance ? instance[key] : void 0);
       });
-      entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
-        recordset[0] : recordset;
+      if (instance && instance.saveOld) {
+        if (instance[key]) {
+          recordset.map(function(rec) {
+             //todo
+          });
+
+          if (_.isArray(instance[key])) {
+            var i = 0;
+            instance[key].map(function(instance) {
+              _.extend(instance, recordset[i++])
+            })
+          } else {
+            _.extend(instance[key], recordset[0])
+          }
+        } else {
+          entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
+            recordset[0] : recordset;
+        }
+      } else {
+        entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
+          recordset[0] : recordset;
+      }
     }
   });
+  if (instance) {
+    if (instance.saveOld) {
+      instance.saveOld();
+      return instance;
+    } else {
+      return newInstace(entity, data, isNew);
+    }
+  }
   return newInstace(entity, data, isNew);
 }
 
@@ -429,6 +471,7 @@ function update(entity, was, options, data) {
                   return obj;
                 }
               }
+              log(entity, '----', entities)
               throw new EntityError({
                 type: 'InvalidData',
                 message: 'Record ' + JSON.stringify(entity) + ' in association ' +
@@ -565,6 +608,7 @@ module.exports = function(schemaName, schema, config) {
   var db = config.db;
   var sv = sqlView(db.dialect);
   var entity = entityFactory(schemaName, schema, rebuild);
+  entity.entity = entity;
 
   function entityFactory(schemaName, schema, rebuild) {
     const publicAssociationMethods = [
@@ -579,7 +623,6 @@ module.exports = function(schemaName, schema, config) {
     ];
     const identity = splitAlias(schemaName);
     var data = {
-      entity: entity,
       validator: config.validator,
       identity: identity,
       table: schema || {},
@@ -626,6 +669,7 @@ module.exports = function(schemaName, schema, config) {
         },
         hasMany: function(schemaName, schema) {
           var association = entityFactory(schemaName, schema, rebuild);
+          association.entity = entity;
           association.isAssociation = true;
           data.methods[association.key] = association.methods;
           data.public[association.key] = association.public;
@@ -638,6 +682,7 @@ module.exports = function(schemaName, schema, config) {
         },
         hasOne: function(schemaName, schema) {
           var association = entityFactory(schemaName, schema, rebuild);
+          association.entity = entity;
           association.isAssociation = true;
           data.methods[association.key] = association.methods;
           data.public[association.key] = association.public;
@@ -706,7 +751,7 @@ module.exports = function(schemaName, schema, config) {
                 });
             })
             .then(function(record) {
-              return buildEntity(record, data);
+              return buildEntity(record, data, false, false, isInstance(entity));
             });
         },
         update: function(entity, key, options) {
@@ -744,8 +789,15 @@ module.exports = function(schemaName, schema, config) {
                 });
               }
               assert(was.length === 1);
-              entity = _.extend({}, was[0], entity);
-              return runValidations(entity, was[0], data)
+
+              var validations;
+              if (isInstance(entity)) {
+                validations = entity.validate();
+              } else {
+                entity = _.extend({}, was[0], entity);
+                validations = runValidations(entity, was[0], data)
+              }
+              return validations
                 .then(function() {
                   return options.transaction ?
                     update(entity, was[0], options, data) :
@@ -755,7 +807,7 @@ module.exports = function(schemaName, schema, config) {
                     });
                 })
                 .then(function(record) {
-                  return buildEntity(record, data);
+                  return buildEntity(record, data, false, false, isInstance(entity));
                 });
             });
         },
@@ -1073,8 +1125,18 @@ function findProperty(name, properties) {
   return property;
 }
 
-function createInstance(record, name, data) {
-  var instance = {};
+function initInstance(instance, record, data) {
+
+  function clearNulls(obj) {
+    Object.keys(obj).forEach(function(key) {
+      if (obj[key] === null) {
+        delete obj[key];
+      }
+    });
+  }
+
+  clearNulls(instance);
+
   _.forEach(data.properties, function(property, name) {
     if (record[name] && record[name] !== null) {
       if (property.enum) {

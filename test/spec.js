@@ -174,9 +174,7 @@ module.exports = function(options) {
           joao = record;
           done();
         })
-        .catch(function(err) {
-          done(err);
-        });
+        .catch(logError(done));
     });
     it('and can be deleted', function(done) {
       start = process.hrtime();
@@ -826,12 +824,11 @@ module.exports = function(options) {
               nome: 'Maria',
               IDENT: 'Fatima',
               NUMERO: '11'
-            },
-              {
-                nome: 'Maria 2',
-                IDENT: 'Fatima 2',
-                NUMERO: '12'
-              }],
+            }, {
+              nome: 'Maria 2',
+              IDENT: 'Fatima 2',
+              NUMERO: '12'
+            }],
             outroDestino: {
               NOMECAD: 'Gilda',
               IDENT: 'Jessica',
@@ -969,12 +966,9 @@ module.exports = function(options) {
         any.DATNASC = null;
         any.save()
           .then(function() {
+            logObj('any', any)
             expect(any.DATNASC).to.equal(undefined);
             done();
-          })
-          .catch(function(err) {
-            logObj('v', any)
-            done(err)
           })
           .catch(logError(done));
       });
@@ -988,10 +982,6 @@ module.exports = function(options) {
           .then(function() {
             expect(any.DATNASC).to.equal(undefined);
             done();
-          })
-          .catch(function(err) {
-            logObj('v', any)
-            done(err)
           })
           .catch(logError(done));
       });
@@ -2333,6 +2323,8 @@ module.exports = function(options) {
             done(new Error('Validated invalid instance'));
           })
           .catch(function(error) {
+            logObj('lidia', lidia)
+            logObj('err', error)
             expect(error.name).to.equal('EntityError');
             expect(error.errors).to.be.a('array');
             expect(error.errors.length).to.equal(1);
