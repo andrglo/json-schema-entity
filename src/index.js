@@ -1070,7 +1070,7 @@ function createInstance(record, name, data) {
           }
         });
       } else {
-        instance[name] = property.type === 'date' ?
+        instance[name] = property.type === 'date' && record[name] instanceof Date ?
           record[name].toISOString().substr(0, 10) :
           record[name];
       }
