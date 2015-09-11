@@ -226,17 +226,25 @@ function newInstace(entity, data, isNew) {
     return runValidations(this, oldValues, data);
   };
 
+  function clear(obj) {
+    Object.keys(obj).forEach(function(key) {
+      delete obj[key];
+    });
+  }
+
   Instance.prototype.save = function(options) {
     var self = this;
     if (isNew) {
       return data.methods.create(this, null, options)
         .then(function(res) {
           isNew = false;
+          clear(self);
           _.extend(self, res);
         });
     }
     return data.methods.update(this, null, options)
       .then(function(res) {
+        clear(self);
         _.extend(self, res);
       });
   };
@@ -271,19 +279,19 @@ function newInstace(entity, data, isNew) {
   return new Instance(entity);
 }
 
-function buildEntity(record, data, isNew) {
+function buildEntity(record, data, isNew, fromFetch) {
   debug('Entity will be built:', data.key);
   var entity = createInstance(_.pick(record, data.propertiesList), data.identity.name, data);
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
     if (record[key]) {
-      var recordset = isNew ?
-        _.isArray(record[key]) ? record[key] : [record[key]] :
-        data.adapter.extractRecordset(record[key], association.data.coerce);
+      var recordset = fromFetch ?
+        data.adapter.extractRecordset(record[key], association.data.coerce) :
+        _.isArray(record[key]) ? record[key] : [record[key]];
       recordset = recordset.map(function(record) {
-          return buildEntity(record, association.data, isNew);
-        });
+        return buildEntity(record, association.data, isNew, fromFetch);
+      });
       entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
         recordset[0] : recordset;
     }
@@ -370,7 +378,7 @@ function create(entity, options, data) {
     }).then(function(entity) {
       return runHooks(['afterCreate', 'afterSave'], entity, options.transaction, data)
         .then(function() {
-          return newInstace(entity, data);
+          return entity;
         });
     });
 }
@@ -517,7 +525,7 @@ function update(entity, was, options, data) {
     }).then(function(entity) {
       return runHooks(['afterUpdate', 'afterSave'], entity, options.transaction, data)
         .then(function() {
-          return newInstace(entity, data);
+          return entity;
         });
     });
 }
@@ -571,6 +579,7 @@ module.exports = function(schemaName, schema, config) {
     ];
     const identity = splitAlias(schemaName);
     var data = {
+      entity: entity,
       validator: config.validator,
       identity: identity,
       table: schema || {},
@@ -680,7 +689,7 @@ module.exports = function(schemaName, schema, config) {
                 .query(view.statement, view.params, {transaction: options.transaction})
                 .then(function(res) {
                   return res.map(function(record) {
-                    return buildEntity(record, data);
+                    return buildEntity(record, data, false, true);
                   });
                 });
             });
@@ -695,6 +704,9 @@ module.exports = function(schemaName, schema, config) {
                   options.transaction = t;
                   return create(entity, options, data);
                 });
+            })
+            .then(function(record) {
+              return buildEntity(record, data);
             });
         },
         update: function(entity, key, options) {
@@ -741,6 +753,9 @@ module.exports = function(schemaName, schema, config) {
                       options.transaction = t;
                       return update(entity, was[0], options, data);
                     });
+                })
+                .then(function(record) {
+                  return buildEntity(record, data);
                 });
             });
         },
@@ -853,11 +868,11 @@ module.exports = function(schemaName, schema, config) {
       'beforeDestroy',
       'afterDestroy'
     ].map(function(name) {
-        data.hooks[name] = [];
-        data.methods[name] = function(id, fn) {
-          addHook(name, id, fn);
-        };
-      });
+      data.hooks[name] = [];
+      data.methods[name] = function(id, fn) {
+        addHook(name, id, fn);
+      };
+    });
 
     data.validate = [];
     data.methods.validate = function(id, fn, options) {

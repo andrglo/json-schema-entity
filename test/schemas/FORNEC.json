@@ -29,6 +29,10 @@
       "type": "string",
       "maxLength": 50
     },
+    "NUMERO": {
+      "type": "string",
+      "maxLength": 10
+    },
     "SegmentodeMercado": {
       "title": "Segmento de mercado",
       "description": "Segmento de mercado - ramo de atividade",

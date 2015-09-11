@@ -105,7 +105,10 @@ module.exports = function(config) {
       'Suframa',
       'Inativo',
       'VALORLCTO',
-      'futureEnum'
+      'futureEnum',
+      'afterCreate',
+      'afterUpdate',
+      'afterPromise'
     ])
   }, config);
 
@@ -318,15 +321,15 @@ module.exports = function(config) {
   });
   cadAtivo.afterCreate(function() {
     //noinspection JSPotentiallyInvalidUsageOfThis
-    this.afterCreate = true;
+    this.afterCreate = 'true';
   });
   cadAtivo.afterUpdate(function() {
     //noinspection JSPotentiallyInvalidUsageOfThis
-    this.afterUpdate = true;
+    this.afterUpdate = 'true';
     var self = this;
     return Promise.resolve().then(function() {
-      self.afterPromise = true;
-    })
+      self.afterPromise = 'true';
+    });
   });
 
   cadAtivo.method('quitar', function() {

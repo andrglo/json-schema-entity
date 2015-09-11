@@ -20,7 +20,15 @@ var CLASSE = require('./schemas/Classificação.json');
 
 var log = gutil.log;
 var logObj = function(name, obj) {
-  console.log(name, JSON.stringify(obj, null, '  '));
+  log(name, JSON.stringify(obj, null, '  '));
+};
+var logError = function(done) {
+  return function(err) {
+    if (err) {
+      log('Error', gutil.colors.red(JSON.stringify(err, null, '  ')));
+    }
+    done(err);
+  };
 };
 
 function addValidations(validator) {
@@ -84,7 +92,7 @@ module.exports = function(options) {
         .then(function() {
           done();
         })
-        .catch(done);
+        .catch(logError(done));
     });
 
     it('record should not exist', function(done) {
@@ -114,7 +122,7 @@ module.exports = function(options) {
           expect(error.errors[0].path).to.equal('TEST');
           done();
         })
-        .catch(done);
+        .catch(logError(done));
     });
     it('record should be created', function(done) {
       var now = Date.now();
@@ -250,7 +258,7 @@ module.exports = function(options) {
         .then(function() {
           done();
         })
-        .catch(done);
+        .catch(logError(done));
     });
 
     describe('check structure', function() {
@@ -282,7 +290,7 @@ module.exports = function(options) {
       it('should have a customized title for property TipoSimplesNacional', function() {
         var schema = cadAtivo.getSchema();
         var properties = Object.keys(schema.properties);
-        expect(properties.length).to.equal(34);
+        expect(properties.length).to.equal(37);
         expect(properties.indexOf('FAX')).to.equal(-1);
         expect(properties.indexOf('IM')).to.above(-1);
         expect(properties.indexOf('TSN')).to.above(-1);
@@ -294,7 +302,7 @@ module.exports = function(options) {
         schema.properties.fornecedor.should.have.property('type');
         schema.properties.fornecedor.type.should.equal('object');
         schema.properties.fornecedor.should.have.property('properties');
-        expect(Object.keys(schema.properties.fornecedor.properties).length).to.equal(60);
+        expect(Object.keys(schema.properties.fornecedor.properties).length).to.equal(61);
       });
       it('should have property cliente', function() {
         cadAtivo.should.have.property('cliente');
@@ -406,12 +414,12 @@ module.exports = function(options) {
             expect(record.createdAt >= now).to.equal(true);
             record.should.have.property('Inativo');
             expect(record.Inativo).to.equal('Não');
-            expect(record.afterCreate).to.be.true;
+            expect(record.afterCreate).to.equal('true');
             expect(record.afterUpdate).to.be.undefined;
             expect(record.afterPromise).to.be.undefined;
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should not create a new cadastro with wrong CPF', function(done) {
         cadAtivo
@@ -432,7 +440,7 @@ module.exports = function(options) {
             error.should.have.property('message');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should not create a new cadastro with wrong br-phone', function(done) {
         cadAtivo
@@ -460,7 +468,7 @@ module.exports = function(options) {
             error.should.have.property('message');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should create a new cadastro with CPF', function(done) {
         cadAtivo
@@ -473,7 +481,7 @@ module.exports = function(options) {
             record.should.have.property('CGCCPF');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should reject create a new cadastro with the same CPF', function(done) {
         cadAtivo
@@ -567,7 +575,7 @@ module.exports = function(options) {
             expect(message).to.contains('exceeds maximum length');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should throw 2 ENDERECO validation error', function(done) {
         cadAtivo
@@ -591,7 +599,7 @@ module.exports = function(options) {
             expect(message).to.contains('uppercase');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should create 3 new classes', function(done) {
         cadAtivo
@@ -619,7 +627,7 @@ module.exports = function(options) {
             expect(_.find(record.ClassificaçãoCad, 'Classe', 'Nadador')).to.be.a('object');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should not accept a new cliente without classe cliente', function(done) {
         cadAtivo
@@ -670,7 +678,7 @@ module.exports = function(options) {
             expect(error.errors[0].path).to.equal('Teste de promise');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should not accept a new cliente without classe cliente and with Suframa and fornecedor with no NUMERO=99', function(done) {
         cadAtivo
@@ -914,10 +922,10 @@ module.exports = function(options) {
             },
             ClassificaçãoCad: [
               {
-                "Classe": 'Fornecedor'
+                Classe: 'Fornecedor'
               },
               {
-                "Classe": 'Cliente'
+                Classe: 'Cliente'
               }
             ],
             cliente: {
@@ -938,7 +946,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
-            var record = recordset[0];
+            var record = any = recordset[0];
             record.should.have.property('ClassificaçãoCad');
             expect(record.ClassificaçãoCad).to.be.a('array');
             record.should.have.property('DATNASC');
@@ -954,10 +962,40 @@ module.exports = function(options) {
             expect(_.find(record.ClassificaçãoCad, 'Classe', 'Fornecedor')).to.be.a('object');
             done();
           })
-          .catch(function(error) {
-            done(error);
-          })
+          .catch(logError(done));
       });
+
+      it('lets clear the date', function(done) {
+        any.DATNASC = null;
+        any.save()
+          .then(function() {
+            expect(any.DATNASC).to.equal(undefined);
+            done();
+          })
+          .catch(function(err) {
+            logObj('v', any)
+            done(err)
+          })
+          .catch(logError(done));
+      });
+
+      it('lets create with a null date', function(done) {
+        any = cadAtivo.createInstance({
+          NOMECAD: 'Any new'
+        });
+        any.DATNASC = null;
+        any.save()
+          .then(function() {
+            expect(any.DATNASC).to.equal(undefined);
+            done();
+          })
+          .catch(function(err) {
+            logObj('v', any)
+            done(err)
+          })
+          .catch(logError(done));
+      });
+
     });
 
     describe('update cadastro', function() {
@@ -996,8 +1034,8 @@ module.exports = function(options) {
                 expect(record.updatedAt >= now).to.equal(true);
                 expect(record.updatedAt > joao.updatedAt).to.equal(true);
                 expect(record.afterCreate).to.be.undefined;
-                expect(record.afterUpdate).to.be.true;
-                expect(record.afterPromise).to.be.true;
+                expect(record.afterUpdate).to.equal('true');
+                expect(record.afterPromise).to.equal('true');
                 return cadAtivo
                   .fetch({where: {id: joao.id}})
                   .then(function(recordset) {
@@ -1139,9 +1177,7 @@ module.exports = function(options) {
             expect(record.docpagvc[0].DATAVENCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString());
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('replace vctos array', function(done) {
         cadAtivo
@@ -1164,7 +1200,7 @@ module.exports = function(options) {
             expect(Number(record.docpagvc[1].VALOR)).to.equal(250.02);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('add more one vcto', function(done) {
         joao.docpagvc.push({VALOR: 10, DATAVENC: '2015-09-24'});
@@ -1179,7 +1215,7 @@ module.exports = function(options) {
             expect(Number(record.docpagvc[2].VALOR)).to.equal(10);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should not accept a update joão without classe cliente and with Suframa', function(done) {
         cadAtivo
@@ -1217,9 +1253,7 @@ module.exports = function(options) {
             expect(suframa).to.equal(true);
             done();
           })
-          .catch(function(error) {
-            done(error);
-          })
+          .catch(logError(done));
       });
       it('check if the joao vctos array generate is equivalent to the external table', function(done) {
         tableDocpagev
@@ -1229,9 +1263,7 @@ module.exports = function(options) {
             expect(recordset.length).to.equal(3);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          });
+          .catch(logError(done));
       });
       it('finally lets try delete Joao without timestamp', function(done) {
         cadAtivo
@@ -1245,9 +1277,7 @@ module.exports = function(options) {
             expect(error.type).to.equal('RecordModifiedOrDeleted');
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('lets try again with timestamp to delete Joao', function(done) {
         cadAtivo
@@ -1283,9 +1313,7 @@ module.exports = function(options) {
             expect(error.errors[0].path).to.equal('NOMECAD');
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('so lets cleanup only COMPLEMENTO', function(done) {
         joao.NOMECAD = 'João';
@@ -1294,12 +1322,10 @@ module.exports = function(options) {
           .update(joao, {where: {id: joao.id, updatedAt: joao.updatedAt}})
           .then(function(record) {
             joao = record;
-            expect(joao.COMPLEMENTO).to.equal(null);
+            expect(joao.COMPLEMENTO).to.equal(undefined);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('and check COMPLEMENTO', function(done) {
         cadAtivo
@@ -1311,9 +1337,7 @@ module.exports = function(options) {
             expect(record.COMPLEMENTO).to.equal(undefined);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('should not save a smaller valor in vctos', function(done) {
         joao.docpagvc[0].VALOR = 350;
@@ -1330,7 +1354,7 @@ module.exports = function(options) {
             expect(error.errors[0].path).to.equal('Only greater or equal');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should delete joao vctos', function(done) {
         joao.docpagvc = null;
@@ -1340,7 +1364,7 @@ module.exports = function(options) {
             record.should.not.have.property('docpagvc');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('lets check joao vctos', function(done) {
         cadAtivo
@@ -1352,7 +1376,7 @@ module.exports = function(options) {
             record.should.not.have.property('docpagvc');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('lets try a update without parameters', function(done) {
         cadAtivo
@@ -1366,7 +1390,7 @@ module.exports = function(options) {
             expect(error.message.indexOf('need a primary key') !== -1).to.equal(true);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('lets try a update without where', function(done) {
         cadAtivo
@@ -1380,7 +1404,7 @@ module.exports = function(options) {
             expect(error.message.indexOf('Where clause not defined') !== -1).to.equal(true);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('lets try a delete without parameters', function(done) {
         cadAtivo
@@ -1394,7 +1418,7 @@ module.exports = function(options) {
             expect(error.message.indexOf('need a primary key') !== -1).to.equal(true);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('lets try a delete without where', function(done) {
         cadAtivo
@@ -1408,7 +1432,7 @@ module.exports = function(options) {
             expect(error.message.indexOf('Where clause not defined') !== -1).to.equal(true);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('then lets delete Joao', function(done) {
         cadAtivo
@@ -1484,13 +1508,11 @@ module.exports = function(options) {
             record.cliente.should.not.have.property('DATMAIA');
 
             expect(record.afterCreate).to.be.undefined;
-            expect(record.afterUpdate).to.be.true;
-            expect(record.afterPromise).to.be.true;
+            expect(record.afterUpdate).to.equal('true');
+            expect(record.afterPromise).to.equal('true');
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('confirm Joana data after update', function(done) {
         cadAtivo
@@ -1513,9 +1535,7 @@ module.exports = function(options) {
             record.cliente.should.not.have.property('DATMAIA');
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('should update Geralda to be a client', function(done) {
         cadAtivo
@@ -1547,16 +1567,14 @@ module.exports = function(options) {
             record.should.have.property('updatedAt');
             expect(record.cliente.DATMAIA).to.be.a('string');
             expect(record.cliente.DATMAIA).to.equal('2015-02-02');
-            expect(record.afterUpdate).to.be.true;
-            expect(record.afterPromise).to.be.true;
+            expect(record.afterUpdate).to.equal('true');
+            expect(record.afterPromise).to.equal('true');
 
             record.should.not.have.property('DATNASC');
 
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
     });
 
@@ -1578,9 +1596,7 @@ module.exports = function(options) {
             mariana = record;
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('cannot be deleted', function(done) {
         cadAtivo
@@ -1727,11 +1743,11 @@ module.exports = function(options) {
             record.should.have.property('updatedAt');
             expect(record.cliente.DATMAIA).to.be.a('string');
             expect(record.cliente.DATMAIA).to.equal('2015-02-02');
-            expect(record.afterUpdate).to.be.true;
-            expect(record.afterPromise).to.be.true;
+            expect(record.afterUpdate).to.equal('true');
+            expect(record.afterPromise).to.equal('true');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('then geralda disappears, cant be found...', function(done) {
         cadAtivo
@@ -1825,7 +1841,7 @@ module.exports = function(options) {
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             done();
           })
-          .catch(done)
+          .catch(logError(done))
       });
       it('lets check mario, the new fornecedor with two vctos', function(done) {
         cadAtivo
@@ -1955,7 +1971,7 @@ module.exports = function(options) {
             expect(recordset.length).to.equal(0);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('nor any mario fornecedor docpgavc record', function(done) {
         tableDocpagvc
@@ -2002,7 +2018,7 @@ module.exports = function(options) {
             },
             ClassificaçãoCad: [
               {
-                'Classe': 'Fornecedor'
+                Classe: 'Fornecedor'
               }
             ]
           })
@@ -2187,7 +2203,7 @@ module.exports = function(options) {
                 done();
               });
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('then lets recreate lidia as the first time', function(done) {
         cadAtivo
@@ -2204,15 +2220,14 @@ module.exports = function(options) {
                   id: '111',
                   DESCEVENTO: 'Category 111'
                 }
-              },
-                {
-                  VALOR: 250.02,
-                  DATAVENC: '2015-09-23',
-                  categoria: {
-                    id: '222',
-                    DESCEVENTO: 'Category 222'
-                  }
-                }]
+              }, {
+                VALOR: 250.02,
+                DATAVENC: '2015-09-23',
+                categoria: {
+                  id: '222',
+                  DESCEVENTO: 'Category 222'
+                }
+              }]
             },
             ClassificaçãoCad: [
               {
@@ -2242,11 +2257,10 @@ module.exports = function(options) {
         lidia.fornecedor.docpagvc[0].categoria = [{
           id: '333',
           DESCEVENTO: 'Category 333'
-        },
-          {
-            id: '444',
-            DESCEVENTO: 'Category 444'
-          }];
+        }, {
+          id: '444',
+          DESCEVENTO: 'Category 444'
+        }];
         cadAtivo
           .update(lidia, {where: {id: lidia.id, updatedAt: lidia.updatedAt}})
           .then(function() {
@@ -2297,7 +2311,7 @@ module.exports = function(options) {
           })
           .catch(function(err) {
             done(err);
-          })
+          });
       });
     });
 
@@ -2306,13 +2320,14 @@ module.exports = function(options) {
         cadAtivo.fornecedor.docpagvc.categoria.validate(
           'do not alter id', function(was) {
             if (was && this.id !== was.id) {
-              throw new Error('id cannot be modified')
+              throw new Error('id cannot be modified');
             }
           }
         );
         done();
       });
       it('should not be valid due to missing FORNECEDOR=99', function(done) {
+        lidia.fornecedor.NUMERO = null;
         lidia.validate()
           .then(function() {
             done(new Error('Validated invalid instance'));
@@ -2324,9 +2339,7 @@ module.exports = function(options) {
             expect(error.errors[0].path).to.equal('Only in fornecedor');
             done();
           })
-          .catch(function(error) {
-            done(error);
-          })
+          .catch(logError(done));
       });
       it('should be valid due to property FORNECEDOR=99', function(done) {
         lidia.fornecedor.NUMERO = '99';
@@ -2336,7 +2349,7 @@ module.exports = function(options) {
           })
           .catch(function(error) {
             done(error);
-          })
+          });
       });
       it('should not be valid due to categoria cant have id changed', function(done) {
         lidia.fornecedor.docpagvc[0].categoria.id = 'X';
@@ -2351,9 +2364,7 @@ module.exports = function(options) {
             expect(error.errors[0].path).to.equal('do not alter id');
             done();
           })
-          .catch(function(error) {
-            done(error);
-          });
+          .catch(logError(done));
       });
       it('should not be valid too when validating the entity', function(done) {
         lidia.validate()
@@ -2404,7 +2415,7 @@ module.exports = function(options) {
             jessica.NOMECAD.should.equal('Jessica');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('then be modified and saved again', function(done) {
         jessica.NUMERO = '123';
@@ -2417,7 +2428,7 @@ module.exports = function(options) {
             expect(jessica.updatedAt > updatedAt).to.equal(true);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('then can be destroyed', function(done) {
         jessica
@@ -2428,7 +2439,7 @@ module.exports = function(options) {
             jessica.should.not.have.property('createdAt');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('then cannot be destroyed due to be new again', function(done) {
         jessica
@@ -2442,8 +2453,70 @@ module.exports = function(options) {
             expect(error.message).to.equal('Instance is new');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
+
+      describe('without knowing what level it is', function() {
+        var lucia;
+        var vcto = [];
+        before(function(done) {
+          lucia = cadAtivo.createInstance({
+            NOMECAD: 'Lucia',
+            NUMERO: '7',
+            docpagvc: [{
+              VALOR: 100.01,
+              DATAVENC: '2015-08-23'
+            }, {
+              VALOR: 200.02,
+              DATAVENC: '2015-09-23'
+            }],
+            fornecedor: {
+              SIGLAFOR: 'Lucia as fornecedor',
+              NUMERO: '99',
+              docpagvc: [{
+                VALOR: 300.01,
+                DATAVENC: '2015-08-23',
+                categoria: {
+                  id: '111',
+                  DESCEVENTO: 'Category 111'
+                }
+              }, {
+                VALOR: 400.02,
+                DATAVENC: '2015-09-23'
+              }]
+            },
+            ClassificaçãoCad: [
+              {
+                Classe: 'Fornecedor'
+              }
+            ]
+          });
+          vcto[0] = lucia.docpagvc[0];
+          vcto[1] = lucia.docpagvc[1];
+          vcto[2] = lucia.fornecedor.docpagvc[0];
+          vcto[3] = lucia.fornecedor.docpagvc[1];
+          done();
+        });
+        //it('should be saved to disk using any component', function(done) {
+        //  vcto[3]
+        //    .save()
+        //    .then(function() {
+        //      logObj('lucia', lucia)
+        //      logObj('vcto[3]', vcto[3])
+        //      lucia.should.have.property('id');
+        //      lucia.should.have.property('updatedAt');
+        //      lucia.should.have.property('createdAt');
+        //      lucia.should.have.property('NOMECAD');
+        //      lucia.NOMECAD.should.equal('Lucia');
+        //      lucia.should.have.property('docpagvc');
+        //      lucia.should.have.property('fornecedor');
+        //      lucia.fornecedor.should.have.property('docpagvc');
+        //      done();
+        //    })
+        //    .catch(logError(done));
+        //});
+      });
+
     });
 
     describe('querying', function() {
@@ -2580,7 +2653,7 @@ module.exports = function(options) {
             expect(recordset.length).to.above(0);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
 
     });
@@ -2602,7 +2675,7 @@ module.exports = function(options) {
             recordset[0].should.have.property('Nome');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
     });
 
@@ -2641,7 +2714,7 @@ module.exports = function(options) {
               });
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should fetch undefined from those later defined enum columns', function(done) {
         cadAtivo
@@ -2656,7 +2729,7 @@ module.exports = function(options) {
             expect(record.destino[0].futureEnum).to.equal(undefined);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should update destino all alone', function(done) {
         cadAtivo
@@ -2680,7 +2753,7 @@ module.exports = function(options) {
                   });
               });
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should be saved as a new record if you remove the foreign key', function(done) {
         var destinoId = beth.destino[0].id;
@@ -2690,7 +2763,7 @@ module.exports = function(options) {
             expect(beth.destino[0].id).to.above(destinoId);
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should not be saved if you change the the foreign key', function(done) {
         beth.destino[0].NUMLANORI = 0;
@@ -2704,7 +2777,7 @@ module.exports = function(options) {
             expect(error.message).to.contains('does not match primary key');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should not be saved if you remove the id', function(done) {
         beth.destino[0].NUMLANORI = beth.id;
@@ -2719,7 +2792,7 @@ module.exports = function(options) {
             expect(error.message).to.contains('has no previous data');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should delete destino all alone', function(done) {
         delete beth.destino[0].NUMLANORI;
@@ -2741,7 +2814,7 @@ module.exports = function(options) {
                   });
               });
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should throw an error when updating beth with destino already deleted', function(done) {
         beth.save()
@@ -2753,7 +2826,7 @@ module.exports = function(options) {
             expect(error.message).to.contains('One and only one record');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
       it('should throw an error when deleting beth with destino already deleted', function(done) {
         beth.destroy()
@@ -2765,7 +2838,7 @@ module.exports = function(options) {
             expect(error.message).to.contains('One and only one record');
             done();
           })
-          .catch(done);
+          .catch(logError(done));
       });
     });
 
