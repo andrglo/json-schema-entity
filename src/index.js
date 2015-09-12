@@ -220,6 +220,8 @@ function runModelValidations(is, was, data, errors) {
   }, Promise.resolve());
 }
 
+var isJseInstance = Symbol('isJseInstance');
+
 function newInstance(entity, data, isNew, parent) {
 
   var wasValues;
@@ -229,9 +231,9 @@ function newInstance(entity, data, isNew, parent) {
     this.saveWas();
   }
 
-  Instance.prototype.isNew = isNew;
+  Instance.prototype[isJseInstance] = true;
 
-  Instance.prototype.isJseInstance = true;
+  Instance.prototype.isNew = isNew;
 
   Instance.prototype.was = function() {
     return wasValues;
@@ -766,7 +768,7 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
           }
-          return (entity.isJseInstance ?
+          return (entity[isJseInstance] ?
             Promise.resolve([entity.was()]) :
             data.methods.fetch(key, options))
             .then(function(was) {
@@ -779,7 +781,7 @@ module.exports = function(schemaName, schema, config) {
               assert(was.length === 1);
 
               var validations;
-              if (entity.isJseInstance) {
+              if (entity[isJseInstance]) {
                 validations = entity.validate();
               } else {
                 entity = _.extend({}, was[0], entity);
@@ -824,7 +826,7 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = key.where.updatedAt || null;
           }
-          return (entity && entity.isJseInstance ?
+          return (entity && entity[isJseInstance] ?
             Promise.resolve([entity.was()]) :
             data.methods.fetch(key, options))
             .then(function(was) {
@@ -1150,5 +1152,5 @@ function initInstance(instance, record, data, isNew, parent) {
     instance.createdAt = record.createdAt;
     instance.updatedAt = record.updatedAt;
   }
-  return instance.isJseInstance ? instance : newInstance(instance, data, isNew, parent);
+  return instance[isJseInstance] ? instance : newInstance(instance, data, isNew, parent);
 }
