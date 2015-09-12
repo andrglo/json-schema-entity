@@ -2491,6 +2491,34 @@ module.exports = function(options) {
             })
             .catch(logError(done));
         });
+        it('could be saved to disk using any component via entity create', function(done) {
+          vcto[3]
+            .entity()
+            .create({NOMECAD: 'John Doe'})
+            .then(function(record) {
+              record.should.have.property('id');
+              record.should.have.property('updatedAt');
+              record.should.have.property('createdAt');
+              record.should.have.property('NOMECAD');
+              record.NOMECAD.should.equal('John Doe');
+              done();
+            })
+            .catch(logError(done));
+        });
+        it('could be saved to disk using entiy via entity create', function(done) {
+          lucia
+            .entity()
+            .create({NOMECAD: 'Mary Lou'})
+            .then(function(record) {
+              record.should.have.property('id');
+              record.should.have.property('updatedAt');
+              record.should.have.property('createdAt');
+              record.should.have.property('NOMECAD');
+              record.NOMECAD.should.equal('Mary Lou');
+              done();
+            })
+            .catch(logError(done));
+        });
         it('if we push another vcto it should be mutated to instance after save', function(done) {
           var newVcto = {
             VALOR: 500.03,

@@ -236,6 +236,10 @@ function newInstance(entity, data, isNew, parent) {
     oldValues = _.cloneDeep(this);
   };
 
+  Instance.prototype.entity = function() {
+    return data.entity.public;
+  };
+
   Instance.prototype.validate = function() {
     return runValidations(this, oldValues, data);
   };
