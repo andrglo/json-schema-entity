@@ -110,20 +110,20 @@ describe('postgres', function() {
   });
 });
 
-describe('mssql', function() {
-  if (process.env.CI) {
-    return;
-  }
-  var duration;
-  before(function() {
-    duration = process.hrtime();
-  });
-  spec(mssqlOptions);
-  after(function() {
-    duration = process.hrtime(duration);
-    gutil.log('Mssql finished after', gutil.colors.magenta(pretty(duration)));
-  });
-});
+//describe('mssql', function() {
+//  if (process.env.CI) {
+//    return;
+//  }
+//  var duration;
+//  before(function() {
+//    duration = process.hrtime();
+//  });
+//  spec(mssqlOptions);
+//  after(function() {
+//    duration = process.hrtime(duration);
+//    gutil.log('Mssql finished after', gutil.colors.magenta(pretty(duration)));
+//  });
+//});
 
 after(function() {
   if (!process.env.CI) {

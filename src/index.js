@@ -239,21 +239,16 @@ function newInstance(entity, data, isNew) {
   };
 
   Instance.prototype.save = function(options) {
-    var self = this;
     if (isNew) {
       return data.entity.methods.create(this, null, options)
         .then(function(res) {
           isNew = false;
           oldValues = _.cloneDeep(res); // todo should be in master table
-          //clear(self);
-          //_.extend(self, res);
         });
     }
     return data.entity.methods.update(this, null, options)
       .then(function(res) {
         oldValues = _.cloneDeep(res);
-        //clear(self);
-        //_.extend(self, res);
       });
   };
 
@@ -289,7 +284,7 @@ function newInstance(entity, data, isNew) {
 
 function buildEntity(record, data, isNew, fromFetch, instance) {
   debug('Entity will be built:', data.key);
-  var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data);
+  var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data, isNew);
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
@@ -321,15 +316,8 @@ function buildEntity(record, data, isNew, fromFetch, instance) {
       }
     }
   });
-  if (instance) {
-    if (instance.saveOld) {
-      instance.saveOld();
-      return instance;
-    } else {
-      return newInstance(entity, data, isNew);
-    }
-  }
-  return newInstance(entity, data, isNew);
+  entity.saveOld();
+  return entity;
 }
 
 function runHooks(hooks, model, transaction, data) {
@@ -1116,7 +1104,7 @@ function findProperty(name, properties) {
   return property;
 }
 
-function initInstance(instance, record, data) {
+function initInstance(instance, record, data, isNew) {
 
   function clearNulls(obj) {
     Object.keys(obj).forEach(function(key) {
@@ -1148,5 +1136,5 @@ function initInstance(instance, record, data) {
     instance.createdAt = record.createdAt;
     instance.updatedAt = record.updatedAt;
   }
-  return instance;
+  return instance.saveOld ? instance : newInstance(instance, data, isNew);
 }

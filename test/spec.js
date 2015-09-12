@@ -2476,6 +2476,7 @@ module.exports = function(options) {
           vcto[3] = lucia.fornecedor.docpagvc[1];
           done();
         });
+        //todo test the message: One and only one record should have been deleted
         //it('should be saved to disk using any component', function(done) {
         //  vcto[3]
         //    .save()
