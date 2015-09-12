@@ -230,6 +230,8 @@ function newInstance(entity, data, isNew, parent) {
     _.extend(this, values);
   }
 
+  Instance.prototype.isNew = isNew;
+
   Instance.prototype.saveOld = function() {
     oldValues = _.cloneDeep(this);
   };
@@ -240,10 +242,10 @@ function newInstance(entity, data, isNew, parent) {
 
   Instance.prototype.save = function(options) {
     var entity = parent || this;
-    if (isNew) {
+    if (entity.isNew) {
       return data.entity.methods.create(entity, null, options)
         .then(function(res) {
-          isNew = false;
+          entity.isNew = false;
           oldValues = _.cloneDeep(res); // todo should be in master table
         });
     }
@@ -254,7 +256,8 @@ function newInstance(entity, data, isNew, parent) {
   };
 
   Instance.prototype.destroy = function(options) {
-    if (isNew) {
+    var entity = parent || this;
+    if (entity.isNew) {
       return new Promise(function(resolve, reject) {
         reject(new EntityError({
           type: 'InvalidOperation',
@@ -262,7 +265,6 @@ function newInstance(entity, data, isNew, parent) {
         }));
       });
     }
-    var entity = parent || this;
     var primaryKey = data.entity.primaryKeyAttributes[0];
     var key = {where: {}};
     key.where[primaryKey] = entity[primaryKey];
@@ -271,7 +273,7 @@ function newInstance(entity, data, isNew, parent) {
     }
     return data.entity.methods.destroy(key, options, entity)
       .then(function() {
-        isNew = true;
+        entity.isNew = true;
         delete entity.createdAt;
         delete entity.updatedAt;
       });
@@ -451,7 +453,6 @@ function update(entity, was, options, data) {
                   return obj;
                 }
               }
-              log(entity, '----', entities)
               throw new EntityError({
                 type: 'InvalidData',
                 message: 'Record ' + JSON.stringify(entity) + ' in association ' +
