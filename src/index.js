@@ -288,6 +288,10 @@ function newInstance(entity, data, isNew, parent) {
 function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   debug('Entity will be built:', data.key);
   var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data, isNew, parent);
+  if (instance && !instance.save) {
+    Object.setPrototypeOf(instance, Object.getPrototypeOf(entity));
+    entity = instance;
+  }
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
@@ -296,16 +300,12 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
         data.adapter.extractRecordset(record[key], association.data.coerce) :
         _.isArray(record[key]) ? record[key] : [record[key]];
       var instanceSet = instance ?
-        (_.isArray(instance[key]) ? instance[key] : [instance[key]]) :
+        _.isArray(instance[key]) ? instance[key] : [instance[key]] :
         void 0;
-      for (let i = 0; i < recordset.length; i++) {
-        let inst = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent || entity);
-        if (instanceSet && instanceSet[i]) {
-          if (instanceSet[i].saveOld) {
-            _.extend(instanceSet[i], inst);
-          } else {
-            instanceSet[i] = inst;
-          }
+      for (var i = 0; i < recordset.length; i++) {
+        var inst = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent || entity);
+        if (instance) {
+          instanceSet[i] = inst;
         } else {
           recordset[i] = inst;
         }

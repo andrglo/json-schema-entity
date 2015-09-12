@@ -2474,7 +2474,6 @@ module.exports = function(options) {
           vcto[3] = lucia.fornecedor.docpagvc[1];
           done();
         });
-        //todo test the message: One and only one record should have been deleted
         it('should be saved to disk using any component', function(done) {
           vcto[3]
             .save()
@@ -2487,6 +2486,27 @@ module.exports = function(options) {
               lucia.should.have.property('docpagvc');
               lucia.should.have.property('fornecedor');
               lucia.fornecedor.should.have.property('docpagvc');
+              vcto[3].should.have.property('id');
+              done();
+            })
+            .catch(logError(done));
+        });
+        it('if we push another vcto it should be mutated to instance after save', function(done) {
+          var newVcto = {
+            VALOR: 500.03,
+            DATAVENC: '2015-10-23',
+            categoria: {
+              id: '777',
+              DESCEVENTO: 'Category 777'
+            }
+          };
+          lucia.fornecedor.docpagvc.push(newVcto);
+          lucia
+            .save()
+            .then(function() {
+              newVcto.should.have.property('id');
+              expect(lucia.fornecedor.docpagvc[2] === newVcto).to.equal(true);
+              newVcto.should.have.property('save');
               done();
             })
             .catch(logError(done));
