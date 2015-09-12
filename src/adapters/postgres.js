@@ -3,8 +3,6 @@ var assert = require('assert');
 var debug = require('debug')('json-schema-entity');
 var common = require('./common');
 
-var log = console.log;
-
 module.exports = function(db) {
 
   var adapter = {};
@@ -56,7 +54,9 @@ module.exports = function(db) {
     _.forEach(jsonset, function(record) {
       coerce.map(function(coercion) {
         debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
-        if (record[coercion.property]) record[coercion.property] = coercion.fn(record[coercion.property]);
+        if (record[coercion.property]) {
+          record[coercion.property] = coercion.fn(record[coercion.property]);
+        }
         debug('Coercion after', coercion.property, typeof record[coercion.property], record[coercion.property]);
       });
     });
@@ -109,7 +109,7 @@ module.exports = function(db) {
         return function(value) {
           if (timezone === 'ignore') {
             var d = new Date(value + 'Z');
-            return new Date(d.getTime() + (d.getTimezoneOffset() * 60000));
+            return new Date(d.getTime() + d.getTimezoneOffset() * 60000);
           } else {
             return new Date(value);
           }

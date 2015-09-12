@@ -2487,6 +2487,16 @@ module.exports = function(options) {
               lucia.should.have.property('fornecedor');
               lucia.fornecedor.should.have.property('docpagvc');
               vcto[3].should.have.property('id');
+              var was = lucia.was();
+              was.should.have.property('id');
+              was.should.have.property('updatedAt');
+              was.should.have.property('createdAt');
+              was.should.have.property('NOMECAD');
+              was.NOMECAD.should.equal('Lucia');
+              was.should.have.property('docpagvc');
+              was.should.have.property('fornecedor');
+              was.fornecedor.should.have.property('docpagvc');
+              vcto[3].was().should.have.property('id');
               done();
             })
             .catch(logError(done));

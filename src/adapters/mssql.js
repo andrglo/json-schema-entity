@@ -126,7 +126,9 @@ module.exports = function(db) {
     _.forEach(isArray ? json : [json], function(record) {
       coerce.map(function(coercion) {
         debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
-        if (record[coercion.property]) record[coercion.property] = coercion.fn(record[coercion.property]);
+        if (record[coercion.property]) {
+          record[coercion.property] = coercion.fn(record[coercion.property]);
+        }
         debug('Coercion after', coercion.property, typeof record[coercion.property], record[coercion.property]);
       });
     });

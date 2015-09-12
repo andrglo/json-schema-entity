@@ -6,14 +6,18 @@ var sqlView = require('sql-view');
 var jst = require('json-schema-table');
 var debug = require('debug')('json-schema-entity');
 
-var log = console.log;
+//var log = console.log;
 
 function EntityError(options) {
   options = options || {};
   this.name = options.name || 'EntityError';
   this.message = options.message || 'Entity error';
-  if (options.errors) this.errors = options.errors;
-  if (options.type) this.type = options.type;
+  if (options.errors) {
+    this.errors = options.errors;
+  }
+  if (options.type) {
+    this.type = options.type;
+  }
 }
 EntityError.prototype = Object.create(Error.prototype);
 EntityError.prototype.constructor = EntityError;
@@ -92,12 +96,12 @@ function runValidations(is, was, data) {
 
 function decimalPlaces(num) {
   var match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
-  return (match && Math.max(
+  return match && Math.max(
       0,
       // Number of digits right of decimal point.
       (match[1] ? match[1].length : 0)
         // Adjust for scientific notation.
-      - (match[2] ? +match[2] : 0))) || 0;
+      - (match[2] ? +match[2] : 0)) || 0;
 }
 
 function runFieldValidations(is, was, data, errors) {
@@ -188,17 +192,17 @@ function runFieldValidations(is, was, data, errors) {
 function runModelValidations(is, was, data, errors) {
   return _.reduce(data.validate, function(chain, validation) {
     return chain.then(function() {
-      if (!((is && !was && validation.options.onCreate) ||
-        (is && was && validation.options.onUpdate) ||
-        (!is && was && validation.options.onDestroy))) {
+      if (!(is && !was && validation.options.onCreate ||
+        is && was && validation.options.onUpdate ||
+        !is && was && validation.options.onDestroy)) {
         return;
       }
       debug('Running validation:', validation.id);
       var res;
       try {
-        res = validation.fn.call(is || was, is ? was : void 0)
+        res = validation.fn.call(is || was, is ? was : void 0);
       } catch (err) {
-        errors.push({path: validation.id, message: err.message})
+        errors.push({path: validation.id, message: err.message});
       }
       if (res && res.then) {
         return res.catch(function(err) {
@@ -218,10 +222,11 @@ function runModelValidations(is, was, data, errors) {
 
 function newInstance(entity, data, isNew, parent) {
 
-  var wasValues = _.cloneDeep(entity);
+  var wasValues;
 
   function Instance(values) {
     _.extend(this, values);
+    this.saveWas();
   }
 
   Instance.prototype.isNew = isNew;
@@ -248,15 +253,11 @@ function newInstance(entity, data, isNew, parent) {
     var entity = parent || this;
     if (entity.isNew) {
       return data.entity.methods.create(entity, null, options)
-        .then(function(res) {
+        .then(function() {
           entity.isNew = false;
-          wasValues = _.cloneDeep(res); // todo should be in master table
         });
     }
-    return data.entity.methods.update(entity, null, options)
-      .then(function(res) {
-        wasValues = _.cloneDeep(res);
-      });
+    return data.entity.methods.update(entity, null, options);
   };
 
   Instance.prototype.destroy = function(options) {
@@ -373,7 +374,7 @@ function create(entity, options, data) {
             const associationKey = association.data.key;
             var associatedEntity = entity[associationKey];
             const recordIsArray = _.isArray(associatedEntity);
-            var hasMany = (recordIsArray && associatedEntity.length > 1) ||
+            var hasMany = recordIsArray && associatedEntity.length > 1 ||
               association.type === 'hasMany';
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
@@ -426,7 +427,7 @@ function update(entity, was, options, data) {
       debug('Will update', data.key, 'key', options.where);
       return data.adapter.update(record, data, options)
         .then(function(res) {
-          assert(res[0] === 1 || (typeof res === 'object' && res[0] === void 0),
+          assert(res[0] === 1 || typeof res === 'object' && res[0] === void 0,
             'Record of ' + data.key + ' found ' + res[0] + ' times for update, expected 1.' +
             ' Check if your entity has two association with the same foreign key');
           var modifiedEntity = record;
@@ -465,7 +466,7 @@ function update(entity, was, options, data) {
             };
 
             var associatedIsEntity = entity[associationKey];
-            var hasMany = (_.isArray(associatedIsEntity) && associatedIsEntity.length > 1) ||
+            var hasMany = _.isArray(associatedIsEntity) && associatedIsEntity.length > 1 ||
               association.type === 'hasMany';
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
@@ -569,7 +570,7 @@ function destroy(entity, options, data) {
         associatedEntity = associatedEntity === void 0 || recordIsArray ? associatedEntity : [associatedEntity];
         return _.reduce(associatedEntity, function(chain, entity) {
           return chain.then(function() {
-            return destroy(entity, {transaction: options.transaction}, association.data)
+            return destroy(entity, {transaction: options.transaction}, association.data);
           });
         }, chain);
       }, Promise.resolve()).then(function() {
@@ -583,7 +584,7 @@ function destroy(entity, options, data) {
         return data.adapter.destroy(data, options);
       });
     }).then(function(entity) {
-      return runHooks(['afterDestroy', 'afterDelete'], entity, options.transaction, data)
+      return runHooks(['afterDestroy', 'afterDelete'], entity, options.transaction, data);
     });
 }
 
@@ -616,7 +617,7 @@ module.exports = function(schemaName, schema, config) {
       description: schema && schema.description,
       key: identity.as || identity.name,
       associations: [],
-      requestedProperties: (schema && schema.properties) || {},
+      requestedProperties: schema && schema.properties || {},
       propertiesList: [],
       schema: {},
       primaryKey: schema.primaryKey,
@@ -659,7 +660,7 @@ module.exports = function(schemaName, schema, config) {
           data.methods[association.key] = association.methods;
           data.public[association.key] = association.public;
           publicAssociationMethods.map(function(name) {
-            data.public[association.key][name] = association.methods[name]
+            data.public[association.key][name] = association.methods[name];
           });
           data.associations.push({type: 'hasMany', data: association});
           rebuild();
@@ -672,7 +673,7 @@ module.exports = function(schemaName, schema, config) {
           data.methods[association.key] = association.methods;
           data.public[association.key] = association.public;
           publicAssociationMethods.map(function(name) {
-            data.public[association.key][name] = association.methods[name].bind(association.methods)
+            data.public[association.key][name] = association.methods[name].bind(association.methods);
           });
           data.associations.push({type: 'hasOne', data: association});
           rebuild();
@@ -782,7 +783,7 @@ module.exports = function(schemaName, schema, config) {
                 validations = entity.validate();
               } else {
                 entity = _.extend({}, was[0], entity);
-                validations = runValidations(entity, was[0], data)
+                validations = runValidations(entity, was[0], data);
               }
               return validations
                 .then(function() {
@@ -894,7 +895,7 @@ module.exports = function(schemaName, schema, config) {
     function addHook(name, id, fn) {
       fn = fn || id;
       id = typeof id === 'string' ? id : (methodId++).toString();
-      data.hooks[name].push({id: id, fn: fn, name: name})
+      data.hooks[name].push({id: id, fn: fn, name: name});
     }
 
     [
@@ -960,7 +961,7 @@ module.exports = function(schemaName, schema, config) {
 function getForeignKey(table, properties) {
   var foreignKey;
   _.forEach(properties, function(property, name) {
-    var $ref = property.$ref || (property.schema && property.schema.$ref);
+    var $ref = property.$ref || property.schema && property.schema.$ref;
     if ($ref) {
       var referencedTableName = getReferencedTableName($ref);
       if (referencedTableName === table) {
@@ -1021,9 +1022,12 @@ function buildTable(data) {
     type: 'object',
     properties: {}
   };
-  if (data.title) data.schema.title = data.title;
-  if (data.description) data.schema.description = data.description;
-  var hasRequestedProperties = data.requestedProperties !== void 0;
+  if (data.title) {
+    data.schema.title = data.title;
+  }
+  if (data.description) {
+    data.schema.description = data.description;
+  }
   data.properties = {};
   _.forEach(data.requestedProperties, function(property, name) {
     data.properties[name] = data.requestedProperties[name];
@@ -1104,10 +1108,10 @@ function findProperty(name, properties) {
   var property = properties[name];
   if (property === void 0) {
     property = _.reduce(properties, function(res, prop, propName) {
-        return res ? res : (name === propName ? prop : void 0);
+        return res ? res : name === propName ? prop : void 0;
       }, void 0) ||
       _.reduce(properties, function(res, prop) {
-        return res ? res : (prop.field && name === prop.field ? prop : void 0);
+        return res ? res : prop.field && name === prop.field ? prop : void 0;
       }, void 0);
   }
   assert(property, 'Property "' + name + '" not found');

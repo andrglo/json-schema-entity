@@ -42,7 +42,7 @@ exports.create = function(record, data, options) {
     fields.reduce(function(fields, field) {
       return fields + (fields ? ',' : '') + data.public.db.wrap(field);
     }, '')).replace('<values>',
-    fields.reduce(function(fields, field) {
+    fields.reduce(function(fields) {
       return fields + (fields ? ',' : '') + '$' + index++;
     }, ''));
   debug(insertCommand, params);
