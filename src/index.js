@@ -222,7 +222,7 @@ function isInstance(entity) {
   }
 }
 
-function newInstance(entity, data, isNew) {
+function newInstance(entity, data, isNew, parent) {
 
   var oldValues = _.cloneDeep(entity);
 
@@ -239,14 +239,15 @@ function newInstance(entity, data, isNew) {
   };
 
   Instance.prototype.save = function(options) {
+    var entity = parent || this;
     if (isNew) {
-      return data.entity.methods.create(this, null, options)
+      return data.entity.methods.create(entity, null, options)
         .then(function(res) {
           isNew = false;
           oldValues = _.cloneDeep(res); // todo should be in master table
         });
     }
-    return data.entity.methods.update(this, null, options)
+    return data.entity.methods.update(entity, null, options)
       .then(function(res) {
         oldValues = _.cloneDeep(res);
       });
@@ -261,18 +262,18 @@ function newInstance(entity, data, isNew) {
         }));
       });
     }
-    var self = this;
-    var primaryKey = data.primaryKeyAttributes[0];
+    var entity = parent || this;
+    var primaryKey = data.entity.primaryKeyAttributes[0];
     var key = {where: {}};
-    key.where[primaryKey] = this[primaryKey];
-    if (data.timestamps) {
-      key.where.updatedAt = this.updatedAt || null;
+    key.where[primaryKey] = entity[primaryKey];
+    if (data.entity.timestamps) {
+      key.where.updatedAt = entity.updatedAt || null;
     }
-    return data.entity.methods.destroy(key, options, this)
+    return data.entity.methods.destroy(key, options, entity)
       .then(function() {
         isNew = true;
-        delete self.createdAt;
-        delete self.updatedAt;
+        delete entity.createdAt;
+        delete entity.updatedAt;
       });
   };
 
@@ -282,9 +283,9 @@ function newInstance(entity, data, isNew) {
   return new Instance(entity);
 }
 
-function buildEntity(record, data, isNew, fromFetch, instance) {
+function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   debug('Entity will be built:', data.key);
-  var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data, isNew);
+  var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data, isNew, parent);
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
@@ -296,7 +297,7 @@ function buildEntity(record, data, isNew, fromFetch, instance) {
         (_.isArray(instance[key]) ? instance[key] : [instance[key]]) :
         void 0;
       for (let i = 0; i < recordset.length; i++) {
-        let inst = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i]);
+        let inst = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent || entity);
         if (instanceSet && instanceSet[i]) {
           if (instanceSet[i].saveOld) {
             _.extend(instanceSet[i], inst);
@@ -503,7 +504,7 @@ function update(entity, was, options, data) {
             return _.reduce(toBeDeleted, function(chain, entity) {
               debug('ForeignKey in update/delete', association.data.foreignKey, 'key', data.primaryKeyAttributes[0]);
               return chain.then(function() {
-                return destroy(entity, options, association.data)
+                return destroy(entity, options, association.data);
               });
             }, chain).then(function() {
               return _.reduce(toBeUpdated, function(chain, entity) {
@@ -574,7 +575,7 @@ function destroy(entity, options, data) {
         if (data.timestamps) {
           options.where.updatedAt = entity.updatedAt || null;
         }
-        return data.adapter.destroy(data, options)
+        return data.adapter.destroy(data, options);
       });
     }).then(function(entity) {
       return runHooks(['afterDestroy', 'afterDelete'], entity, options.transaction, data)
@@ -1104,7 +1105,7 @@ function findProperty(name, properties) {
   return property;
 }
 
-function initInstance(instance, record, data, isNew) {
+function initInstance(instance, record, data, isNew, parent) {
 
   function clearNulls(obj) {
     Object.keys(obj).forEach(function(key) {
@@ -1136,5 +1137,5 @@ function initInstance(instance, record, data, isNew) {
     instance.createdAt = record.createdAt;
     instance.updatedAt = record.updatedAt;
   }
-  return instance.saveOld ? instance : newInstance(instance, data, isNew);
+  return instance.saveOld ? instance : newInstance(instance, data, isNew, parent);
 }

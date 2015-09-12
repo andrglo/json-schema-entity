@@ -2477,24 +2477,22 @@ module.exports = function(options) {
           done();
         });
         //todo test the message: One and only one record should have been deleted
-        //it('should be saved to disk using any component', function(done) {
-        //  vcto[3]
-        //    .save()
-        //    .then(function() {
-        //      logObj('lucia', lucia)
-        //      logObj('vcto[3]', vcto[3])
-        //      lucia.should.have.property('id');
-        //      lucia.should.have.property('updatedAt');
-        //      lucia.should.have.property('createdAt');
-        //      lucia.should.have.property('NOMECAD');
-        //      lucia.NOMECAD.should.equal('Lucia');
-        //      lucia.should.have.property('docpagvc');
-        //      lucia.should.have.property('fornecedor');
-        //      lucia.fornecedor.should.have.property('docpagvc');
-        //      done();
-        //    })
-        //    .catch(logError(done));
-        //});
+        it('should be saved to disk using any component', function(done) {
+          vcto[3]
+            .save()
+            .then(function() {
+              lucia.should.have.property('id');
+              lucia.should.have.property('updatedAt');
+              lucia.should.have.property('createdAt');
+              lucia.should.have.property('NOMECAD');
+              lucia.NOMECAD.should.equal('Lucia');
+              lucia.should.have.property('docpagvc');
+              lucia.should.have.property('fornecedor');
+              lucia.fornecedor.should.have.property('docpagvc');
+              done();
+            })
+            .catch(logError(done));
+        });
       });
 
     });
