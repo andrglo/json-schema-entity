@@ -1,3 +1,5 @@
+'use strict';
+
 var _ = require('lodash');
 var assert = require('assert');
 var sqlView = require('sql-view');
@@ -214,15 +216,13 @@ function runModelValidations(is, was, data, errors) {
   }, Promise.resolve());
 }
 
-
-
 function isInstance(entity) {
   if (entity.save) { //todo refactor
     return entity;
   }
 }
 
-function newInstace(entity, data, isNew) {
+function newInstance(entity, data, isNew) {
 
   var oldValues = _.cloneDeep(entity);
 
@@ -237,12 +237,6 @@ function newInstace(entity, data, isNew) {
   Instance.prototype.validate = function() {
     return runValidations(this, oldValues, data);
   };
-
-  function clear(obj) {
-    Object.keys(obj).forEach(function(key) {
-      delete obj[key];
-    });
-  }
 
   Instance.prototype.save = function(options) {
     var self = this;
@@ -303,27 +297,24 @@ function buildEntity(record, data, isNew, fromFetch, instance) {
       var recordset = fromFetch ?
         data.adapter.extractRecordset(record[key], association.data.coerce) :
         _.isArray(record[key]) ? record[key] : [record[key]];
-      recordset = recordset.map(function(record) {
-        return buildEntity(record, association.data, isNew, fromFetch, instance ? instance[key] : void 0);
-      });
-      if (instance && instance.saveOld) {
-        if (instance[key]) {
-          recordset.map(function(rec) {
-             //todo
-          });
-
-          if (_.isArray(instance[key])) {
-            var i = 0;
-            instance[key].map(function(instance) {
-              _.extend(instance, recordset[i++])
-            })
+      var instanceSet = instance ?
+        (_.isArray(instance[key]) ? instance[key] : [instance[key]]) :
+        void 0;
+      for (let i = 0; i < recordset.length; i++) {
+        let inst = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i]);
+        if (instanceSet && instanceSet[i]) {
+          if (instanceSet[i].saveOld) {
+            _.extend(instanceSet[i], inst);
           } else {
-            _.extend(instance[key], recordset[0])
+            instanceSet[i] = inst;
           }
         } else {
-          entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
-            recordset[0] : recordset;
+          recordset[i] = inst;
         }
+      }
+      if (instance) {
+        instance[key] = recordset.length === 1 && association.type === 'hasOne' ?
+          instanceSet[0] : instanceSet;
       } else {
         entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
           recordset[0] : recordset;
@@ -335,10 +326,10 @@ function buildEntity(record, data, isNew, fromFetch, instance) {
       instance.saveOld();
       return instance;
     } else {
-      return newInstace(entity, data, isNew);
+      return newInstance(entity, data, isNew);
     }
   }
-  return newInstace(entity, data, isNew);
+  return newInstance(entity, data, isNew);
 }
 
 function runHooks(hooks, model, transaction, data) {

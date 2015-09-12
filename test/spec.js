@@ -933,9 +933,7 @@ module.exports = function(options) {
             any = record;
             done();
           })
-          .catch(function(error) {
-            done(error);
-          })
+          .catch(logError(done));
       });
       it('lets check the new cliente/fornecedor', function(done) {
         cadAtivo
@@ -966,7 +964,6 @@ module.exports = function(options) {
         any.DATNASC = null;
         any.save()
           .then(function() {
-            logObj('any', any)
             expect(any.DATNASC).to.equal(undefined);
             done();
           })
@@ -2238,9 +2235,7 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222');
             done();
           })
-          .catch(function(error) {
-            done(error);
-          });
+          .catch(logError(done));
       });
       it('should not accept to update lidia with one vcto with and two event each', function(done) {
         lidia.fornecedor.NUMERO = '99';
@@ -2262,9 +2257,7 @@ module.exports = function(options) {
             expect(error.errors).to.equal(undefined);
             done();
           })
-          .catch(function(error) {
-            done(error);
-          });
+          .catch(logError(done));
       });
       it('should now accept to update lidia with one vcto with one event', function(done) {
         lidia.fornecedor.NUMERO = '99';
@@ -2287,9 +2280,7 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222');
             done();
           })
-          .catch(function(error) {
-            done(error);
-          })
+          .catch(logError(done));
       });
       it('and then category 111 does not exists any longer', function(done) {
         tableEvento
@@ -2299,9 +2290,7 @@ module.exports = function(options) {
             expect(recordset.length).to.equal(0);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          });
+          .catch(logError(done));
       });
     });
 
@@ -2323,8 +2312,6 @@ module.exports = function(options) {
             done(new Error('Validated invalid instance'));
           })
           .catch(function(error) {
-            logObj('lidia', lidia)
-            logObj('err', error)
             expect(error.name).to.equal('EntityError');
             expect(error.errors).to.be.a('array');
             expect(error.errors.length).to.equal(1);
