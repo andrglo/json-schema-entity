@@ -216,15 +216,9 @@ function runModelValidations(is, was, data, errors) {
   }, Promise.resolve());
 }
 
-function isInstance(entity) {
-  if (entity.save) { //todo refactor
-    return entity;
-  }
-}
-
 function newInstance(entity, data, isNew, parent) {
 
-  var oldValues = _.cloneDeep(entity);
+  var wasValues = _.cloneDeep(entity);
 
   function Instance(values) {
     _.extend(this, values);
@@ -232,8 +226,14 @@ function newInstance(entity, data, isNew, parent) {
 
   Instance.prototype.isNew = isNew;
 
-  Instance.prototype.saveOld = function() {
-    oldValues = _.cloneDeep(this);
+  Instance.prototype.isJseInstance = true;
+
+  Instance.prototype.was = function() {
+    return wasValues;
+  };
+
+  Instance.prototype.saveWas = function() {
+    wasValues = _.cloneDeep(this);
   };
 
   Instance.prototype.entity = function() {
@@ -241,7 +241,7 @@ function newInstance(entity, data, isNew, parent) {
   };
 
   Instance.prototype.validate = function() {
-    return runValidations(this, oldValues, data);
+    return runValidations(this, wasValues, data);
   };
 
   Instance.prototype.save = function(options) {
@@ -250,12 +250,12 @@ function newInstance(entity, data, isNew, parent) {
       return data.entity.methods.create(entity, null, options)
         .then(function(res) {
           entity.isNew = false;
-          oldValues = _.cloneDeep(res); // todo should be in master table
+          wasValues = _.cloneDeep(res); // todo should be in master table
         });
     }
     return data.entity.methods.update(entity, null, options)
       .then(function(res) {
-        oldValues = _.cloneDeep(res);
+        wasValues = _.cloneDeep(res);
       });
   };
 
@@ -323,7 +323,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
       }
     }
   });
-  entity.saveOld();
+  entity.saveWas();
   return entity;
 }
 
@@ -765,7 +765,9 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
           }
-          return data.methods.fetch(key, options)
+          return (entity.isJseInstance ?
+            Promise.resolve([entity.was()]) :
+            data.methods.fetch(key, options))
             .then(function(was) {
               if (was.length === 0) {
                 throw new EntityError({
@@ -776,7 +778,7 @@ module.exports = function(schemaName, schema, config) {
               assert(was.length === 1);
 
               var validations;
-              if (isInstance(entity)) {
+              if (entity.isJseInstance) {
                 validations = entity.validate();
               } else {
                 entity = _.extend({}, was[0], entity);
@@ -821,7 +823,9 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = key.where.updatedAt || null;
           }
-          return data.methods.fetch(key, options)
+          return (entity && entity.isJseInstance ?
+            Promise.resolve([entity.was()]) :
+            data.methods.fetch(key, options))
             .then(function(was) {
               if (was.length === 0) {
                 throw new EntityError({
@@ -1142,5 +1146,5 @@ function initInstance(instance, record, data, isNew, parent) {
     instance.createdAt = record.createdAt;
     instance.updatedAt = record.updatedAt;
   }
-  return instance.saveOld ? instance : newInstance(instance, data, isNew, parent);
+  return instance.isJseInstance ? instance : newInstance(instance, data, isNew, parent);
 }
