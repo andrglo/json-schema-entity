@@ -80,8 +80,6 @@ module.exports = function(options) {
 
     before(function(done) {
       db = options.db;
-      delete CADASTRO.properties.createdAt; //todo its optional in the schema
-      delete CADASTRO.properties.updatedAt;
       tableCadastro = entity('CADASTRO', CADASTRO, {db: db}).useTimestamps();
       tableCadastro.validate('TEST', function() {
         if (!this.NUMERO) {

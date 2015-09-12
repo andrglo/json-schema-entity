@@ -257,12 +257,6 @@
     "futureEnum": {
       "type": "string",
       "maxLength": 1
-    },
-    "createdAt": {
-      "type": "datetime"
-    },
-    "updatedAt": {
-      "type": "datetime"
     }
   }
 }
