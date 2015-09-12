@@ -732,7 +732,7 @@ module.exports = function(schemaName, schema, config) {
                 });
             })
             .then(function(record) {
-              return buildEntity(record, data, false, false, isInstance(entity));
+              return buildEntity(record, data, false, false, entity);
             });
         },
         update: function(entity, key, options) {
@@ -788,7 +788,7 @@ module.exports = function(schemaName, schema, config) {
                     });
                 })
                 .then(function(record) {
-                  return buildEntity(record, data, false, false, isInstance(entity));
+                  return buildEntity(record, data, false, false, entity);
                 });
             });
         },

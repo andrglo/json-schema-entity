@@ -2511,8 +2511,22 @@ module.exports = function(options) {
             })
             .catch(logError(done));
         });
+        var jane;
+        it('will mutate a plain object to a instance after create', function(done) {
+          jane = {
+            NOMECAD: 'Jane'
+          };
+          cadAtivo
+            .create(jane)
+            .then(function(record) {
+              record.should.have.property('id');
+              record.should.have.property('save');
+              expect(jane).to.equal(record);
+              done();
+            })
+            .catch(logError(done));
+        });
       });
-
     });
 
     describe('querying', function() {
