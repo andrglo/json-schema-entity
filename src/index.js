@@ -6,7 +6,7 @@ var sqlView = require('sql-view');
 var jst = require('json-schema-table');
 var debug = require('debug')('json-schema-entity');
 
-//var log = console.log;
+var log = console.log;
 
 function EntityError(options) {
   options = options || {};
@@ -220,51 +220,150 @@ function runModelValidations(is, was, data, errors) {
   }, Promise.resolve());
 }
 
-var isJseInstance = Symbol('isJseInstance');
+function clearNulls(obj) {
+  Object.keys(obj).forEach(function(key) {
+    if (obj[key] === null) {
+      delete obj[key];
+    }
+  });
+}
 
-function newInstance(entity, data, isNew, parent) {
+const dataKey = Symbol('data');
+const parentKey = Symbol('parent');
+const tableIsNew = new WeakMap();
+const tableIsData = new WeakMap();
+const tableWasData = new WeakMap();
+class Record {
 
-  var wasValues;
+  constructor(instance, record, data, isNew, parent) {
 
-  function Instance(values) {
-    _.extend(this, values);
-    this.saveWas();
+    //clearNulls(record); //todo should be after fetch only
+    tableIsData.set(this, {});
+    //let wasData = {};
+
+    data.instanceMethods.map(function(method) {
+      Object.defineProperty(this, method.id, method.fn);
+    }, this);
+
+    _.forEach(data.properties, function(property, name) {
+      //todo check name for reserved words
+      Object.defineProperty(this, name, {
+        get: function() {
+          return tableIsData.get(this)[name];
+        },
+        set: function(value) {
+          if (value && value !== null) {
+            if (property.enum) {
+              let found;
+              let valueInLowerCase = value.substring(0, property.maxLength).toLowerCase();
+              _.forEach(property.enum, function(item) {
+                if (item.substring(0, property.maxLength).toLowerCase() === valueInLowerCase) {
+                  value = item;
+                  found = true;
+                  return false;
+                }
+              });
+              if (!found) {
+                throw new EntityError({
+                  type: 'InvalidColumnData',
+                  message: 'Invalid value', errors: [
+                    {
+                      path: name,
+                      message: 'Value \'' + value + '\' not valid. Options are: ' + property.enum.join()
+                    }
+                  ]
+                });
+              }
+            } else {
+              switch (property.type) {
+                case 'date':
+                  value = value instanceof Date ? value.toISOString().substr(0, 10) : value;
+                  break;
+                case 'number':
+                  value = Number(value);
+                  break;
+              }
+            }
+          }
+          tableIsData.get(this)[name] = value;
+        },
+        enumerable: true
+      });
+      this[name] = record[name];
+      //wasData[name] = this[name];
+    }, this);
+
+    _.forEach(data.associations, function(association) {
+      var name = association.data.key;
+      Object.defineProperty(this, name, {
+        get: function() {
+          return tableIsData.get(this)[name];
+        },
+        set: function(value) {
+          tableIsData.get(this)[name] = value;
+        },
+        enumerable: true
+      });
+    }, this);
+
+    if (data.timestamps) {
+      let is = tableIsData.get(this);
+      Object.defineProperty(this, 'createdAt', {
+        get: function() {
+          return tableIsData.get(this).createdAt;
+        },
+        set: function() {
+          throw new Error('todo');
+        },
+        enumerable: true
+      });
+      is.createdAt = record.createdAt;
+      //wasData.createdAt = this.createdAt;
+      Object.defineProperty(this, 'updatedAt', {
+        get: function() {
+          return tableIsData.get(this).updatedAt;
+        },
+        set: function() {
+          throw new Error('todo');
+        },
+        enumerable: true
+      });
+      is.updatedAt = record.updatedAt;
+      //wasData.createdAt = this.updatedAt;
+    }
+
+    this[dataKey] = data;
+    this[parentKey] = parent;
+    //tableWasData.set(this, wasData);
+    tableIsNew.set(this, isNew);
+
+    //Object.freeze(this);
+    //Object.freeze(wasData);
+
   }
 
-  Instance.prototype[isJseInstance] = true;
+  entity() {
+    return this[dataKey].entity.public;
+  }
 
-  Instance.prototype.isNew = isNew;
+  validate() {
+    return runValidations(this, tableWasData.get(this), this[dataKey]);
+  }
 
-  Instance.prototype.was = function() {
-    return wasValues;
-  };
-
-  Instance.prototype.saveWas = function() {
-    wasValues = _.cloneDeep(this);
-  };
-
-  Instance.prototype.entity = function() {
-    return data.entity.public;
-  };
-
-  Instance.prototype.validate = function() {
-    return runValidations(this, wasValues, data);
-  };
-
-  Instance.prototype.save = function(options) {
-    var entity = parent || this;
-    if (entity.isNew) {
-      return data.entity.methods.create(entity, null, options)
+  save(options) {
+    var entity = this[parentKey] || this;
+    if (tableIsNew.get(entity)) {
+      return this[dataKey].entity.methods.create(entity, null, options)
         .then(function() {
-          entity.isNew = false;
+          tableIsNew.set(entity, false);
         });
     }
-    return data.entity.methods.update(entity, null, options);
-  };
+    return this[dataKey].entity.methods.update(entity, null, options);
+  }
 
-  Instance.prototype.destroy = function(options) {
-    var entity = parent || this;
-    if (entity.isNew) {
+  destroy(options) {
+    var entity = this[parentKey] || this;
+    if (tableIsNew.get(entity)) {
       return new Promise(function(resolve, reject) {
         reject(new EntityError({
           type: 'InvalidOperation',
@@ -272,33 +371,147 @@ function newInstance(entity, data, isNew, parent) {
         }));
       });
     }
-    var primaryKey = data.entity.primaryKeyAttributes[0];
+    var primaryKey = this[dataKey].entity.primaryKeyAttributes[0];
     var key = {where: {}};
     key.where[primaryKey] = entity[primaryKey];
-    if (data.entity.timestamps) {
+    if (this[dataKey].entity.timestamps) {
       key.where.updatedAt = entity.updatedAt || null;
     }
-    return data.entity.methods.destroy(key, options, entity)
+    return this[dataKey].entity.methods.destroy(key, options, entity)
       .then(function() {
-        entity.isNew = true;
+        tableIsNew.set(entity, true);
         delete entity.createdAt;
         delete entity.updatedAt;
       });
-  };
+  }
 
-  data.instanceMethods.map(function(method) {
-    Instance.prototype[method.id] = method.fn;
-  });
-  return new Instance(entity);
 }
+
+function setRecord(instance, record) {
+  tableIsData.set(instance, record);
+  let data = instance[dataKey];
+  _.forEach(data.properties, function(property, name) {
+    if (record[name] !== void 0) {
+      instance[name] = record[name];
+    }
+  });
+  if (data.timestamps) {
+    let is = tableIsData.get(instance);
+    is.createdAt = record.createdAt;
+    is.updatedAt = record.updatedAt;
+  }
+  return instance;
+}
+
+function getWas(instance) {
+  return tableWasData.get(instance);
+}
+
+function setWas(instance) {
+  //let data = instance[dataKey];
+  let wasData = {};
+  //_.forEach(data.properties, function(property, name) {
+  //  let value = instance[name];
+  //  if (value !== void 0) {
+  //    wasData[name] = instance[name];
+  //  }
+  //});
+  //if (data.timestamps) {
+  //  wasData.createdAt = instance.createdAt;
+  //  wasData.updatedAt = instance.updatedAt;
+  //}
+  Object.keys(instance).forEach(function(name) {
+    let value = instance[name];
+    if (value !== void 0) {
+      wasData[name] = instance[name];
+    }
+  });
+  tableWasData.set(instance, wasData);
+  Object.freeze(wasData);
+}
+
+//var isJseInstance = Symbol('isJseInstance');
+
+//function newInstance(entity, data, isNew, parent) {
+//
+//  var wasValues;
+//
+//  function Instance(values) {
+//    _.extend(this, values);
+//    this.saveWas();
+//  }
+
+//Instance.prototype[isJseInstance] = true;
+
+//Instance.prototype.isNew = isNew;
+
+//Instance.prototype.was = function() {
+//  return wasValues;
+//};
+
+//  Instance.prototype.saveWas = function() {
+//    wasValues = _.cloneDeep(this);
+//  };
+//
+//  Instance.prototype.entity = function() {
+//    return data.entity.public;
+//  };
+//
+//  Instance.prototype.validate = function() {
+//    return runValidations(this, wasValues, data);
+//  };
+//
+//  Instance.prototype.save = function(options) {
+//    var entity = parent || this;
+//    if (entity.isNew) {
+//      return data.entity.methods.create(entity, null, options)
+//        .then(function() {
+//          entity.isNew = false;
+//        });
+//    }
+//    return data.entity.methods.update(entity, null, options);
+//  };
+//
+//  Instance.prototype.destroy = function(options) {
+//    var entity = parent || this;
+//    if (entity.isNew) {
+//      return new Promise(function(resolve, reject) {
+//        reject(new EntityError({
+//          type: 'InvalidOperation',
+//          message: 'Instance is new'
+//        }));
+//      });
+//    }
+//    var primaryKey = data.entity.primaryKeyAttributes[0];
+//    var key = {where: {}};
+//    key.where[primaryKey] = entity[primaryKey];
+//    if (data.entity.timestamps) {
+//      key.where.updatedAt = entity.updatedAt || null;
+//    }
+//    return data.entity.methods.destroy(key, options, entity)
+//      .then(function() {
+//        entity.isNew = true;
+//        delete entity.createdAt;
+//        delete entity.updatedAt;
+//      });
+//  };
+//
+//  data.instanceMethods.map(function(method) {
+//    Instance.prototype[method.id] = method.fn;
+//  });
+//  return new Instance(entity);
+//}
 
 function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   debug('Entity will be built:', data.key);
-  var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data, isNew, parent);
-  if (instance && !instance.save) {
-    Object.setPrototypeOf(instance, Object.getPrototypeOf(entity));
-    entity = instance;
+  if (fromFetch) {
+    clearNulls(record);
   }
+  var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data, isNew, parent);
+  //if (instance && !instance.save) {
+  //  Object.setPrototypeOf(instance, Object.getPrototypeOf(entity));
+  //  entity = instance;
+  //}
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
@@ -310,23 +523,17 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
         _.isArray(instance[key]) ? instance[key] : [instance[key]] :
         void 0;
       for (var i = 0; i < recordset.length; i++) {
-        var inst = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent || entity);
-        if (instance) {
-          instanceSet[i] = inst;
-        } else {
-          recordset[i] = inst;
-        }
+        recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent || entity);
       }
-      if (instance) {
-        instance[key] = recordset.length === 1 && association.type === 'hasOne' ?
-          instanceSet[0] : instanceSet;
+      if (instance && instance instanceof Record) {
       } else {
         entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
           recordset[0] : recordset;
       }
     }
   });
-  entity.saveWas();
+  setWas(entity);
+  Object.freeze(entity);
   return entity;
 }
 
@@ -768,8 +975,8 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
           }
-          return (entity[isJseInstance] ?
-            Promise.resolve([entity.was()]) :
+          return (entity instanceof Record ?
+            Promise.resolve([getWas(entity)]) :
             data.methods.fetch(key, options))
             .then(function(was) {
               if (was.length === 0) {
@@ -781,7 +988,7 @@ module.exports = function(schemaName, schema, config) {
               assert(was.length === 1);
 
               var validations;
-              if (entity[isJseInstance]) {
+              if (entity instanceof Record) {
                 validations = entity.validate();
               } else {
                 entity = _.extend({}, was[0], entity);
@@ -826,8 +1033,8 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = key.where.updatedAt || null;
           }
-          return (entity && entity[isJseInstance] ?
-            Promise.resolve([entity.was()]) :
+          return (entity && entity instanceof Record ?
+            Promise.resolve([getWas(entity)]) :
             data.methods.fetch(key, options))
             .then(function(was) {
               if (was.length === 0) {
@@ -1121,36 +1328,5 @@ function findProperty(name, properties) {
 }
 
 function initInstance(instance, record, data, isNew, parent) {
-
-  function clearNulls(obj) {
-    Object.keys(obj).forEach(function(key) {
-      if (obj[key] === null) {
-        delete obj[key];
-      }
-    });
-  }
-
-  clearNulls(instance);
-
-  _.forEach(data.properties, function(property, name) {
-    if (record[name] && record[name] !== null) {
-      if (property.enum) {
-        _.forEach(property.enum, function(value) {
-          if (value.substr(0, record[name].length) === record[name]) {
-            instance[name] = value;
-            return false;
-          }
-        });
-      } else {
-        instance[name] = property.type === 'date' && record[name] instanceof Date ?
-          record[name].toISOString().substr(0, 10) :
-          record[name];
-      }
-    }
-  });
-  if (data.timestamps) {
-    instance.createdAt = record.createdAt;
-    instance.updatedAt = record.updatedAt;
-  }
-  return instance[isJseInstance] ? instance : newInstance(instance, data, isNew, parent);
+  return instance instanceof Record ? setRecord(instance, record) : new Record(instance, record, data, isNew, parent);
 }

@@ -65,6 +65,63 @@ function addValidations(validator) {
   });
 }
 
+// Define as constant
+const privateData = new WeakMap();
+
+class MyClass {
+  constructor(name, age) {
+    privateData.set(this, {name: name, age: age});
+    //this.address = 'strrer'
+    Object.defineProperty(this, 'cst', {
+      get: function() {
+        return privateData.get(this)['cst'];
+      },
+      set: function(value) {
+        privateData.get(this).cst = value;
+      },
+      enumerable: true
+    });
+  }
+
+  get latest() {
+    return privateData.get(this).latest;
+  }
+
+  set latest(latest) {
+    let data = privateData.get(this);
+    data.latest = latest;
+  }
+
+  getName() {
+    return privateData.get(this).name;
+  }
+
+  getAge() {
+    return privateData.get(this).age;
+  }
+
+  //get address() {
+  //  return this.address;
+  //}
+  //
+  //set address(address) {
+  //  //this.address = address;
+  //}
+
+  addColumn(name) {
+    Object.defineProperty(this, name, {
+      get: function() {
+        return privateData.get(this)[name];
+      },
+      set: function(value) {
+        privateData.get(this)[name] = value;
+      },
+      enumerable: true
+    });
+  }
+
+}
+
 module.exports = function(options) {
 
   var db;
@@ -91,6 +148,33 @@ module.exports = function(options) {
           done();
         })
         .catch(logError(done));
+    });
+
+    it('study classes', function(done) {
+      var m = new MyClass('andre', 34);
+      m.addColumn('teste')
+      Object.freeze(m)
+      var n = new MyClass('bruna', 29);
+      Object.freeze(n)
+
+      logObj('m', m)
+      logObj('m.name', m.getName())
+      //m.ABC = 'cde'
+      //m.address = 'new addre'
+      logObj('m', m)
+      logObj('n', n)
+      logObj('n.name', n.getName())
+
+      m.latest = 'nowww';
+      logObj('m after latest', m)
+      logObj('latest', m.latest)
+      m.teste = 'teste included'
+      m.cst = 1001;
+      logObj('teste', m.teste)
+      logObj('m', m)
+
+      //done(new Error('See'))
+      done()
     });
 
     it('record should not exist', function(done) {
@@ -883,7 +967,7 @@ module.exports = function(options) {
             expect(record.docpagvc).to.be.a('array');
             expect(record.docpagvc.length).to.equal(1);
 
-            record.should.not.have.property('DATNASC');
+            expect(record.DATNASC).to.equal(undefined);
 
             done();
           })
@@ -993,17 +1077,15 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             var entity = recordset[0];
-            _.extend(entity, {
-              ClassificaçãoCad: [
-                {
-                  Classe: 'Cliente'
-                }
-              ],
-              cliente: {
-                SIGLACLI: 'Sigla',
-                DATMAIA: '2015-02-02'
+            entity.ClassificaçãoCad = [
+              {
+                Classe: 'Cliente'
               }
-            });
+            ];
+            entity.cliente = {
+              SIGLACLI: 'Sigla',
+              DATMAIA: '2015-02-02'
+            };
             return cadAtivo
               .update(entity)
               .then(function(record) {
