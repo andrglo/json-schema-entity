@@ -260,7 +260,7 @@
     },
     "futureEnum": {
       "type": "string",
-      "maxLength": 1
+      "maxLength": 2
     }
   }
 }

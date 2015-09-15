@@ -257,9 +257,8 @@ class Record {
           if (value && value !== null) {
             if (property.enum) {
               let found;
-              let valueInLowerCase = value.substring(0, property.maxLength).toLowerCase();
               _.forEach(property.enum, function(item) {
-                if (item.substring(0, property.maxLength).toLowerCase() === valueInLowerCase) {
+                if (item === value || item.substring(0, property.maxLength) === value) {
                   value = item;
                   found = true;
                   return false;
@@ -315,7 +314,7 @@ class Record {
           return tableIsData.get(this).createdAt;
         },
         set: function() {
-          throw new Error('todo');
+          throw new Error('Column createdAt cannot be modified');
         },
         enumerable: true
       });
@@ -326,7 +325,7 @@ class Record {
           return tableIsData.get(this).updatedAt;
         },
         set: function() {
-          throw new Error('todo');
+          throw new Error('Column updatedAt cannot be modified');
         },
         enumerable: true
       });
@@ -399,11 +398,7 @@ function setRecord(instance, record) {
   //tableIsData.set(instance, record);
   let data = instance[dataKey];
   _.forEach(data.properties, function(property, name) {
-    if (record[name] !== null) {
-      instance[name] = record[name];
-    } else {
-      instance[name] = void 0;
-    }
+    instance[name] = record[name];
   });
   if (data.timestamps) {
     let is = tableIsData.get(instance);

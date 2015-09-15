@@ -134,9 +134,9 @@ module.exports = function(options) {
         .then(function(record) {
           end = process.hrtime(start);
           joao = record;
-          record.should.have.property('id');
-          record.should.have.property('createdAt');
-          record.should.have.property('updatedAt');
+          expect(record.id).to.not.equal(undefined);
+          expect(record.createdAt).to.not.equal(undefined);
+          expect(record.updatedAt).to.not.equal(undefined);
           expect(end[1] > minNanoSecsToSave).to.equal(true); // mssql Macbook 33.700 iMac retina 22.786
           record.createdAt.toISOString().should.equal(record.updatedAt.toISOString());
           expect(record.createdAt).to.be.a('date');
@@ -402,9 +402,9 @@ module.exports = function(options) {
           })
           .then(function(record) {
             joao = record;
-            record.should.have.property('id');
-            record.should.have.property('createdAt');
-            record.should.have.property('updatedAt');
+            expect(record.id).to.not.equal(undefined);
+            expect(record.createdAt).to.not.equal(undefined);
+            expect(record.updatedAt).to.not.equal(undefined);
             record.createdAt.toISOString().should.equal(record.updatedAt.toISOString());
             expect(record.createdAt).to.be.a('date');
             expect(record.createdAt >= now).to.equal(true);
@@ -1012,7 +1012,7 @@ module.exports = function(options) {
                 expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
                 expect(record.cliente.DATMAIA).to.be.a('string');
                 expect(record.cliente.DATMAIA).to.equal('2015-02-02');
-                record.should.have.property('updatedAt');
+                expect(record.updatedAt).to.not.be.undefined;
                 expect(record.updatedAt).to.be.a('date');
                 expect(record.updatedAt >= now).to.equal(true);
                 expect(record.updatedAt > joao.updatedAt).to.equal(true);
@@ -1032,7 +1032,7 @@ module.exports = function(options) {
                     expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
                     expect(record.cliente.DATMAIA).to.be.a('string');
                     expect(record.cliente.DATMAIA).to.equal('2015-02-02');
-                    record.should.have.property('updatedAt');
+                    expect(record.updatedAt).to.not.be.undefined;
                     expect(record.updatedAt).to.be.a('date');
                     expect(record.updatedAt >= now).to.equal(true);
                     expect(record.updatedAt > joao.updatedAt).to.equal(true);
@@ -1080,7 +1080,7 @@ module.exports = function(options) {
             ],
             updatedAt: joao.updatedAt
           }, joao.id)
-          .then(function(r) {
+          .then(function() {
             done(new Error('Saved invalid record'));
           })
           .catch(function(error) {
@@ -2771,18 +2771,9 @@ module.exports = function(options) {
             cadAtivo
               .setProperties(function(properties) {
                 properties.futureEnum.enum = [
-                  'A',
-                  'B',
-                  'C'
-                ];
-              });
-            cadAtivo
-              .destino
-              .setProperties(function(properties) {
-                properties.futureEnum.enum = [
-                  'A',
-                  'B',
-                  'C'
+                  'Abc',
+                  'Bcd',
+                  'Cde'
                 ];
               });
             done();
@@ -2866,6 +2857,64 @@ module.exports = function(options) {
             done();
           })
           .catch(logError(done));
+      });
+      it('cannot alter the timestamps, createdAt', function() {
+        try {
+          beth.createdAt = new Date();
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid column modified');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.equal('Column createdAt cannot be modified');
+        }
+      });
+      it('cannot alter the timestamps, updatedAt', function() {
+        try {
+          beth.updatedAt = new Date();
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid column modified');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.equal('Column updatedAt cannot be modified');
+        }
+      });
+      it('should not accept an incomplete value', function() {
+        try {
+          beth.futureEnum = 'A';
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid column modified');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.equal('Invalid value');
+        }
+      });
+      it('should not accept an greater value', function() {
+        try {
+          beth.futureEnum = 'Abcd';
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid column modified');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.equal('Invalid value');
+        }
+      });
+      it('should not accept a value not contained in the enum array', function() {
+        try {
+          beth.futureEnum = 'Abd';
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid column modified');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.equal('Invalid value');
+        }
+      });
+      it('should accept the exact value', function() {
+        beth.futureEnum = 'Abc';
+        expect(beth.futureEnum).to.equal('Abc');
+      });
+      it('should accept the exact value considering the max length', function() {
+        beth.futureEnum = 'Ab';
+        expect(beth.futureEnum).to.equal('Abc');
       });
       it('should delete destino all alone', function(done) {
         beth.destino[0].NUMLANORI = undefined;
