@@ -65,63 +65,6 @@ function addValidations(validator) {
   });
 }
 
-// Define as constant
-const privateData = new WeakMap();
-
-class MyClass {
-  constructor(name, age) {
-    privateData.set(this, {name: name, age: age});
-    //this.address = 'strrer'
-    Object.defineProperty(this, 'cst', {
-      get: function() {
-        return privateData.get(this)['cst'];
-      },
-      set: function(value) {
-        privateData.get(this).cst = value;
-      },
-      enumerable: true
-    });
-  }
-
-  get latest() {
-    return privateData.get(this).latest;
-  }
-
-  set latest(latest) {
-    let data = privateData.get(this);
-    data.latest = latest;
-  }
-
-  getName() {
-    return privateData.get(this).name;
-  }
-
-  getAge() {
-    return privateData.get(this).age;
-  }
-
-  //get address() {
-  //  return this.address;
-  //}
-  //
-  //set address(address) {
-  //  //this.address = address;
-  //}
-
-  addColumn(name) {
-    Object.defineProperty(this, name, {
-      get: function() {
-        return privateData.get(this)[name];
-      },
-      set: function(value) {
-        privateData.get(this)[name] = value;
-      },
-      enumerable: true
-    });
-  }
-
-}
-
 module.exports = function(options) {
 
   var db;
@@ -148,33 +91,6 @@ module.exports = function(options) {
           done();
         })
         .catch(logError(done));
-    });
-
-    it('study classes', function(done) {
-      var m = new MyClass('andre', 34);
-      m.addColumn('teste')
-      Object.freeze(m)
-      var n = new MyClass('bruna', 29);
-      Object.freeze(n)
-
-      logObj('m', m)
-      logObj('m.name', m.getName())
-      //m.ABC = 'cde'
-      //m.address = 'new addre'
-      logObj('m', m)
-      logObj('n', n)
-      logObj('n.name', n.getName())
-
-      m.latest = 'nowww';
-      logObj('m after latest', m)
-      logObj('latest', m.latest)
-      m.teste = 'teste included'
-      m.cst = 1001;
-      logObj('teste', m.teste)
-      logObj('m', m)
-
-      //done(new Error('See'))
-      done()
     });
 
     it('record should not exist', function(done) {
@@ -2585,8 +2501,6 @@ module.exports = function(options) {
               was.should.have.property('docpagvc');
               was.should.have.property('fornecedor');
               was.fornecedor.should.have.property('docpagvc');
-              logObj('is', vcto[3])
-              logObj('was', vcto[3].was())
               vcto[3].was().should.have.property('id');
               done();
             })
@@ -2914,9 +2828,9 @@ module.exports = function(options) {
           })
           .catch(logError(done));
       });
-      it('should be saved as a new record if you remove the foreign key', function(done) {
+      it('should be saved as a new record if you hide the foreign key', function(done) {
         var destinoId = beth.destino[0].id;
-        delete beth.destino[0].NUMLANORI;
+        beth.destino[0].NUMLANORI = undefined;
         beth.save()
           .then(function() {
             expect(beth.destino[0].id).to.above(destinoId);
@@ -2938,9 +2852,9 @@ module.exports = function(options) {
           })
           .catch(logError(done));
       });
-      it('should not be saved if you remove the id', function(done) {
+      it('should not be saved if you hide the id', function(done) {
         beth.destino[0].NUMLANORI = beth.id;
-        delete beth.destino[0].id;
+        beth.destino[0].id = undefined;
         beth.save()
           .then(function() {
             done(new Error('Invalid record saved, you cannot use the primary key presence to verify if a record exists'));
@@ -2954,7 +2868,7 @@ module.exports = function(options) {
           .catch(logError(done));
       });
       it('should delete destino all alone', function(done) {
-        delete beth.destino[0].NUMLANORI;
+        beth.destino[0].NUMLANORI = undefined;
         beth.save()
           .then(function() {
             return cadAtivo
@@ -2967,8 +2881,8 @@ module.exports = function(options) {
                   .destroy()
                   .then(function() {
                     record.should.have.property('id');
-                    record.should.not.have.property('updatedAt');
-                    record.should.not.have.property('createdAt');
+                    expect(record.updatedAt).to.equal(undefined);
+                    expect(record.createdAt).to.equal(undefined);
                     done();
                   });
               });

@@ -382,8 +382,10 @@ class Record {
     return this[dataKey].entity.methods.destroy(key, options, entity)
       .then(function() {
         tableIsNew.set(entity, true);
-        entity.createdAt = void 0;
-        entity.updatedAt = void 0;
+        var is = tableIsData.get(entity);
+        is.createdAt = void 0;
+        is.updatedAt = void 0;
+        tableWasData.set(entity, Object.freeze({}));
       });
   }
 
