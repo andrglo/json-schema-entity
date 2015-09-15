@@ -354,10 +354,99 @@ module.exports = function(options) {
 
     describe('Instance structure', function() {
       var emptyInstance;
+      var expectedEnumerableKeys = [
+        'id',
+        'NOMECAD',
+        'IDENT',
+        'CGCCPF',
+        'INSCEST',
+        'DATNASC',
+        'DATNASCZ',
+        'DATNASCNOZ',
+        'ENDERECO',
+        'NUMERO',
+        'COMPLEMENTO',
+        'BAIRRO',
+        'CEP',
+        'CIDADE',
+        'PAIS',
+        'TELEFONE',
+        'ESTADO',
+        'FAX',
+        'CELULAR',
+        'EMAIL',
+        'CONTAEV',
+        'CONTACC',
+        'Suframa',
+        'Inativo',
+        'VALORLCTO',
+        'futureEnum',
+        'afterCreate',
+        'afterUpdate',
+        'afterPromise',
+        'quitado',
+        'TSN',
+        'IM',
+        'destino',
+        'outroDestino',
+        'maisOutroDestino',
+        'fornecedor',
+        'cliente',
+        'ClassificaçãoCad',
+        'docpagvc',
+        'createdAt',
+        'updatedAt'
+      ];
+      var expectedInstanceMethods = [
+        'constructor',
+        'entity',
+        'validate',
+        'save',
+        'destroy',
+        'was'
+      ];
+      var enumerableKeys;
+      var allKeys;
+      var symbols;
+      var instanceMethods;
       it('should create an empty new instance with no parameters', function() {
         emptyInstance = cadAtivo.createInstance();
-        emptyInstance.should.have.property('save');
-        emptyInstance.should.have.property('destroy');
+        enumerableKeys = Object.keys(emptyInstance);
+        allKeys = Object.getOwnPropertyNames(emptyInstance);
+        symbols = Object.getOwnPropertySymbols(emptyInstance);
+        instanceMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(emptyInstance));
+        expect(expectedEnumerableKeys).to.eql(enumerableKeys);
+      });
+      describe('The empty instance', function() {
+        it('Should have an instance method in an extra non enumerable property', function() {
+          expect(allKeys.length).to.equal(enumerableKeys.length + 1);
+        });
+        it('Should have two symbol properties', function() {
+          expect(symbols.length).to.equal(2);
+        });
+        it('Should have six instance (prototypes) methods', function() {
+          expect(instanceMethods).to.eql(expectedInstanceMethods);
+        });
+      });
+      describe('The reserved words', function() {
+        it('Should not use a reserved word for a column', function() {
+          try {
+            cadAtivo.setProperties(function(properties) {
+              properties.save = {
+                type: 'string',
+                maxLength: 1
+              };
+            });
+            //noinspection ExceptionCaughtLocallyJS
+            throw new Error('Invalid property modification');
+          } catch (error) {
+            error.should.have.property('message');
+            expect(error.message).to.contains('Property save cannot have this name, it is a reserved word, use an alias');
+            cadAtivo.setProperties(function(properties) {
+              delete properties.save;
+            });
+          }
+        });
       });
     });
 
@@ -645,7 +734,7 @@ module.exports = function(options) {
             },
             ClassificaçãoCad: [
               {
-                "Classe": 'Fornecedor'
+                'Classe': 'Fornecedor'
               }
             ],
             cliente: {
@@ -2162,7 +2251,7 @@ module.exports = function(options) {
             },
             ClassificaçãoCad: [
               {
-                "Classe": 'Fornecedor'
+                'Classe': 'Fornecedor'
               }
             ]
           })

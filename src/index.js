@@ -723,6 +723,14 @@ module.exports = function(schemaName, schema, config) {
       'method',
       'foreignKey'
     ];
+    const reservedInstanceMethodsNames = [
+      'constructor',
+      'entity',
+      'validate',
+      'save',
+      'destroy',
+      'was'
+    ];
     const identity = splitAlias(schemaName);
     var data = {
       validator: config.validator,
@@ -734,6 +742,7 @@ module.exports = function(schemaName, schema, config) {
       key: identity.as || identity.name,
       associations: [],
       requestedProperties: schema && schema.properties || {},
+      reservedInstanceMethodsNames: reservedInstanceMethodsNames,
       propertiesList: [],
       schema: {},
       primaryKey: schema.primaryKey,
@@ -1228,6 +1237,15 @@ function buildTable(data) {
       fn: data.adapter.getCoercionFunction('datetime')
     });
   }
+
+  data.propertiesList.forEach(function(name) {
+    if (data.reservedInstanceMethodsNames.indexOf(name) !== -1) {
+      throw new EntityError({
+        message: `Property ${name} cannot have this name, it is a reserved word, use an alias`,
+        type: 'InvalidIdentifier'
+      });
+    }
+  });
 
 }
 
