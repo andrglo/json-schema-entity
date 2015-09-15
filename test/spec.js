@@ -352,6 +352,15 @@ module.exports = function(options) {
       });
     });
 
+    describe('Instance structure', function() {
+      var emptyInstance;
+      it('should create an empty new instance with no parameters', function() {
+        emptyInstance = cadAtivo.createInstance();
+        emptyInstance.should.have.property('save');
+        emptyInstance.should.have.property('destroy');
+      });
+    });
+
     describe('get cadastro id 8', function() {
       it('should not exist', function(done) {
         cadAtivo

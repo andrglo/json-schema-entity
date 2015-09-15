@@ -964,7 +964,7 @@ module.exports = function(schemaName, schema, config) {
             });
         },
         createInstance: function(entity) {
-          return buildEntity(entity, data, true);
+          return buildEntity(entity || {}, data, true);
         },
         createTables: function() {
           return Promise.resolve()
