@@ -242,7 +242,9 @@ class Record {
     //let wasData = {};
 
     data.instanceMethods.map(function(method) {
-      Object.defineProperty(this, method.id, method.fn);
+      Object.defineProperty(this, method.id, {
+        value: method.fn
+      });
     }, this);
 
     _.forEach(data.properties, function(property, name) {
@@ -380,19 +382,25 @@ class Record {
     return this[dataKey].entity.methods.destroy(key, options, entity)
       .then(function() {
         tableIsNew.set(entity, true);
-        delete entity.createdAt;
-        delete entity.updatedAt;
+        entity.createdAt = void 0;
+        entity.updatedAt = void 0;
       });
+  }
+
+  was() {
+    return tableWasData.get(this);
   }
 
 }
 
 function setRecord(instance, record) {
-  tableIsData.set(instance, record);
+  //tableIsData.set(instance, record);
   let data = instance[dataKey];
   _.forEach(data.properties, function(property, name) {
-    if (record[name] !== void 0) {
+    if (record[name] !== null) {
       instance[name] = record[name];
+    } else {
+      instance[name] = void 0;
     }
   });
   if (data.timestamps) {
@@ -423,7 +431,7 @@ function setWas(instance) {
   Object.keys(instance).forEach(function(name) {
     let value = instance[name];
     if (value !== void 0) {
-      wasData[name] = instance[name];
+      wasData[name] = _.cloneDeep(instance[name]);
     }
   });
   tableWasData.set(instance, wasData);
@@ -504,7 +512,7 @@ function setWas(instance) {
 
 function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   debug('Entity will be built:', data.key);
-  if (fromFetch) {
+  if (!isNew) {
     clearNulls(record);
   }
   var entity = initInstance(instance || {}, _.pick(record, data.propertiesList), data, isNew, parent);
@@ -525,11 +533,15 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
       for (var i = 0; i < recordset.length; i++) {
         recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent || entity);
       }
-      if (instance && instance instanceof Record) {
-      } else {
-        entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
-          recordset[0] : recordset;
-      }
+      //if (instance && instance instanceof Record) {
+      //  entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
+      //    instanceSet[0] : instanceSet;
+      //} else {
+      entity[key] = recordset.length === 1 && association.type === 'hasOne' ?
+        recordset[0] : recordset;
+      //}
+    } else {
+      entity[key] = void 0;
     }
   });
   setWas(entity);
@@ -1151,6 +1163,12 @@ module.exports = function(schemaName, schema, config) {
     data.methods.method = function(id, fn) {
       assert(id, 'Methods should have an identification');
       assert(fn, 'Method missing');
+      if (_.find(data.instanceMethods, 'id', id)) {
+        throw new EntityError({
+          type: 'InvalidArgument',
+          message: 'Method ' + id + ' is already defined'
+        });
+      }
       data.instanceMethods.push({id: id, fn: fn});
     };
 

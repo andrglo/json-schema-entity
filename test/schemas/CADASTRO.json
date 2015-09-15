@@ -235,6 +235,10 @@
       "type": "string",
       "maxLength": 9
     },
+    "quitado": {
+      "type": "string",
+      "maxLength": 1
+    },
     "TipoSimplesNacional": {
       "title": "Simples Nacional",
       "description": "Informa o tipo de opção pelo Simples Nacional",

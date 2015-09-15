@@ -108,7 +108,8 @@ module.exports = function(config) {
       'futureEnum',
       'afterCreate',
       'afterUpdate',
-      'afterPromise'
+      'afterPromise',
+      'quitado'
     ])
   }, config);
 
@@ -195,7 +196,8 @@ module.exports = function(config) {
     .hasMany('ClassificaçãoCad', {
       properties: _.pick(ClassificacaoCad.properties, [
         'NUMCAD', //todo -> not show / but request
-        'Classe'
+        'Classe',
+        'quitado'
       ])
     })
     .foreignKey('NUMCAD');
@@ -340,13 +342,6 @@ module.exports = function(config) {
     this.quitado = 'S';
   });
 
-  cadAtivo.method('quitar', function() {
-    if (!this.id) {
-      throw new Error('Id not found');
-    }
-    //noinspection JSPotentiallyInvalidUsageOfThis
-    this.quitado = 'S';
-  });
   cadAtivo.ClassificaçãoCad.method('quitar', function() {
     if (!this.Classe) {
       throw new Error('Classe not found');

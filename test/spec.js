@@ -370,7 +370,7 @@ module.exports = function(options) {
       it('should have a customized title for property TipoSimplesNacional', function() {
         var schema = cadAtivo.getSchema();
         var properties = Object.keys(schema.properties);
-        expect(properties.length).to.equal(37);
+        expect(properties.length).to.equal(38);
         expect(properties.indexOf('FAX')).to.equal(-1);
         expect(properties.indexOf('IM')).to.above(-1);
         expect(properties.indexOf('TSN')).to.above(-1);
@@ -403,7 +403,7 @@ module.exports = function(options) {
         schema.properties.should.have.property('ClassificaçãoCad');
         schema.properties.ClassificaçãoCad.should.have.property('items');
         schema.properties.ClassificaçãoCad.items.should.have.property('properties');
-        expect(Object.keys(schema.properties.ClassificaçãoCad.items.properties).length).to.equal(1);
+        expect(Object.keys(schema.properties.ClassificaçãoCad.items.properties).length).to.equal(2);
       });
       it('should have property docpagvc', function() {
         var schema = cadAtivo.getSchema();
@@ -1428,7 +1428,7 @@ module.exports = function(options) {
         cadAtivo
           .update(joao)
           .then(function(record) {
-            record.should.not.have.property('docpagvc');
+            expect(record.docpagvc).to.equal(undefined);
             done();
           })
           .catch(logError(done));
@@ -1440,7 +1440,7 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             var record = joao = recordset[0];
-            record.should.not.have.property('docpagvc');
+            expect(record.docpagvc).to.equal(undefined);
             done();
           })
           .catch(logError(done));
@@ -1539,22 +1539,19 @@ module.exports = function(options) {
             record.should.have.property('updatedAt');
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('should update Joana to be a client', function(done) {
+        joana.ClassificaçãoCad = [
+          {
+            Classe: 'Cliente'
+          }
+        ];
+        joana.cliente = {
+          SIGLACLI: 'Sigla'
+        };
         cadAtivo
-          .update(_.extend({
-            ClassificaçãoCad: [
-              {
-                Classe: 'Cliente'
-              }
-            ],
-            cliente: {
-              SIGLACLI: 'Sigla'
-            }
-          }, joana), joana.id)
+          .update(joana, joana.id)
           .then(function(record) {
             joana = record;
             record.should.have.property('destino');
@@ -1572,7 +1569,7 @@ module.exports = function(options) {
             expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
             record.should.have.property('updatedAt');
 
-            record.cliente.should.not.have.property('DATMAIA');
+            expect(record.cliente.DATMAIA).to.equal(undefined);
 
             expect(record.afterCreate).to.be.undefined;
             expect(record.afterUpdate).to.equal('true');
@@ -1599,27 +1596,26 @@ module.exports = function(options) {
             expect(record.ClassificaçãoCad.length).to.equal(1);
             expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente');
             record.should.have.property('updatedAt');
-            record.cliente.should.not.have.property('DATMAIA');
+            expect(record.cliente.DATMAIA).to.equal(undefined);
             done();
           })
           .catch(logError(done));
       });
       it('should update Geralda to be a client', function(done) {
+        geralda.ClassificaçãoCad = [
+          {
+            Classe: 'Cliente'
+          },
+          {
+            Classe: 'Outra'
+          }
+        ];
+        geralda.cliente = {
+          SIGLACLI: 'Sigla',
+          DATMAIA: '2015-02-02'
+        };
         cadAtivo
-          .update(_.extend({
-            ClassificaçãoCad: [
-              {
-                Classe: 'Cliente'
-              },
-              {
-                Classe: 'Outra'
-              }
-            ],
-            cliente: {
-              SIGLACLI: 'Sigla',
-              DATMAIA: '2015-02-02'
-            }
-          }, geralda), geralda.id)
+          .update(geralda, geralda.id)
           .then(function(record) {
             geralda = record;
             record.should.have.property('maisOutroDestino');
@@ -1637,7 +1633,7 @@ module.exports = function(options) {
             expect(record.afterUpdate).to.equal('true');
             expect(record.afterPromise).to.equal('true');
 
-            record.should.not.have.property('DATNASC');
+            expect(record.DATNASC).to.equal(undefined);
 
             done();
           })
@@ -1894,21 +1890,21 @@ module.exports = function(options) {
             },
             ClassificaçãoCad: [
               {
-                "Classe": 'Fornecedor'
+                Classe: 'Fornecedor'
               }
             ]
           })
           .then(function(record) {
             mario = record;
             record.should.have.property('fornecedor');
-            record.should.not.have.property('docpagvc');
-            record.fornecedor.should.have.property('docpagvc');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             done();
           })
-          .catch(logError(done))
+          .catch(logError(done));
       });
       it('lets check mario, the new fornecedor with two vctos', function(done) {
         cadAtivo
@@ -1917,9 +1913,9 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             var record = mario = recordset[0];
-            record.should.have.property('fornecedor');
-            record.should.not.have.property('docpagvc');
-            record.fornecedor.should.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
@@ -1936,9 +1932,9 @@ module.exports = function(options) {
           .update(mario, mario.id)
           .then(function(record) {
             mario = record;
-            record.should.have.property('fornecedor');
-            record.fornecedor.should.have.property('docpagvc');
-            record.should.not.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(3);
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
@@ -1956,9 +1952,9 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             var record = mario = recordset[0];
-            record.should.have.property('fornecedor');
-            record.fornecedor.should.have.property('docpagvc');
-            record.should.not.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(3);
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
@@ -1976,9 +1972,9 @@ module.exports = function(options) {
           .update(mario, mario.id)
           .then(function(record) {
             mario = record;
-            record.should.have.property('fornecedor');
-            record.fornecedor.should.have.property('docpagvc');
-            record.should.not.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(250.02);
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(10.99);
@@ -1995,9 +1991,9 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             var record = mario = recordset[0];
-            record.should.have.property('fornecedor');
-            record.fornecedor.should.have.property('docpagvc');
-            record.should.not.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(250.02);
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(10.99);
@@ -2058,6 +2054,17 @@ module.exports = function(options) {
       before(function() {
         cadAtivo.fornecedor.docpagvc.hasOne('EVENTO as categoria', EVENTO);
       });
+      it('should reject a new method already existante', function() {
+        try {
+          cadAtivo.method('quitar', function() {
+          });
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid method created');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.equal('Method quitar is already defined');
+        }
+      });
       it('should accept a new fornecedor with two vctos with on event each', function(done) {
         cadAtivo
           .create({
@@ -2091,9 +2098,9 @@ module.exports = function(options) {
           })
           .then(function(record) {
             lidia = record;
-            record.should.have.property('fornecedor');
-            record.should.not.have.property('docpagvc');
-            record.fornecedor.should.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
@@ -2113,9 +2120,9 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(1);
             var record = recordset[0];
-            record.should.have.property('fornecedor');
-            record.should.not.have.property('docpagvc');
-            record.fornecedor.should.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
@@ -2304,9 +2311,9 @@ module.exports = function(options) {
           })
           .then(function(record) {
             lidia = record;
-            record.should.have.property('fornecedor');
-            record.should.not.have.property('docpagvc');
-            record.fornecedor.should.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
@@ -2349,9 +2356,9 @@ module.exports = function(options) {
           .update(lidia, {where: {id: lidia.id, updatedAt: lidia.updatedAt}})
           .then(function(record) {
             lidia = record;
-            record.should.have.property('fornecedor');
-            record.should.not.have.property('docpagvc');
-            record.fornecedor.should.have.property('docpagvc');
+            expect(record.fornecedor).to.be.a('object');
+            expect(record.docpagvc).to.equal(undefined);
+            expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             record.fornecedor.docpagvc[0].should.have.property('categoria');
             expect(Number(record.fornecedor.docpagvc[0].VALOR)).to.equal(350.01);
@@ -2493,9 +2500,9 @@ module.exports = function(options) {
         jessica
           .destroy()
           .then(function() {
-            jessica.should.have.property('id');
-            jessica.should.not.have.property('updatedAt');
-            jessica.should.not.have.property('createdAt');
+            expect(jessica.id).to.not.equal(undefined);
+            expect(jessica.updatedAt).to.equal(undefined);
+            expect(jessica.createdAt).to.equal(undefined);
             done();
           })
           .catch(logError(done));
@@ -2560,15 +2567,15 @@ module.exports = function(options) {
           vcto[3]
             .save()
             .then(function() {
-              lucia.should.have.property('id');
-              lucia.should.have.property('updatedAt');
-              lucia.should.have.property('createdAt');
-              lucia.should.have.property('NOMECAD');
+              expect(lucia.id).to.not.equal(undefined);
+              expect(lucia.updatedAt).to.not.equal(undefined);
+              expect(lucia.createdAt).to.not.equal(undefined);
+              expect(lucia.NOMECAD).to.not.equal(undefined);
               lucia.NOMECAD.should.equal('Lucia');
-              lucia.should.have.property('docpagvc');
-              lucia.should.have.property('fornecedor');
-              lucia.fornecedor.should.have.property('docpagvc');
-              vcto[3].should.have.property('id');
+              expect(lucia.docpagvc).to.not.equal(undefined);
+              expect(lucia.fornecedor).to.not.equal(undefined);
+              expect(lucia.fornecedor.docpagvc).to.not.equal(undefined);
+              expect(vcto[3].id).to.not.equal(undefined);
               var was = lucia.was();
               was.should.have.property('id');
               was.should.have.property('updatedAt');
@@ -2578,10 +2585,32 @@ module.exports = function(options) {
               was.should.have.property('docpagvc');
               was.should.have.property('fornecedor');
               was.fornecedor.should.have.property('docpagvc');
+              logObj('is', vcto[3])
+              logObj('was', vcto[3].was())
               vcto[3].was().should.have.property('id');
               done();
             })
             .catch(logError(done));
+        });
+        it('was cannot have new properties', function() {
+          try {
+            vcto[3].was().newColumn = 1;
+            //noinspection ExceptionCaughtLocallyJS
+            throw new Error('Invalid property modification');
+          } catch (error) {
+            error.should.have.property('message');
+            expect(error.message).to.contains('object is not extensible');
+          }
+        });
+        it('was cannot be modified', function() {
+          try {
+            vcto[3].was().id = 1;
+            //noinspection ExceptionCaughtLocallyJS
+            throw new Error('Invalid property modification');
+          } catch (error) {
+            error.should.have.property('message');
+            expect(error.message).to.contains('Cannot assign to read only property');
+          }
         });
         it('could be saved to disk using any component via entity create', function(done) {
           vcto[3]
@@ -2611,7 +2640,7 @@ module.exports = function(options) {
             })
             .catch(logError(done));
         });
-        it('if we push another vcto it should be mutated to instance after save', function(done) {
+        it('if we push another vcto it should not be mutated to instance after save', function(done) {
           var newVcto = {
             VALOR: 500.03,
             DATAVENC: '2015-10-23',
@@ -2624,24 +2653,24 @@ module.exports = function(options) {
           lucia
             .save()
             .then(function() {
-              newVcto.should.have.property('id');
-              expect(lucia.fornecedor.docpagvc[2] === newVcto).to.equal(true);
-              newVcto.should.have.property('save');
+              expect(newVcto.id).to.equal(undefined);
+              expect(lucia.fornecedor.docpagvc[2] !== newVcto).to.equal(true);
+              newVcto.should.not.have.property('save');
               done();
             })
             .catch(logError(done));
         });
         var jane;
-        it('will mutate a plain object to a instance after create', function(done) {
+        it('will not mutate a plain object to a instance after create', function(done) {
           jane = {
             NOMECAD: 'Jane'
           };
           cadAtivo
             .create(jane)
             .then(function(record) {
-              record.should.have.property('id');
-              record.should.have.property('save');
-              expect(jane).to.equal(record);
+              expect(record.id).to.not.equal(undefined);
+              expect(record.save).to.not.equal(undefined);
+              expect(jane).to.not.equal(record);
               done();
             })
             .catch(logError(done));

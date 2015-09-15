@@ -21,6 +21,10 @@
       "format": "list",
       "$ref": "Classificação",
       "primaryKey": true
+    },
+    "quitado": {
+      "type": "string",
+      "maxLength": 1
     }
   }
 }
