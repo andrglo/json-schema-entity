@@ -6,7 +6,7 @@ var sqlView = require('sql-view');
 var jst = require('json-schema-table');
 var debug = require('debug')('json-schema-entity');
 
-var log = console.log;
+//var log = console.log;
 
 function EntityError(options) {
   options = options || {};

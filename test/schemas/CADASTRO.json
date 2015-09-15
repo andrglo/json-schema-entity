@@ -2,10 +2,6 @@
   "type": "object",
   "title": "Cadastro",
   "description": "Cadastro",
-  "define": {
-    "timestamps": true,
-    "hasTrigger": true
-  },
   "properties": {
     "id": {
       "title": "Nº cadastral",
