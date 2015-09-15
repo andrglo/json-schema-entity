@@ -246,7 +246,6 @@ class Record {
     }, this);
 
     _.forEach(data.properties, function(property, name) {
-      //todo check name for reserved words
       Object.defineProperty(this, name, {
         get: function() {
           return tableIsData.get(this)[name];
@@ -1226,6 +1225,12 @@ function buildTable(data) {
     }
   });
   if (data.timestamps) {
+    if (data.propertiesList.indexOf('updatedAt') !== -1 || data.propertiesList.indexOf('createdAt') !== -1) {
+      throw new EntityError({
+        message: 'Properties cannot have timestamps names createAt or updatedAt, use an alias',
+        type: 'InvalidIdentifier'
+      });
+    }
     data.propertiesList.push('updatedAt');
     data.propertiesList.push('createdAt');
     data.coerce.push({

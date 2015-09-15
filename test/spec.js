@@ -429,7 +429,7 @@ module.exports = function(options) {
         });
       });
       describe('The reserved words', function() {
-        it('Should not use a reserved word for a column', function() {
+        it('Should not use instance method name for a column', function() {
           try {
             cadAtivo.setProperties(function(properties) {
               properties.save = {
@@ -444,6 +444,24 @@ module.exports = function(options) {
             expect(error.message).to.contains('Property save cannot have this name, it is a reserved word, use an alias');
             cadAtivo.setProperties(function(properties) {
               delete properties.save;
+            });
+          }
+        });
+        it('Should not use a timestamp column name for a column', function() {
+          try {
+            cadAtivo.setProperties(function(properties) {
+              properties.updatedAt = {
+                type: 'string',
+                maxLength: 1
+              };
+            });
+            //noinspection ExceptionCaughtLocallyJS
+            throw new Error('Invalid property modification');
+          } catch (error) {
+            error.should.have.property('message');
+            expect(error.message).to.contains('Properties cannot have timestamps names createAt or updatedAt, use an alias');
+            cadAtivo.setProperties(function(properties) {
+              delete properties.updatedAt;
             });
           }
         });
