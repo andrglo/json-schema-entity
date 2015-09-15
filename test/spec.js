@@ -1990,6 +1990,17 @@ module.exports = function(options) {
           expect(error.message).to.equal('Method quitar is already defined');
         }
       });
+      it('should reject a new method with a column with the same name', function() {
+        try {
+          cadAtivo.method('NOMECAD', function() {
+          });
+          //noinspection ExceptionCaughtLocallyJS
+          throw new Error('Invalid method created');
+        } catch (error) {
+          error.should.have.property('message');
+          expect(error.message).to.contains('there is already a column with this name');
+        }
+      });
       it('should accept a new fornecedor with two vctos with on event each', function(done) {
         cadAtivo
           .create({

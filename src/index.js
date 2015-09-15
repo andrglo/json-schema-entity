@@ -1064,6 +1064,12 @@ module.exports = function(schemaName, schema, config) {
           message: 'Method ' + id + ' is already defined'
         });
       }
+      if (data.propertiesList.indexOf(id) !== -1) {
+        throw new EntityError({
+          type: 'InvalidArgument',
+          message: 'Method ' + id + ' cannot be used, there is already a column with this name'
+        });
+      }
       data.instanceMethods.push({id: id, fn: fn});
     };
 
