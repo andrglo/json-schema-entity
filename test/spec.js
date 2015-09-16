@@ -1,5 +1,7 @@
 'use strict';
 
+var assert = require('assert');
+
 var chai = require('chai');
 var expect = chai.expect;
 chai.should();
@@ -134,7 +136,9 @@ module.exports = function(options) {
         .then(function(record) {
           end = process.hrtime(start);
           joao = record;
-          expect(record.id).to.not.equal(undefined);
+          console.log('joao', joao, joao.id)
+          expect(record).to.equal(undefined);
+          //expect(record.id).to.not.equal(undefined);
           expect(record.createdAt).to.not.equal(undefined);
           expect(record.updatedAt).to.not.equal(undefined);
           expect(end[1] > minNanoSecsToSave).to.equal(true); // mssql Macbook 33.700 iMac retina 22.786
@@ -149,11 +153,14 @@ module.exports = function(options) {
     });
     it('then can have only one field updated', function(done) {
       var now = new Date(Date.now());
+      console.log('joao before fetch', joao)
+
       tableCadastro
         .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
         .then(function(recordset) {
           var record = recordset[0];
           start = process.hrtime();
+          console.log('joao', joao)
           return tableCadastro.update({
             IDENT: 'J',
             TipoSimplesNacional: '2 - Optante ME/EPP'
@@ -3077,6 +3084,112 @@ module.exports = function(options) {
           })
           .catch(logError(done));
       });
+
+      it('lets proxy', function() {
+        //var x = {};
+        //Object.freeze(p)
+        var wm = new WeakMap();
+        class rec {
+          constructor() {
+            this.zzz = 'zzz';
+          }
+          get(target, name) {
+            //console.log('get', name)
+            //var o = wm.get(target);
+            //if (o) {
+            //  return o[name];
+            //}
+            return this[name] || super[name];
+          }
+          set(target, name, val) {
+            //assert(this === p)
+            //assert(target === p)
+
+            //this.abc = target;
+
+            //if (name === 'a') {
+            //  throw new Error('Invalid name')
+            //}
+            //var o = wm.get(target);
+            //if (!o) {
+            //  o = {};
+            //  wm.set(target, o);
+            //}
+            //o[name] = val;
+            this[name] = val;
+          }
+          has(name) {
+            //assert(Object.getPrototypeOf(this) === x)
+            //var o = wm.get(this);
+            //console.log('has', arguments);
+            console.log(super.zzz)
+
+            if (this[name]) {
+              return true;
+              //return o[name] !== void 0;
+            }
+            return false;
+          }
+          keys() {
+            //console.log('keys', arguments);
+            console.log(super.zzz)
+
+            //var o = wm.get(this.abc);
+            //if (o) {
+            //  console.log('keys', o)
+            //  return Object.keys(o);
+            //}
+            return Object.keys(this);
+          }
+          getOwnPropertyDescriptor(name) {
+            //console.log('getOwnPropertyDescriptor', arguments);
+
+            console.log(super.zzz)
+            //var o = wm.get(this.abc);
+            //if (o) {
+            //  console.log('descriptor', o)
+            //  return Object.getOwnPropertyDescriptor(o, name);
+            //}
+            return Object.getOwnPropertyDescriptor(this, name);
+          }
+          save() {
+            console.log('save', this);
+          }
+        }
+
+        //var ms = {
+        //  save: function() {
+        //    console.log('save', this);
+        //  }
+        //}
+        class ms {
+          save() {
+            console.log('save', this);
+          }
+        }
+
+        var p = Proxy.create(Object.create(new rec()));
+        var z = Proxy.create(new rec());
+
+        //Object.freeze(p)
+
+        //var p = new Proxy({}, handler);
+        p.a = 1;
+        p.teste = 'teste';
+        p.b = undefined;
+
+        console.log('first', p.a, p.b); // 1, undefined
+        console.log('second', 'c' in p, p.c); // false, 37
+        console.log('p.teste', p.teste);
+        console.log('p.zzz', p.zzz);
+        console.log('p');
+        console.log(p);
+        console.log('z', z);
+        p.save();
+        z.save();
+        throw new Error('ok')
+      });
+
       it('should throw an error when deleting beth with destino already deleted', function(done) {
         beth.destroy()
           .then(function() {
@@ -3154,19 +3267,19 @@ module.exports = function(options) {
           //console.log(JSON.stringify(invoiceInstance, null, ' '));
           /* will log
            {
-            "id": 1,
-            "client": "Jessica",
-            "items": [
-             {
-              "id": 1,
-              "name": "diamond",
-              "description": "a beautiful diamond",
-              "price": 9999.99,
-              "invoiceId": 1
-             }
-            ]
+           "id": 1,
+           "client": "Jessica",
+           "items": [
+           {
+           "id": 1,
+           "name": "diamond",
+           "description": "a beautiful diamond",
+           "price": 9999.99,
+           "invoiceId": 1
            }
-          */
+           ]
+           }
+           */
           done();
         })
         .catch(logError(done));
