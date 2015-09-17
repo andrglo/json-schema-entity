@@ -1,7 +1,5 @@
 'use strict';
 
-var assert = require('assert');
-
 var chai = require('chai');
 var expect = chai.expect;
 chai.should();
@@ -20,14 +18,15 @@ var EVENTO = require('./schemas/EVENTO.json');
 var DOCPAGEV = require('./schemas/DOCPAGEV.json');
 var CLASSE = require('./schemas/Classificação.json');
 
-var log = gutil.log;
-var logObj = function(name, obj) {
-  log(name, JSON.stringify(obj, null, '  '));
+var log = function() {
+  console.log.apply(null, Array.prototype.slice.call(arguments)
+    .map(arg => JSON.stringify(arg, null, '  ')));
 };
+
 var logError = function(done) {
   return function(err) {
     if (err) {
-      log('Error', gutil.colors.red(JSON.stringify(err, null, '  ')));
+      gutil.log('Error', gutil.colors.red(JSON.stringify(err, null, '  ')));
     }
     done(err);
   };
@@ -136,10 +135,6 @@ module.exports = function(options) {
         .then(function(record) {
           end = process.hrtime(start);
           joao = record;
-          //console.log('joao->')
-          //console.log(joao.id)
-          //console.log(joao)
-          //console.log('<-joao')
           expect(record.id).to.not.equal(undefined);
           expect(record.createdAt).to.not.equal(undefined);
           expect(record.updatedAt).to.not.equal(undefined);
@@ -155,14 +150,11 @@ module.exports = function(options) {
     });
     it('then can have only one field updated', function(done) {
       var now = new Date(Date.now());
-      console.log('joao before fetch', joao)
-
       tableCadastro
         .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
         .then(function(recordset) {
           var record = recordset[0];
           start = process.hrtime();
-          console.log('joao', joao)
           return tableCadastro.update({
             IDENT: 'J',
             TipoSimplesNacional: '2 - Optante ME/EPP'
@@ -413,29 +405,28 @@ module.exports = function(options) {
         'destroy',
         'was'
       ];
-      var emptyInstance;
       var enumerableKeys;
-      var columnNames;
+      var allKeys;
+      var symbols;
+      var instanceMethods;
       it('should create an empty new instance with no parameters', function() {
-        emptyInstance = cadAtivo.createInstance();
-        columnNames = emptyInstance.getColumnNames();
-        expect(expectedEnumerableKeys).to.eql(columnNames);
+        var emptyInstance = cadAtivo.createInstance();
+        enumerableKeys = Object.keys(emptyInstance);
+        allKeys = Object.getOwnPropertyNames(emptyInstance);
+        symbols = Object.getOwnPropertySymbols(emptyInstance);
+        instanceMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(emptyInstance));
+        expect(expectedEnumerableKeys).to.eql(enumerableKeys);
       });
-      describe('The new instance', function() {
-        it('Only the non undefined are listed as enumerable', function() {
-          emptyInstance.NOMECAD = 'Josie';
-          enumerableKeys = Object.keys(emptyInstance);
-          //logObj('all keys', enumerableKeys)
-          expect(enumerableKeys.length).to.equal(1);
+      describe('The empty instance', function() {
+        it('Should have an instance method in an extra non enumerable property', function() {
+          expect(allKeys.length).to.equal(enumerableKeys.length + 1);
         });
-        it('The instance method is not a non enumerable property', function() {
-          let allKeys = Object.getOwnPropertyNames(emptyInstance);
-          expect(allKeys.length).to.equal(enumerableKeys.length);
+        it('Should have no symbol properties', function() {
+          expect(symbols.length).to.equal(0);
         });
-        //it('Should have no symbol properties', function() {
-        //  let symbols = Object.getOwnPropertySymbols(emptyInstance);
-        //  expect(symbols.length).to.equal(0);
-        //}); todo Wait for proxies official support
+        it('Should have six instance (prototypes) methods', function() {
+          expect(instanceMethods).to.eql(expectedInstanceMethods);
+        });
       });
       describe('The reserved words', function() {
         it('Should not use instance method name for a column', function() {
@@ -1426,7 +1417,6 @@ module.exports = function(options) {
       it('so lets cleanup only COMPLEMENTO', function(done) {
         joao.NOMECAD = 'João';
         joao.COMPLEMENTO = null;
-        console.log('joao', joao)
         cadAtivo
           .update(joao, {where: {id: joao.id, updatedAt: joao.updatedAt}})
           .then(function(record) {
@@ -1983,9 +1973,7 @@ module.exports = function(options) {
             expect(Number(record.fornecedor.docpagvc[2].VALOR)).to.equal(10.99);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(done);
       });
       it('lets check mario, the new fornecedor with three vctos', function(done) {
         cadAtivo
@@ -2418,6 +2406,7 @@ module.exports = function(options) {
             expect(Number(record.fornecedor.docpagvc[1].VALOR)).to.equal(250.02);
             expect(record.fornecedor.docpagvc[0].categoria.id).to.equal('333');
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222');
+            expect(record.fornecedor.docpagvc[0].categoria.validate).to.be.a('function');
             done();
           })
           .catch(logError(done));
@@ -3086,111 +3075,6 @@ module.exports = function(options) {
             done();
           })
           .catch(logError(done));
-      });
-
-      it('lets proxy', function() {
-        //var x = {};
-        //Object.freeze(p)
-        var wm = new WeakMap();
-        class rec {
-          constructor() {
-            this.zzz = 'zzz';
-          }
-          get(target, name) {
-            //console.log('get', name)
-            //var o = wm.get(target);
-            //if (o) {
-            //  return o[name];
-            //}
-            return this[name] || super[name];
-          }
-          set(target, name, val) {
-            //assert(this === p)
-            //assert(target === p)
-
-            //this.abc = target;
-
-            //if (name === 'a') {
-            //  throw new Error('Invalid name')
-            //}
-            //var o = wm.get(target);
-            //if (!o) {
-            //  o = {};
-            //  wm.set(target, o);
-            //}
-            //o[name] = val;
-            this[name] = val;
-          }
-          has(name) {
-            //assert(Object.getPrototypeOf(this) === x)
-            //var o = wm.get(this);
-            //console.log('has', arguments);
-            console.log(super.zzz)
-
-            if (this[name]) {
-              return true;
-              //return o[name] !== void 0;
-            }
-            return false;
-          }
-          keys() {
-            //console.log('keys', arguments);
-            console.log(super.zzz)
-
-            //var o = wm.get(this.abc);
-            //if (o) {
-            //  console.log('keys', o)
-            //  return Object.keys(o);
-            //}
-            return Object.keys(this);
-          }
-          getOwnPropertyDescriptor(name) {
-            //console.log('getOwnPropertyDescriptor', arguments);
-
-            console.log(super.zzz)
-            //var o = wm.get(this.abc);
-            //if (o) {
-            //  console.log('descriptor', o)
-            //  return Object.getOwnPropertyDescriptor(o, name);
-            //}
-            return Object.getOwnPropertyDescriptor(this, name);
-          }
-          save() {
-            console.log('save', this);
-          }
-        }
-
-        //var ms = {
-        //  save: function() {
-        //    console.log('save', this);
-        //  }
-        //}
-        class ms {
-          save() {
-            console.log('save', this);
-          }
-        }
-
-        var p = Proxy.create(Object.create(new rec()));
-        var z = Proxy.create(new rec());
-
-        //Object.freeze(p)
-
-        //var p = new Proxy({}, handler);
-        p.a = 1;
-        p.teste = 'teste';
-        p.b = undefined;
-
-        console.log('first', p.a, p.b); // 1, undefined
-        console.log('second', 'c' in p, p.c); // false, 37
-        console.log('p.teste', p.teste);
-        console.log('p.zzz', p.zzz);
-        console.log('p');
-        console.log(p);
-        console.log('z', z);
-        p.save();
-        z.save();
-        throw new Error('ok')
       });
 
       it('should throw an error when deleting beth with destino already deleted', function(done) {
