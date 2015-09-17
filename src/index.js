@@ -238,7 +238,7 @@ class TableRecord {
   }
 
   get(target, name) {
-    console.log('get', name)
+    //console.log('get', name)
     //if (name === 'then') {
     //  return;
     //}
@@ -248,14 +248,18 @@ class TableRecord {
     //}
     //let columns = it.info.columns;
     //assert(columns.has(name), `Column ${name} not found`);
-    return it.values[name] || this[name];
+    return it.values[name] === void 0 ? this[name] : it.values[name];
   }
 
   set(target, name, value) {
     let it = tableRecordData.get(this);
+    if (name === '__tableRecord') {
+      this[name] = value;
+      return;
+    }
     let columns = it.info.columns;
     assert(columns.has(name), `Column ${name} not found`);
-    columns.get(name).call(it, value);
+    columns.get(name).call(it.values, value);
   }
 
   has(name) {
@@ -263,29 +267,47 @@ class TableRecord {
   }
 
   keys() {
-    return tableRecordData.get(this).info.columns.keys();
+    assert(this.__tableRecord === this)
+
+    let it = tableRecordData.get(this);
+    return it.info.keys.filter(key => it.values[key] !== void 0);
   }
 
-  getOwnPropertyDescriptor(name) {
+  getOwnPropertyNames() {
+    let it = tableRecordData.get(this);
+    return it.info.keys.filter(key => it.values[key] !== void 0);
+  }
+
+  getColumnNames() {
+    let it = tableRecordData.get(this.__tableRecord);
+    return it.info.keys;
+  }
+
+  //getOwnPropertySymbols() {
+  //  return [];
+  //} todo Wait for proxies official support
+
+  getOwnPropertyDescriptor(target, name) {
     let it = tableRecordData.get(this);
     return it.info.columns.has(name) ? {
       value: it.values[name],
       writable: true,
-      enumerable: true
+      enumerable: true,
+      configurable: true
     } : void 0;
   }
 
   entity() {
-    return tableRecordData.get(this).info.data.entity.public;
+    return tableRecordData.get(this.__tableRecord).info.data.entity.public;
   }
 
   validate() {
-    let it = tableRecordData.get(this);
+    let it = tableRecordData.get(this.__tableRecord);
     return runValidations(this, it.was, it.info.data);
   }
 
   save(options) {
-    let it = tableRecordData.get(this);
+    let it = tableRecordData.get(this.__tableRecord);
     let entity = it.parent || this;
     let entityRecordData = it.parent ? tableRecordData.get(this) : it;
     if (entityRecordData.isNew) {
@@ -298,7 +320,7 @@ class TableRecord {
   }
 
   destroy(options) {
-    let it = tableRecordData.get(this);
+    let it = tableRecordData.get(this.__tableRecord);
     let entity = it.parent || this;
     let entityRecordData = it.parent ? tableRecordData.get(this) : it;
     if (entityRecordData.isNew) {
@@ -326,7 +348,7 @@ class TableRecord {
   }
 
   was() {
-    return tableRecordData.get(this).was;
+    return tableRecordData.get(this.__tableRecord).was;
   }
 
 }
@@ -337,7 +359,8 @@ class TableRecordSchema {
 
     let columns = new Map();
     let methods = {};
-    tableRecordInfo.set(this, {columns, methods, data});
+    let keys = [];
+    tableRecordInfo.set(this, {columns, methods, data, keys});
     data.instanceMethods.map(function(method) {
       methods[method.id] = method.fn;
     });
@@ -396,12 +419,19 @@ class TableRecordSchema {
       });
     }
 
+    for (var key of columns.keys()) {
+      keys.push(key);
+    }
+
   }
 
 }
 
 function tableRecordFactory(trs, record, isNew, parent) {
-  return Proxy.create(new TableRecord(trs, record, isNew, parent));
+  let tableRecord = new TableRecord(trs, record, isNew, parent);
+  let proxy = Proxy.create(tableRecord);
+  proxy.__tableRecord = tableRecord;
+  return proxy;
 }
 
 //const dataKey = Symbol('data');
@@ -583,13 +613,9 @@ function setIs(instance, record, it) {
   it.info.columns.forEach(function(value, key) {
     let newValue = record[key];
     if (newValue !== void 0) {
-      if (timeStampsColumns.indexOf(key) !== -1) {
-        it.values[key] = newValue;
-      } else {
-        instance[key] = newValue;
-      }
       let association = it.info.data.associations[key];
       if (association) {
+        it.values[key] = newValue;
         if (_.isArray(newValue)) {
           for (var i = 0; i < newValue.length; i++) {
             was[key][i] = newValue[i].was();
@@ -598,11 +624,18 @@ function setIs(instance, record, it) {
           was[key] = newValue.was();
         }
       } else {
+        if (timeStampsColumns.indexOf(key) !== -1) {
+          it.values[key] = newValue;
+        } else {
+          value.call(it.values, newValue);
+        }
         was[key] = newValue;
       }
+    } else {
+      it.values[key] = void 0;
     }
   });
-  return instance;
+  it.was = was;
 }
 
 //function setWas(instance) {
@@ -635,7 +668,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   if (!isNew) {
     clearNulls(record);
   }
-  let associations = instance instanceof TableRecord ? instance : {};
+  let associations = instance && instance.__tableRecord ? instance : {};
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     debug('Checking association key:', key);
@@ -653,8 +686,9 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
         recordset[0] : recordset;
     }
   });
-  if (instance instanceof TableRecord) {
-    return instance.setIs(instance, record);
+  if (instance && instance.__tableRecord) {
+    setIs(instance.__tableRecord, record);
+    return instance;
   } else {
     return tableRecordFactory(data.trs,
       _.extend(_.pick(record, data.propertiesList), associations),
@@ -1110,7 +1144,7 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
           }
-          return (entity instanceof TableRecord ?
+          return (entity.__tableRecord ?
             Promise.resolve([entity.was()]) :
             data.methods.fetch(key, options))
             .then(function(was) {
@@ -1123,12 +1157,12 @@ module.exports = function(schemaName, schema, config) {
               assert(was.length === 1);
 
               var validations;
-              log('entity instanceof TableRecord', entity instanceof TableRecord)
-              if (entity instanceof TableRecord) {
+              //log('entity instanceof TableRecord', entity instanceof TableRecord)
+              if (entity.__tableRecord) {
                 validations = entity.validate();
               } else {
                 entity = _.extend({}, was[0], entity);
-                log('entity', entity)
+                //log('entity', entity)
                 validations = runValidations(entity, was[0], data);
               }
               return validations
@@ -1170,7 +1204,7 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = key.where.updatedAt || null;
           }
-          return (entity && entity instanceof TableRecord ?
+          return (entity && entity.__tableRecord ?
             Promise.resolve([entity.was()]) :
             data.methods.fetch(key, options))
             .then(function(was) {

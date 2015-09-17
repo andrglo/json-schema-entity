@@ -136,9 +136,11 @@ module.exports = function(options) {
         .then(function(record) {
           end = process.hrtime(start);
           joao = record;
-          console.log('joao', joao, joao.id)
-          expect(record).to.equal(undefined);
-          //expect(record.id).to.not.equal(undefined);
+          //console.log('joao->')
+          //console.log(joao.id)
+          //console.log(joao)
+          //console.log('<-joao')
+          expect(record.id).to.not.equal(undefined);
           expect(record.createdAt).to.not.equal(undefined);
           expect(record.updatedAt).to.not.equal(undefined);
           expect(end[1] > minNanoSecsToSave).to.equal(true); // mssql Macbook 33.700 iMac retina 22.786
@@ -360,7 +362,6 @@ module.exports = function(options) {
     });
 
     describe('Instance structure', function() {
-      var emptyInstance;
       var expectedEnumerableKeys = [
         'id',
         'NOMECAD',
@@ -412,28 +413,29 @@ module.exports = function(options) {
         'destroy',
         'was'
       ];
+      var emptyInstance;
       var enumerableKeys;
-      var allKeys;
-      var symbols;
-      var instanceMethods;
+      var columnNames;
       it('should create an empty new instance with no parameters', function() {
         emptyInstance = cadAtivo.createInstance();
-        enumerableKeys = Object.keys(emptyInstance);
-        allKeys = Object.getOwnPropertyNames(emptyInstance);
-        symbols = Object.getOwnPropertySymbols(emptyInstance);
-        instanceMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(emptyInstance));
-        expect(expectedEnumerableKeys).to.eql(enumerableKeys);
+        columnNames = emptyInstance.getColumnNames();
+        expect(expectedEnumerableKeys).to.eql(columnNames);
       });
-      describe('The empty instance', function() {
-        it('Should have an instance method in an extra non enumerable property', function() {
-          expect(allKeys.length).to.equal(enumerableKeys.length + 1);
+      describe('The new instance', function() {
+        it('Only the non undefined are listed as enumerable', function() {
+          emptyInstance.NOMECAD = 'Josie';
+          enumerableKeys = Object.keys(emptyInstance);
+          //logObj('all keys', enumerableKeys)
+          expect(enumerableKeys.length).to.equal(1);
         });
-        it('Should have two symbol properties', function() {
-          expect(symbols.length).to.equal(2);
+        it('The instance method is not a non enumerable property', function() {
+          let allKeys = Object.getOwnPropertyNames(emptyInstance);
+          expect(allKeys.length).to.equal(enumerableKeys.length);
         });
-        it('Should have six instance (prototypes) methods', function() {
-          expect(instanceMethods).to.eql(expectedInstanceMethods);
-        });
+        //it('Should have no symbol properties', function() {
+        //  let symbols = Object.getOwnPropertySymbols(emptyInstance);
+        //  expect(symbols.length).to.equal(0);
+        //}); todo Wait for proxies official support
       });
       describe('The reserved words', function() {
         it('Should not use instance method name for a column', function() {
@@ -1424,6 +1426,7 @@ module.exports = function(options) {
       it('so lets cleanup only COMPLEMENTO', function(done) {
         joao.NOMECAD = 'João';
         joao.COMPLEMENTO = null;
+        console.log('joao', joao)
         cadAtivo
           .update(joao, {where: {id: joao.id, updatedAt: joao.updatedAt}})
           .then(function(record) {
