@@ -2432,6 +2432,18 @@ module.exports = function(options) {
             }
           }
         );
+        cadAtivo.validate(
+          'do not alter TSN', function(was) {
+            if (was.TSN !== this.TSN) {
+              throw new Error('TSN cannot be modified');
+            }
+          }, {onCreate: false});
+        cadAtivo.fornecedor.docpagvc.categoria.validate(
+          'do not alter doCaixa', function(was) {
+            if (was.doCaixa !== this.doCaixa) {
+              throw new Error('doCaixa cannot be modified');
+            }
+          }, {onCreate: false});
         done();
       });
       it('should not be valid due to missing FORNECEDOR=99', function(done) {

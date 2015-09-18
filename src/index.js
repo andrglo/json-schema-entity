@@ -402,7 +402,7 @@ function setIs(instance, record, it) {
         } else if (_.isObject(newValue)) {
           was[key] = 'was' in newValue ? newValue.was() : _.cloneDeep(newValue);
         } else {
-          was[key] = newValue;
+          was[key] = instance[key];
         }
       }
     } else {
