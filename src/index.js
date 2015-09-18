@@ -398,9 +398,9 @@ function setIs(instance, record, it) {
         if (_.isArray(newValue)) {
           was[key] = 'was' in newValue ? newValue.was() :
             newValue.map(newValue =>
-              'was' in newValue ? newValue.was() : _.cloneDeep(newValue));
+              'was' in newValue ? newValue.was() : _.cloneDeep(instance[key]));
         } else if (_.isObject(newValue)) {
-          was[key] = 'was' in newValue ? newValue.was() : _.cloneDeep(newValue);
+          was[key] = 'was' in newValue ? newValue.was() : _.cloneDeep(instance[key]);
         } else {
           was[key] = instance[key];
         }

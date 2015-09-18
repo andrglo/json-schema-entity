@@ -1060,6 +1060,7 @@ module.exports = function(options) {
             expect(record.ClassificaçãoCad).to.be.a('array');
             record.should.have.property('DATNASC');
             expect(record.DATNASC).to.equal('1999-12-31');
+            expect(record.was().DATNASC).to.equal('1999-12-31');
             record.should.have.property('DATNASCZ');
             expect(record.DATNASCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
             record.should.have.property('DATNASCNOZ');
