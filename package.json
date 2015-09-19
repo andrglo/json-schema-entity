@@ -47,7 +47,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "debug": "^2.2.0",
     "lodash": "^3.10.1",
     "json-schema-table": "^0.1.4",
     "sql-view": "^0.0.1",

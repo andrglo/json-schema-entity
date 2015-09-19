@@ -1,7 +1,6 @@
 var _ = require('lodash');
 var assert = require('assert');
 var xml2json = require('xml2json');
-var debug = require('debug')('json-schema-entity');
 var common = require('./common');
 
 var xmlSpaceToken = '_-_';
@@ -74,7 +73,6 @@ module.exports = function(db) {
       ' INTO @tmp VALUES (<values>)');
     commands.push('SELECT * FROM @tmp');
     data.insertCommand = commands.join(';');
-    debug('insert command', data.insertCommand);
   };
   adapter.buildUpdateCommand = function(data) {
     var fieldsWithType = [];
@@ -88,7 +86,6 @@ module.exports = function(db) {
       ' INTO @tmp WHERE <primary-keys>');
     commands.push('SELECT * FROM @tmp');
     data.updateCommand = commands.join(';');
-    debug('update command', data.updateCommand);
   };
   adapter.buildDeleteCommand = function(data) {
     var fieldsWithType = [];
@@ -102,7 +99,6 @@ module.exports = function(db) {
       ' INTO @tmp WHERE <find-keys>');
     commands.push('SELECT * FROM @tmp');
     data.deleteCommand = commands.join(';');
-    debug('delete command', data.deleteCommand);
   };
   adapter.create = common.create;
   adapter.update = common.update;
@@ -125,9 +121,7 @@ module.exports = function(db) {
     const isArray = _.isArray(json);
     _.forEach(isArray ? json : [json], function(record) {
       coerce.map(function(coercion) {
-        debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
         record[coercion.property] = record[coercion.property] && coercion.fn(record[coercion.property]) || null;
-        debug('Coercion after', coercion.property, typeof record[coercion.property], record[coercion.property]);
       });
     });
 
@@ -137,7 +131,6 @@ module.exports = function(db) {
   adapter.buildQuery = function buildQuery(data) {
     var fields = [];
     _.forEach(data.properties, function(property, name) {
-      debug('Property', name);
       var fieldName = property.field || name;
       var alias = name.replace(/ /g, xmlSpaceToken);
       fields.push('[' + fieldName + ']' + (alias !== fieldName ? ' AS [' + alias + ']' : ''));
@@ -148,7 +141,6 @@ module.exports = function(db) {
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {
-        debug('foreignKey yet not defined for', association.data.key);
         return false;
       }
       buildQuery(association.data);
@@ -165,7 +157,6 @@ module.exports = function(db) {
     });
     data.query = 'SELECT ' + fields.join(',') +
       ' FROM [' + data.identity.name + '] AS [' + data.key + ']';
-    debug('Query:', data.query);
   };
 
   adapter.getCoercionFunction = function(type) {

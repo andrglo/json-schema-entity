@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var assert = require('assert');
-var debug = require('debug')('json-schema-entity');
 var common = require('./common');
 
 module.exports = function(db) {
@@ -32,19 +31,16 @@ module.exports = function(db) {
   adapter.buildInsertCommand = function(data) {
     data.insertCommand = 'INSERT INTO ' + db.wrap(data.identity.name) +
       ' (<fields>) VALUES (<values>) RETURNING *';
-    debug('insert command', data.insertCommand);
   };
 
   adapter.buildUpdateCommand = function(data) {
     data.updateCommand = 'UPDATE ' + db.wrap(data.identity.name) +
       ' SET <fields-values> WHERE <primary-keys> RETURNING *';
-    debug('update command', data.updateCommand);
   };
 
   adapter.buildDeleteCommand = function(data) {
     data.deleteCommand = 'DELETE FROM ' + db.wrap(data.identity.name) +
       ' WHERE <find-keys> RETURNING *';
-    debug('delete command', data.deleteCommand);
   };
   adapter.create = common.create;
   adapter.update = common.update;
@@ -53,11 +49,7 @@ module.exports = function(db) {
     assert(_.isArray(jsonset), 'jsonset is not an array');
     _.forEach(jsonset, function(record) {
       coerce.map(function(coercion) {
-        debug('Coercion before', coercion.property, typeof record[coercion.property], record[coercion.property]);
-        if (record[coercion.property]) {
-          record[coercion.property] = coercion.fn(record[coercion.property]);
-        }
-        debug('Coercion after', coercion.property, typeof record[coercion.property], record[coercion.property]);
+        record[coercion.property] = record[coercion.property] && coercion.fn(record[coercion.property]) || null;
       });
     });
     return jsonset;
@@ -67,7 +59,6 @@ module.exports = function(db) {
 
     var fields = [];
     _.forEach(data.properties, function(property, name) {
-      debug('Property', name);
       var fieldName = property.field || name;
       var alias = name;
       fields.push(db.wrap(fieldName) + (alias !== fieldName ? ' AS ' +
@@ -79,7 +70,6 @@ module.exports = function(db) {
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {
-        debug('foreignKey yet not defined for', association.data.key);
         return false;
       }
       buildQuery(association.data);
@@ -96,7 +86,6 @@ module.exports = function(db) {
     });
     data.query = 'SELECT ' + fields.join(',') +
       ' FROM ' + db.wrap(data.identity.name) + ' AS ' + db.wrap(data.key);
-    debug('Query:', data.query);
   };
 
   adapter.getCoercionFunction = function(type, timezone) {

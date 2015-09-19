@@ -4,7 +4,6 @@ var _ = require('lodash');
 var assert = require('assert');
 var sqlView = require('sql-view');
 var jst = require('json-schema-table');
-var debug = require('debug')('json-schema-entity');
 
 //var log = function() {
 //  console.log.apply(null, Array.prototype.slice.call(arguments)
@@ -35,7 +34,6 @@ function runValidations(is, was, data) {
         return _.reduce(data.associations, function(chain, association) {
           return chain.then(function() {
             var associationKey = association.data.key;
-            debug('Associated validation:', associationKey);
             var from = is && is[associationKey];
             var to = was && was[associationKey];
             if (_.isArray(from) || _.isArray(to)) {
@@ -168,7 +166,6 @@ function runFieldValidations(is, was, data, errors) {
         }
         return _.reduce(validations, function(chain, validation) {
           return chain.then(function() {
-            debug('Running field validation:', validation.id, validation.args);
             var res;
             try {
               res = validation.fn.apply(validator, validation.args);
@@ -203,7 +200,6 @@ function runModelValidations(is, was, data, errors) {
         !is && was && validation.options.onDestroy)) {
         return;
       }
-      debug('Running validation:', validation.id);
       var res;
       try {
         res = validation.fn.call(is || was, is ? was : void 0);
@@ -440,13 +436,11 @@ function buildPlainObject(record, data) {
 }
 
 function buildEntity(record, data, isNew, fromFetch, instance, parent) {
-  debug('Entity will be built:', data.key);
   clearNulls(record);
   parent = parent || {};
   let associations = instance instanceof TableRecord ? record : {};
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
-    debug('Checking association key:', key);
     if (record[key]) {
       var recordset = fromFetch ?
         data.adapter.extractRecordset(record[key], association.data.coerce) :
@@ -482,7 +476,6 @@ function runHooks(hooks, model, transaction, data) {
 
   return _.reduce(allHooks, function(chain, hook) {
     return chain.then(function() {
-      debug('Running hook:', hook.id);
       var res;
       try {
         res = hook.fn.call(model, transaction);
@@ -509,7 +502,6 @@ function runHooks(hooks, model, transaction, data) {
 
 function create(entity, options, data) {
   var record = _.pick(entity, data.propertiesList);
-  debug('Creating ', data.key);
   return runHooks(['beforeCreate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
       return data.adapter.create(record, data, {transaction: options.transaction})
@@ -529,13 +521,10 @@ function create(entity, options, data) {
             }
             associatedEntity = associatedEntity === void 0 || recordIsArray ? associatedEntity : [associatedEntity];
             return _.reduce(associatedEntity, function(chain, entity) {
-              debug('ForeignKey in create', association.data.foreignKey, 'key', data.primaryKeyAttributes[0]);
               entity[association.data.foreignKey] = newEntity[data.primaryKeyAttributes[0]];
-              debug(entity ? entity : data.key + ' association ' + associationKey + ' non existent');
               return chain.then(function() {
                 return create(entity, {transaction: options.transaction}, association.data)
                   .then(function(associationEntity) {
-                    debug('created ', data.key, 'association', associationKey);
                     if (hasMany) {
                       newEntity[associationKey] = newEntity[associationKey] || [];
                       newEntity[associationKey].push(associationEntity);
@@ -559,7 +548,6 @@ function create(entity, options, data) {
 
 function update(entity, was, options, data) {
   var record = _.pick(entity, data.propertiesList);
-  debug('Updating ', data.key);
   return runHooks(['beforeUpdate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
       options = {where: {}, transaction: options.transaction};
@@ -569,7 +557,6 @@ function update(entity, was, options, data) {
       if (data.timestamps) {
         options.where.updatedAt = entity.updatedAt || null;
       }
-      debug('Will update', data.key, 'key', options.where);
       return data.adapter.update(record, data, options)
         .then(function(res) {
           assert(res[0] === 1 || typeof res === 'object' && res[0] === void 0,
@@ -653,17 +640,14 @@ function update(entity, was, options, data) {
             });
 
             return _.reduce(toBeDeleted, function(chain, entity) {
-              debug('ForeignKey in update/delete', association.data.foreignKey, 'key', data.primaryKeyAttributes[0]);
               return chain.then(function() {
                 return destroy(entity, options, association.data);
               });
             }, chain).then(function() {
               return _.reduce(toBeUpdated, function(chain, entity) {
-                debug('ForeignKey in update/update', association.data.foreignKey, 'key', data.primaryKeyAttributes[0]);
                 return chain.then(function() {
                   return update(entity, find(entity, was[association.data.key]), options, association.data)
                     .then(function(associationEntity) {
-                      debug('updated ', data.key, 'association', associationKey);
                       if (hasMany) {
                         modifiedEntity[associationKey] = modifiedEntity[associationKey] || [];
                         modifiedEntity[associationKey].push(associationEntity);
@@ -675,13 +659,10 @@ function update(entity, was, options, data) {
               }, chain);
             }).then(function() {
               return _.reduce(toBeCreated, function(chain, entity) {
-                debug('ForeignKey in update/create', association.data.foreignKey, 'key', data.primaryKeyAttributes[0]);
                 entity[association.data.foreignKey] = modifiedEntity[data.primaryKeyAttributes[0]];
-                debug(entity ? entity : data.key + ' association ' + associationKey + ' non existent');
                 return chain.then(function() {
                   return create(entity, options, association.data)
                     .then(function(associationEntity) {
-                      debug('created ', data.key, 'association', associationKey);
                       if (hasMany) {
                         modifiedEntity[associationKey] = modifiedEntity[associationKey] || [];
                         modifiedEntity[associationKey].push(associationEntity);
@@ -705,7 +686,6 @@ function update(entity, was, options, data) {
 }
 
 function destroy(entity, options, data) {
-  debug('Deleting ', data.key);
   return runHooks(['beforeDelete', 'beforeDestroy'], entity, options.transaction, data)
     .then(function() {
       return _.reduce(data.associations, function(chain, association) {
@@ -1294,9 +1274,11 @@ function buildTable(data) {
 function findProperty(name, properties) {
   var property = properties[name];
   if (property === void 0) {
-    property = _.reduce(properties, function(res, prop, propName) {
-        return res ? res : name === propName ? prop : void 0;
-      }, void 0) ||
+    property = _.
+      reduce(properties,
+        function(res, prop, propName) {
+          return res ? res : name === propName ? prop : void 0;
+        }, void 0) ||
       _.reduce(properties, function(res, prop) {
         return res ? res : prop.field && name === prop.field ? prop : void 0;
       }, void 0);

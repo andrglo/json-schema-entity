@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var assert = require('assert');
-var debug = require('debug')('json-schema-entity');
 
 exports.create = function(record, data, options) {
   options = options || {};
@@ -45,7 +44,6 @@ exports.create = function(record, data, options) {
     fields.reduce(function(fields) {
       return fields + (fields ? ',' : '') + '$' + index++;
     }, ''));
-  debug(insertCommand, params);
   return data.public.db.execute(insertCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
       assert(recordset.length === 1, 'One and only one record should have been inserted');
@@ -111,7 +109,6 @@ exports.update = function(record, data, options) {
         data.public.db.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
-  debug(updateCommand);
   return data.public.db.execute(updateCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
       assert(recordset.length === 1, 'One and only one record should have been updated');
@@ -148,7 +145,6 @@ exports.destroy = function(data, options) {
         data.public.db.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
-  debug(deleteCommand, params);
   return data.public.db.execute(deleteCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
       assert(recordset.length === 1, 'One and only one record should have been deleted');
