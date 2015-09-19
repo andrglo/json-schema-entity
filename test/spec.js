@@ -2822,6 +2822,40 @@ module.exports = function(options) {
           })
           .catch(logError(done));
       });
+      it('Will return a plain object after fetch', function(done) {
+        cadAtivo
+          .fetch({where: {id: marianne.id}}, {toPlainObject: true})
+          .then(function(recordset) {
+            var record = recordset[0];
+            expect(record.id).to.exist;
+            expect(record).to.not.have.property('save');
+            expect(record.IDENT).to.be.null;
+            expect(record.DATNASC).to.be.a('date');
+
+            expect(record.fornecedor.id).to.exist;
+            expect(record.fornecedor).to.not.have.property('save');
+            //expect(record.fornecedor.INSCEST).to.be.null;
+            expect(record.fornecedor.TIPOCONTA).to.equal('1');
+            expect(record.fornecedor.SIGLAFOR).to.equal('Catering');
+
+            expect(record.fornecedor.docpagvc[0].id).to.exist;
+            expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
+            expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null;
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
+            expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P');
+
+            expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
+            expect(record.fornecedor.docpagvc[0].categoria).to.not.have.property('save');
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('D');
+
+            expect(record.ClassificaçãoCad[0].NUMCAD).to.exist;
+            expect(record.ClassificaçãoCad[0]).to.not.have.property('save');
+            expect(record.ClassificaçãoCad[0].quitado).to.be.null;
+
+            done();
+          })
+          .catch(logError(done));
+      });
       var lorraine;
       it('Will return a instance after create if you pass a instance, even with toPlainObject true', function(done) {
         lorraine = cadAtivo.createInstance({

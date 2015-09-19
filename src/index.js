@@ -1253,12 +1253,10 @@ function buildTable(data) {
   data.propertiesList = Object.keys(data.properties);
   data.coerce = [];
   _.forEach(data.properties, function(property, name) {
-    if (property.type !== 'string') {
-      data.coerce.push({
-        property: name,
-        fn: data.adapter.getCoercionFunction(property.type, property.timezone)
-      });
-    }
+    data.coerce.push({
+      property: name,
+      fn: data.adapter.getCoercionFunction(property.type, property.timezone)
+    });
   });
   if (data.timestamps) {
     if (data.propertiesList.indexOf('updatedAt') !== -1 || data.propertiesList.indexOf('createdAt') !== -1) {
