@@ -484,13 +484,13 @@ module.exports = function(options) {
     });
 
     describe('create cadastro', function() {
-      it('should not create a new cadastro with a partial enum', function(done) {
+      it('should not create a new cadastro with a partial invalid enum', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'João',
             NUMERO: '1',
             COMPLEMENTO: 'Do not exclude',
-            TSN: '1'
+            TSN: '2 - Optante'
           })
           .then(function() {
             done(new Error('Invalid record created'));
@@ -1045,6 +1045,7 @@ module.exports = function(options) {
           })
           .then(function(record) {
             any = record;
+            expect(record.DATNASC).to.equal('1999-12-31');
             done();
           })
           .catch(logError(done));
@@ -2516,7 +2517,7 @@ module.exports = function(options) {
         jessica
           .destroy()
           .then(function() {
-            done(new Error(('Invalid operation')));
+            done(new Error('Invalid operation'));
           })
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
@@ -2713,9 +2714,8 @@ module.exports = function(options) {
             })
             .catch(logError(done));
         });
-        var jane;
         it('will not mutate a plain object to a instance after create', function(done) {
-          jane = {
+          var jane = {
             NOMECAD: 'Jane'
           };
           cadAtivo
@@ -2731,9 +2731,194 @@ module.exports = function(options) {
       });
     });
 
+    describe('Plain object', function() {
+      var marianne;
+      it('Will return a plain object after create', function(done) {
+        marianne = {
+          NOMECAD: 'Marianne',
+          DATNASC: '1998-12-31',
+          fornecedor: {
+            SIGLAFOR: 'Marianne catering',
+            NUMERO: '99',
+            docpagvc: [{
+              VALOR: 350.99,
+              DATAVENC: '2015-08-23',
+              categoria: {
+                id: '888',
+                DESCEVENTO: 'Category 888'
+              }
+            }]
+          },
+          ClassificaçãoCad: [
+            {
+              Classe: 'Fornecedor'
+            }
+          ]
+        };
+        cadAtivo
+          .create(marianne, {toPlainObject: true})
+          .then(function(record) {
+            expect(record.id).to.exist;
+            expect(record).to.not.have.property('save');
+            expect(record.IDENT).to.be.null;
+            expect(record.DATNASC).to.be.a('date');
+
+            expect(record.fornecedor.id).to.exist;
+            expect(record.fornecedor).to.not.have.property('save');
+            expect(record.fornecedor.INSCEST).to.be.null;
+            expect(record.fornecedor.TIPOCONTA).to.equal('1');
+
+            expect(record.fornecedor.docpagvc[0].id).to.exist;
+            expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
+            expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null;
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
+            expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P');
+
+            expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
+            expect(record.fornecedor.docpagvc[0].categoria).to.not.have.property('save');
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('D');
+
+            expect(record.ClassificaçãoCad[0].NUMCAD).to.exist;
+            expect(record.ClassificaçãoCad[0]).to.not.have.property('save');
+            expect(record.ClassificaçãoCad[0].quitado).to.be.null;
+
+            marianne = record;
+
+            done();
+          })
+          .catch(logError(done));
+      });
+      it('Will return a plain object after update', function(done) {
+        marianne.fornecedor.SIGLAFOR = 'Catering';
+        cadAtivo
+          .update(marianne, null, {toPlainObject: true})
+          .then(function(record) {
+            expect(record.id).to.exist;
+            expect(record).to.not.have.property('save');
+            expect(record.IDENT).to.be.null;
+            expect(record.DATNASC).to.be.a('date');
+
+            expect(record.fornecedor.id).to.exist;
+            expect(record.fornecedor).to.not.have.property('save');
+            expect(record.fornecedor.INSCEST).to.be.null;
+            expect(record.fornecedor.TIPOCONTA).to.equal('1');
+            expect(record.fornecedor.SIGLAFOR).to.equal('Catering');
+
+            expect(record.fornecedor.docpagvc[0].id).to.exist;
+            expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
+            expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null;
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
+            expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P');
+
+            expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
+            expect(record.fornecedor.docpagvc[0].categoria).to.not.have.property('save');
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('D');
+
+            expect(record.ClassificaçãoCad[0].NUMCAD).to.exist;
+            expect(record.ClassificaçãoCad[0]).to.not.have.property('save');
+            expect(record.ClassificaçãoCad[0].quitado).to.be.null;
+
+            done();
+          })
+          .catch(logError(done));
+      });
+      var lorraine;
+      it('Will return a instance after create if you pass a instance, even with toPlainObject true', function(done) {
+        lorraine = cadAtivo.createInstance({
+          NOMECAD: 'Lorraine',
+          DATNASC: '1998-12-31',
+          fornecedor: {
+            SIGLAFOR: 'Loarraine catering',
+            NUMERO: '99',
+            docpagvc: [{
+              VALOR: 350.99,
+              DATAVENC: '2015-08-23',
+              categoria: {
+                id: '999',
+                DESCEVENTO: 'Category 999'
+              }
+            }]
+          },
+          ClassificaçãoCad: [
+            {
+              Classe: 'Fornecedor'
+            }
+          ]
+        });
+        cadAtivo
+          .create(lorraine, {toPlainObject: true})
+          .then(function(record) {
+            expect(record.id).to.exist;
+            expect(record).to.have.property('save');
+            expect(record.IDENT).to.be.undefined;
+            expect(record.DATNASC).to.be.a('string');
+
+            expect(record.fornecedor.id).to.exist;
+            expect(record.fornecedor).to.have.property('save');
+            expect(record.fornecedor.INSCEST).to.be.undefined;
+            expect(record.fornecedor.TIPOCONTA).to.equal('1-Conta_corrente');
+
+            expect(record.fornecedor.docpagvc[0].id).to.exist;
+            expect(record.fornecedor.docpagvc[0]).to.have.property('save');
+            expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.undefined;
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('string');
+            expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('Pendente');
+
+            expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
+            expect(record.fornecedor.docpagvc[0].categoria).to.have.property('save');
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('Devedora');
+
+            expect(record.ClassificaçãoCad[0].NUMCAD).to.exist;
+            expect(record.ClassificaçãoCad[0]).to.have.property('save');
+            expect(record.ClassificaçãoCad[0].quitado).to.be.undefined;
+
+            lorraine = record;
+
+            done();
+          })
+          .catch(logError(done));
+      });
+      it('Will return a instance after update if you pass a instance, even with toPlainObject true', function(done) {
+        lorraine.fornecedor.SIGLAFOR = 'Catering';
+        cadAtivo
+          .update(lorraine, null, {toPlainObject: true})
+          .then(function(record) {
+            expect(record.id).to.exist;
+            expect(record).to.have.property('save');
+            expect(record.IDENT).to.be.undefined;
+            expect(record.DATNASC).to.be.a('string');
+
+            expect(record.fornecedor.id).to.exist;
+            expect(record.fornecedor).to.have.property('save');
+            expect(record.fornecedor.INSCEST).to.be.undefined;
+            expect(record.fornecedor.TIPOCONTA).to.equal('1-Conta_corrente');
+            expect(record.fornecedor.SIGLAFOR).to.equal('Catering');
+
+            expect(record.fornecedor.docpagvc[0].id).to.exist;
+            expect(record.fornecedor.docpagvc[0]).to.have.property('save');
+            expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.undefined;
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('string');
+            expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('Pendente');
+
+            expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
+            expect(record.fornecedor.docpagvc[0].categoria).to.have.property('save');
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('Devedora');
+
+            expect(record.ClassificaçãoCad[0].NUMCAD).to.exist;
+            expect(record.ClassificaçãoCad[0]).to.have.property('save');
+            expect(record.ClassificaçãoCad[0].quitado).to.be.undefined;
+
+            lorraine = record;
+
+            done();
+          })
+          .catch(logError(done));
+      });
+    });
+
     describe('querying', function() {
       var numberOfRecordsToGenerate = 10;
-      var minMiliSecsToGenerate = 500;
+      var minMiliSecsToGenerate = 450;
       it('should create ' + numberOfRecordsToGenerate + ' records in an minimum time', function(done) {
         gutil.log('Is generating ' + numberOfRecordsToGenerate + ' entities...');
         var duration = process.hrtime();
@@ -2771,7 +2956,7 @@ module.exports = function(options) {
                     Classe: 'Fornecedor'
                   }
                 ]
-              });
+              }, {toPlainObject: true});
           });
         });
 
@@ -2782,17 +2967,17 @@ module.exports = function(options) {
             expect(duration).to.below(minMiliSecsToGenerate);
             done();
           })
-          .catch(function(error) {
-            done(error);
-          });
+          .catch(done);
       });
 
       it('should read the records', function(done) {
         cadAtivo
-          .fetch({where: {NUMERO: 'QRYTST'}})
+          .fetch({where: {NUMERO: 'QRYTST'}}, {toPlainObject: true})
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(numberOfRecordsToGenerate);
+            expect(recordset[0].IDENT).to.be.null;
+            expect(recordset[0]).to.not.have.property('save');
             done();
           })
           .catch(function(err) {

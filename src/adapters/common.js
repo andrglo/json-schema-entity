@@ -52,21 +52,7 @@ exports.create = function(record, data, options) {
       var inserted = recordset[0];
       _.forEach(data.properties, function(property, name) {
         var fieldName = property.field || name;
-        var insertedValue = inserted[fieldName];
-        if (insertedValue !== null) {
-          if (property.enum && property.maxLength) {
-            record[name] = property.enum.reduce(function(result, value) {
-              return result ||
-                (value.substr(0, property.maxLength) === insertedValue ? value : null);
-            }, null);
-          } else if (property.type === 'date') {
-            record[name] = insertedValue.toISOString().substr(0, 10);
-          } else {
-            record[name] = insertedValue;
-          }
-        } else {
-          delete record[name];
-        }
+        record[name] = inserted[fieldName];
       });
       if (data.timestamps) {
         record.createdAt = inserted.createdAt;
@@ -132,21 +118,7 @@ exports.update = function(record, data, options) {
       var updated = recordset[0];
       _.forEach(data.properties, function(property, name) {
         var fieldName = property.field || name;
-        var updatedValue = updated[fieldName];
-        if (updatedValue !== null) {
-          if (property.enum && property.maxLength) {
-            record[name] = property.enum.reduce(function(result, value) {
-              return result ||
-                (value.substr(0, property.maxLength) === updatedValue ? value : null);
-            }, null);
-          } else if (property.type === 'date') {
-            record[name] = updatedValue.toISOString().substr(0, 10);
-          } else {
-            record[name] = updatedValue;
-          }
-        } else {
-          delete record[name];
-        }
+        record[name] = updated[fieldName];
       });
       if (data.timestamps) {
         record.createdAt = updated.createdAt;

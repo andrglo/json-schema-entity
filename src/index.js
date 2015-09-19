@@ -114,7 +114,10 @@ function runFieldValidations(is, was, data, errors) {
       _.forEach(is && data.properties, function(property, key) {
         if (is[key] && is[key] !== null) {
           var value = is[key];
-          if (property.enum && property.enum.indexOf(value) === -1) {
+          if (property.enum && property.enum.indexOf(value) === -1 &&
+            (property.maxLength && property.enum
+              .map(value => value.substr(0, property.maxLength))
+              .indexOf(value) === -1)) {
             errors.push({
               path: key,
               message: 'Value \'' + value + '\' not valid. Options are: ' + property.enum.join()
@@ -421,11 +424,24 @@ function clearNulls(obj) {
   });
 }
 
+function buildPlainObject(record, data) {
+  _.forEach(data.associations, function(association) {
+    var key = association.data.key;
+    if (record[key]) {
+      var recordset = data.adapter.extractRecordset(record[key], association.data.coerce);
+      for (var i = 0; i < recordset.length; i++) {
+        recordset[i] = buildPlainObject(recordset[i], association.data);
+      }
+      record[key] = recordset.length === 1 && association.type === 'hasOne' ?
+        recordset[0] : recordset;
+    }
+  });
+  return record;
+}
+
 function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   debug('Entity will be built:', data.key);
-  if (!isNew) {
-    clearNulls(record);
-  }
+  clearNulls(record);
   parent = parent || {};
   let associations = instance instanceof TableRecord ? record : {};
   _.forEach(data.associations, function(association) {
@@ -858,7 +874,9 @@ module.exports = function(schemaName, schema, config) {
                 .query(view.statement, view.params, {transaction: options.transaction})
                 .then(function(res) {
                   return res.map(function(record) {
-                    return buildEntity(record, data, false, true);
+                    return options.toPlainObject === true ?
+                      buildPlainObject(record, data) :
+                      buildEntity(record, data, false, true);
                   });
                 });
             });
@@ -875,7 +893,9 @@ module.exports = function(schemaName, schema, config) {
                 });
             })
             .then(function(record) {
-              return buildEntity(record, data, false, false, entity);
+              return options.toPlainObject === true && !(entity instanceof TableRecord) ?
+                record :
+                buildEntity(record, data, false, false, entity);
             });
         },
         update: function(entity, key, options) {
@@ -933,7 +953,9 @@ module.exports = function(schemaName, schema, config) {
                     });
                 })
                 .then(function(record) {
-                  return buildEntity(record, data, false, false, entity);
+                  return options.toPlainObject === true && !(entity instanceof TableRecord) ?
+                    record :
+                    buildEntity(record, data, false, false, entity);
                 });
             });
         },
