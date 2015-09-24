@@ -805,7 +805,7 @@ module.exports = function(schemaName, schema, config) {
           rebuild();
           return data.public;
         },
-        getSchema: function() {
+        get schema() {
 
           function buildSchema(data) {
             var schema = data.schema;
@@ -823,7 +823,15 @@ module.exports = function(schemaName, schema, config) {
             return data.schema;
           }
 
-          return buildSchema(data);
+          return {
+            get() {
+              return buildSchema(data);
+            },
+
+            primaryKey() {
+              return data.primaryKeyAttributes.slice();
+            }
+          };
 
         },
         fetch: function(criteria, options) {

@@ -270,22 +270,27 @@ module.exports = function(options) {
           expect(error.message).to.equal('Adapter for this conector is not implemented');
         }
       });
+      it('should have a primary key', function() {
+        var primaryKey = cadAtivo.schema.primaryKey();
+        expect(primaryKey).to.be.a('array');
+        expect(primaryKey).to.eql(['id']);
+      });
       it('should have property destino', function() {
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('destino');
         schema.properties.destino.should.have.property('items');
         schema.properties.destino.items.should.have.property('properties');
         expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(5);
       });
       it('should have property outroDestino', function() {
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('outroDestino');
         schema.properties.outroDestino.should.have.property('items');
         schema.properties.outroDestino.items.should.have.property('properties');
         expect(Object.keys(schema.properties.outroDestino.items.properties).length).to.equal(3);
       });
       it('should have a customized title for property TipoSimplesNacional', function() {
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         var properties = Object.keys(schema.properties);
         expect(properties.length).to.equal(38);
         expect(properties.indexOf('FAX')).to.equal(-1);
@@ -294,7 +299,7 @@ module.exports = function(options) {
         expect(schema.properties.TSN.title).to.equal('TSN')
       });
       it('should have property fornecedor', function() {
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('fornecedor');
         schema.properties.fornecedor.should.have.property('type');
         schema.properties.fornecedor.type.should.equal('object');
@@ -303,7 +308,7 @@ module.exports = function(options) {
       });
       it('should have property cliente', function() {
         cadAtivo.should.have.property('cliente');
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('cliente');
         schema.properties.cliente.should.have.property('type');
         schema.properties.cliente.type.should.equal('object');
@@ -316,21 +321,21 @@ module.exports = function(options) {
         expect(Object.keys(schema.properties.cliente.properties).length).to.equal(66);
       });
       it('should have property classificacaocad', function() {
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('ClassificaçãoCad');
         schema.properties.ClassificaçãoCad.should.have.property('items');
         schema.properties.ClassificaçãoCad.items.should.have.property('properties');
         expect(Object.keys(schema.properties.ClassificaçãoCad.items.properties).length).to.equal(2);
       });
       it('should have property docpagvc', function() {
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('docpagvc');
         schema.properties.docpagvc.should.have.property('items');
         schema.properties.docpagvc.items.should.have.property('properties');
         expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(6);
       });
       it('should have property docpagvc in fornecedor', function() {
-        var schema = cadAtivo.getSchema();
+        var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('fornecedor');
         schema.properties.fornecedor.properties.should.have.property('docpagvc');
         schema.properties.fornecedor.properties.docpagvc.should.have.property('items');
