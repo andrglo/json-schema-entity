@@ -1,5 +1,6 @@
 var _ = require('lodash');
 var assert = require('assert');
+var EntityError = require('../entity-error');
 
 exports.create = function(record, data, options) {
   options = options || {};
@@ -46,7 +47,7 @@ exports.create = function(record, data, options) {
     }, ''));
   return data.public.db.execute(insertCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
-      assert(recordset.length === 1, 'One and only one record should have been inserted');
+      checkRecordsetLength(data, null, recordset.length, 'create');
       var inserted = recordset[0];
       _.forEach(data.properties, function(property, name) {
         var fieldName = property.field || name;
@@ -111,7 +112,7 @@ exports.update = function(record, data, options) {
     }, ''));
   return data.public.db.execute(updateCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
-      assert(recordset.length === 1, 'One and only one record should have been updated');
+      checkRecordsetLength(data, options.where, recordset.length, 'update');
       var updated = recordset[0];
       _.forEach(data.properties, function(property, name) {
         var fieldName = property.field || name;
@@ -147,7 +148,18 @@ exports.destroy = function(data, options) {
     }, ''));
   return data.public.db.execute(deleteCommand, params, {transaction: options.transaction})
     .then(function(recordset) {
-      assert(recordset.length === 1, 'One and only one record should have been deleted');
+      checkRecordsetLength(data, options.where, recordset.length, 'delete');
       return recordset.length;
     });
 };
+
+function checkRecordsetLength(data, key, n, type) {
+  if (n === 0 && key) {
+    throw new EntityError({
+      type: 'RecordModifiedOrDeleted',
+      message: `Entity '${data.key}' key ${JSON.stringify(key)} not found for ${type}`
+    });
+  }
+  assert(n === 1, `${n} records have been ${type}d, expected one`);
+}
+

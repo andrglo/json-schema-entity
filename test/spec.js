@@ -3302,8 +3302,9 @@ module.exports = function(options) {
             done(new Error('Invalid record updated'));
           })
           .catch(function(error) {
-            expect(error.name).to.equal('AssertionError');
-            expect(error.message).to.contains('One and only one record');
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('RecordModifiedOrDeleted');
+            expect(error.message).to.contains('not found for update');
             done();
           })
           .catch(logError(done));
@@ -3315,8 +3316,9 @@ module.exports = function(options) {
             done(new Error('Invalid record deletion'));
           })
           .catch(function(error) {
-            expect(error.name).to.equal('AssertionError');
-            expect(error.message).to.contains('One and only one record');
+            expect(error.name).to.equal('EntityError');
+            expect(error.type).to.equal('RecordModifiedOrDeleted');
+            expect(error.message).to.contains('not found for delete');
             done();
           })
           .catch(logError(done));
