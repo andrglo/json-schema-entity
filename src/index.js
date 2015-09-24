@@ -4,25 +4,12 @@ var _ = require('lodash');
 var assert = require('assert');
 var sqlView = require('sql-view');
 var jst = require('json-schema-table');
+var EntityError = require('./entity-error');
 
 //var log = function() {
 //  console.log.apply(null, Array.prototype.slice.call(arguments)
 //    .map(arg => JSON.stringify(arg, null, '  ')));
 //};
-
-function EntityError(options) {
-  options = options || {};
-  this.name = options.name || 'EntityError';
-  this.message = options.message || 'Entity error';
-  if (options.errors) {
-    this.errors = options.errors;
-  }
-  if (options.type) {
-    this.type = options.type;
-  }
-}
-EntityError.prototype = Object.create(Error.prototype);
-EntityError.prototype.constructor = EntityError;
 
 function runValidations(is, was, data) {
 
