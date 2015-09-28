@@ -275,6 +275,13 @@ module.exports = function(options) {
         expect(primaryKey).to.be.a('array');
         expect(primaryKey).to.eql(['id']);
       });
+      it('should have 5 tables', function() {
+        var tables = cadAtivo.schema.tables();
+        expect(tables).to.be.a('object');
+        var keys = Object.keys(tables);
+        expect(keys).to.be.a('array');
+        expect(keys).to.eql(['CADASTRO', 'FORNEC', 'DOCPAGVC', 'CLIENTE', 'ClassificaçãoCad']);
+      });
       it('should have property destino', function() {
         var schema = cadAtivo.schema.get();
         schema.properties.should.have.property('destino');

@@ -830,7 +830,16 @@ module.exports = function(schemaName, schema, config) {
 
             primaryKey() {
               return data.primaryKeyAttributes.slice();
+            },
+
+            tables() {
+              var tables = [];
+              getTables(data, tables);
+              var res = {};
+              tables.forEach(table => res[table.name] = res[table.name] || table.schema);
+              return res;
             }
+
           };
 
         },
