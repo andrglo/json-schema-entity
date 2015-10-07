@@ -11,63 +11,65 @@ var EntityError = require('./entity-error');
 //    .map(arg => JSON.stringify(arg, null, '  ')));
 //};
 
-function runValidations(is, was, data) {
+function toArray(obj) {
+  return Array.isArray(obj) ? obj : obj && [obj] || [];
+}
+
+function validateModel(is, was, data) {
 
   var errors = [];
 
   function validate(is, was, data) {
-    return runFieldValidations(is, was, data, errors).then(function() {
-      return runModelValidations(is, was, data, errors).then(function() {
-        return _.reduce(data.associations, function(chain, association) {
-          return chain.then(function() {
-            var associationKey = association.data.key;
-            var from = is && is[associationKey];
-            var to = was && was[associationKey];
-            if (_.isArray(from) || _.isArray(to)) {
-              from = _.isArray(from) ? from.slice(0) : from ? [from] : [];
-              to = _.isArray(to) ? to.slice(0) : to ? [to] : [];
-              var pairs = [];
+    return runModelValidations(is, was, data, errors).then(function() {
+      return _.reduce(data.associations, function(chain, association) {
+        return chain.then(function() {
+          var associationKey = association.data.key;
+          var from = is && is[associationKey];
+          var to = was && was[associationKey];
+          if (_.isArray(from) || _.isArray(to)) {
+            from = _.isArray(from) ? from.slice(0) : from ? [from] : [];
+            to = _.isArray(to) ? to.slice(0) : to ? [to] : [];
+            var pairs = [];
 
-              var hasEqualPrimaryKey = function(a, b) {
-                var same = false;
-                _.forEach(association.data.primaryKeyAttributes, function(name) {
-                  same = a[name] === b[name] || Number(a[name]) === Number(b[name]);
-                  return same;
-                });
+            var hasEqualPrimaryKey = function(a, b) {
+              var same = false;
+              _.forEach(association.data.primaryKeyAttributes, function(name) {
+                same = a[name] === b[name] || Number(a[name]) === Number(b[name]);
                 return same;
-              };
-
-              var findAndRemove = function(arr, obj) {
-                var res = _.remove(arr, function(e) {
-                  if (hasEqualPrimaryKey(e, obj)) {
-                    return true;
-                  }
-                });
-                assert(res.length < 2, 'Pair this was for validation should be 1 but found ' + res.length);
-                return res.length === 0 ? void 0 : res[0];
-              };
-
-              from.map(function(record) {
-                pairs.push({
-                  from: record,
-                  to: findAndRemove(to, record)
-                });
               });
-              to.map(function(record) {
-                pairs.push({
-                  to: record
-                });
-              });
+              return same;
+            };
 
-              return _.reduce(pairs, function(chain, pair) {
-                return validate(pair.from, pair.to, association.data);
-              }, Promise.resolve());
-            } else {
-              return validate(from, to, association.data);
-            }
-          });
-        }, Promise.resolve());
-      });
+            var findAndRemove = function(arr, obj) {
+              var res = _.remove(arr, function(e) {
+                if (hasEqualPrimaryKey(e, obj)) {
+                  return true;
+                }
+              });
+              assert(res.length < 2, 'Pair this was for validation should be 1 but found ' + res.length);
+              return res.length === 0 ? void 0 : res[0];
+            };
+
+            from.map(function(record) {
+              pairs.push({
+                from: record,
+                to: findAndRemove(to, record)
+              });
+            });
+            to.map(function(record) {
+              pairs.push({
+                to: record
+              });
+            });
+
+            return _.reduce(pairs, function(chain, pair) {
+              return validate(pair.from, pair.to, association.data);
+            }, Promise.resolve());
+          } else {
+            return validate(from, to, association.data);
+          }
+        });
+      }, Promise.resolve());
     });
   }
 
@@ -92,7 +94,35 @@ function decimalPlaces(num) {
       - (match[2] ? +match[2] : 0)) || 0;
 }
 
-function runFieldValidations(is, was, data, errors) {
+function validateFields(is, data) {
+
+  let errors = [];
+
+  function validate(is, data) {
+    return runFieldValidations(is, data, errors)
+      .then(() =>
+        data.associations.reduce(
+          (chain, association) =>
+            chain.then(() =>
+              toArray(is && is[association.data.key])
+                .reduce((chain, is) =>
+                    chain.then(() => validate(is, association.data)),
+                  Promise.resolve())),
+          Promise.resolve()));
+  }
+
+  return validate(is, data).then(() => {
+    if (errors.length > 0) {
+      throw new EntityError({
+        message: 'Validation error',
+        type: 'ValidationError',
+        errors: errors
+      });
+    }
+  });
+}
+
+function runFieldValidations(is, data, errors) {
   var validator = data.validator;
   return Promise.resolve()
     .then(function() {
@@ -189,7 +219,7 @@ function runModelValidations(is, was, data, errors) {
       }
       var res;
       try {
-        res = validation.fn.call(is || was, is ? was : void 0);
+        res = validation.fn.call(is || was);
       } catch (err) {
         errors.push({path: validation.id, message: err.message});
       }
@@ -227,7 +257,7 @@ class TableRecord {
       Object.defineProperty(this, method.id, {
         value: method.fn
       }));
-    setIs(this, record, it);
+    setIs(this, record, it, isNew);
     Object.freeze(this);
   }
 
@@ -237,7 +267,7 @@ class TableRecord {
 
   validate() {
     let it = tableRecordData.get(this);
-    return runValidations(this, it.was, it.info.data);
+    return validateModel(this, this.was, it.info.data);
   }
 
   save(options) {
@@ -281,7 +311,7 @@ class TableRecord {
       });
   }
 
-  was() {
+  get was() {
     return tableRecordData.get(this).was;
   }
 
@@ -358,7 +388,7 @@ class TableRecordSchema {
 
 }
 
-function setIs(instance, record, it) {
+function setIs(instance, record, it, isNew) {
   let alreadyBuilt = it === void 0;
   it = it || tableRecordData.get(instance);
   let was = {};
@@ -382,11 +412,11 @@ function setIs(instance, record, it) {
       } else {
         instance[key] = newValue;
         if (_.isArray(newValue)) {
-          was[key] = 'was' in newValue ? newValue.was() :
+          was[key] = 'was' in newValue ? newValue.was :
             newValue.map(newValue =>
-              'was' in newValue ? newValue.was() : _.cloneDeep(instance[key]));
+              'was' in newValue ? newValue.was : _.cloneDeep(instance[key]));
         } else if (_.isObject(newValue)) {
-          was[key] = 'was' in newValue ? newValue.was() : _.cloneDeep(instance[key]);
+          was[key] = 'was' in newValue ? newValue.was : _.cloneDeep(instance[key]);
         } else {
           was[key] = instance[key];
         }
@@ -395,8 +425,16 @@ function setIs(instance, record, it) {
       it.values[key] = void 0;
     }
   });
-  Object.freeze(was);
-  it.was = was;
+
+  function exists(record) {
+    return isNew !== true || record[it.info.data.foreignKey] !== void 0;
+  }
+
+  if (exists(record)) {
+    Object.freeze(was);
+    it.was = was;
+  }
+
 }
 
 function clearNulls(obj) {
@@ -867,19 +905,26 @@ module.exports = function(schemaName, schema, config) {
         },
         create: function(entity, options) {
           options = options || {};
-          return runValidations(entity, void 0, data)
+          var isInstance = entity instanceof TableRecord;
+          return (isInstance ? Promise.resolve() : validateFields(entity, data))
             .then(function() {
-              return options.transaction ?
-                create(entity, options, data) :
-                db.transaction(function(t) {
-                  options.transaction = t;
-                  return create(entity, options, data);
-                });
+              entity = isInstance ? entity : buildEntity(entity, data, true);
             })
-            .then(function(record) {
-              return options.toPlainObject === true && !(entity instanceof TableRecord) ?
-                record :
-                buildEntity(record, data, false, false, entity);
+            .then(function() {
+              return validateModel(entity, void 0, data)
+                .then(function() {
+                  return options.transaction ?
+                    create(entity, options, data) :
+                    db.transaction(function(t) {
+                      options.transaction = t;
+                      return create(entity, options, data);
+                    });
+                })
+                .then(function(record) {
+                  return options.toPlainObject === true && !isInstance ?
+                    record :
+                    buildEntity(record, data, false, false, entity);
+                });
             });
         },
         update: function(entity, key, options) {
@@ -909,7 +954,7 @@ module.exports = function(schemaName, schema, config) {
             key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
           }
           return (entity instanceof TableRecord ?
-            Promise.resolve([entity.was()]) :
+            Promise.resolve([entity.was]) :
             data.methods.fetch(key, options))
             .then(function(was) {
               if (was.length === 0) {
@@ -920,14 +965,14 @@ module.exports = function(schemaName, schema, config) {
               }
               assert(was.length === 1);
 
-              var validations;
-              if (entity instanceof TableRecord) {
-                validations = entity.validate();
-              } else {
-                entity = _.extend({}, was[0], entity);
-                validations = runValidations(entity, was[0], data);
-              }
-              return validations
+              var isInstance = entity instanceof TableRecord;
+              return (isInstance ? Promise.resolve() : validateFields(entity, data))
+                .then(function() {
+                  entity = isInstance ? entity : buildEntity(_.extend({}, was[0], entity), data);
+                })
+                .then(function() {
+                  return validateModel(entity, was[0], data);
+                })
                 .then(function() {
                   return options.transaction ?
                     update(entity, was[0], options, data) :
@@ -937,7 +982,7 @@ module.exports = function(schemaName, schema, config) {
                     });
                 })
                 .then(function(record) {
-                  return options.toPlainObject === true && !(entity instanceof TableRecord) ?
+                  return options.toPlainObject === true && !isInstance ?
                     record :
                     buildEntity(record, data, false, false, entity);
                 });
@@ -969,7 +1014,7 @@ module.exports = function(schemaName, schema, config) {
             key.where.updatedAt = key.where.updatedAt || null;
           }
           return (entity instanceof TableRecord ?
-            Promise.resolve([entity.was()]) :
+            Promise.resolve([entity.was]) :
             data.methods.fetch(key, options))
             .then(function(was) {
               if (was.length === 0) {
@@ -979,8 +1024,15 @@ module.exports = function(schemaName, schema, config) {
                 });
               }
               assert(was.length === 1);
-              entity = _.extend({}, was[0], entity);
-              return runValidations(void 0, entity, data)
+
+              var isInstance = entity instanceof TableRecord;
+              return (isInstance ? Promise.resolve() : validateFields(entity, data))
+                .then(function() {
+                  entity = isInstance ? entity : was[0];
+                })
+                .then(function() {
+                  return validateModel(void 0, entity, data);
+                })
                 .then(function() {
                   return options.transaction ?
                     destroy(entity, options, data) :

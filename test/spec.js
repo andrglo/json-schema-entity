@@ -630,7 +630,8 @@ module.exports = function(options) {
             done(err);
           });
       });
-      it('should throw a CEP and a NUMERO validation error', function(done) {
+      it('should throw only a CEP not a NUMERO validation error because model ' +
+        'validations are executed only when no errors occurs in field validation', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'CEP incompleto',
@@ -645,9 +646,8 @@ module.exports = function(options) {
             expect(error.name).to.equal('EntityError');
             expect(error.type).to.equal('ValidationError');
             expect(error.errors).to.be.a('array');
-            expect(error.errors.length).to.equal(2);
+            expect(error.errors.length).to.equal(1);
             expect(error.errors[0].path).to.equal('CEP');
-            expect(error.errors[1].path).to.equal('Only in fornecedor');
             done();
           })
           .catch(function(error) {
@@ -804,7 +804,8 @@ module.exports = function(options) {
           })
           .catch(logError(done));
       });
-      it('should not accept a new cliente without classe cliente and with Suframa and fornecedor with no NUMERO=99', function(done) {
+      it('should not accept a new cliente without classe cliente and with Suframa ' +
+        'and fornecedor with no NUMERO=99', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'Falta classe cliente and have suframa',
@@ -1073,7 +1074,7 @@ module.exports = function(options) {
             expect(record.ClassificaçãoCad).to.be.a('array');
             record.should.have.property('DATNASC');
             expect(record.DATNASC).to.equal('1999-12-31');
-            expect(record.was().DATNASC).to.equal('1999-12-31');
+            expect(record.was.DATNASC).to.equal('1999-12-31');
             record.should.have.property('DATNASCZ');
             expect(record.DATNASCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
             record.should.have.property('DATNASCNOZ');
@@ -1254,9 +1255,7 @@ module.exports = function(options) {
             expect(Number(record.VALORLCTO)).to.equal(700);
             done();
           })
-          .catch(function(err) {
-            done(err);
-          })
+          .catch(logError(done));
       });
       it('check if the added vctos array generate an external table', function(done) {
         tableDocpagev
@@ -2440,21 +2439,21 @@ module.exports = function(options) {
     describe('using the instance', function() {
       before(function(done) {
         cadAtivo.fornecedor.docpagvc.categoria.validate(
-          'do not alter id', function(was) {
-            if (was && this.id !== was.id) {
+          'do not alter id', function() {
+            if (this.was && this.id !== this.was.id) {
               throw new Error('id cannot be modified');
             }
           }
         );
         cadAtivo.validate(
-          'do not alter TSN', function(was) {
-            if (was.TSN !== this.TSN) {
+          'do not alter TSN', function() {
+            if (this.was.TSN !== this.TSN) {
               throw new Error('TSN cannot be modified');
             }
           }, {onCreate: false});
         cadAtivo.fornecedor.docpagvc.categoria.validate(
-          'do not alter doCaixa', function(was) {
-            if (was.doCaixa !== this.doCaixa) {
+          'do not alter doCaixa', function() {
+            if (this.was.doCaixa !== this.doCaixa) {
               throw new Error('doCaixa cannot be modified');
             }
           }, {onCreate: false});
@@ -2644,7 +2643,7 @@ module.exports = function(options) {
               expect(lucia.fornecedor).to.not.equal(undefined);
               expect(lucia.fornecedor.docpagvc).to.not.equal(undefined);
               expect(vcto[3].id).to.not.equal(undefined);
-              var was = lucia.was();
+              var was = lucia.was;
               was.should.have.property('id');
               was.should.have.property('updatedAt');
               was.should.have.property('createdAt');
@@ -2653,14 +2652,14 @@ module.exports = function(options) {
               was.should.have.property('docpagvc');
               was.should.have.property('fornecedor');
               was.fornecedor.should.have.property('docpagvc');
-              vcto[3].was().should.have.property('id');
+              vcto[3].was.should.have.property('id');
               done();
             })
             .catch(logError(done));
         });
         it('was cannot have new properties', function() {
           try {
-            vcto[3].was().newColumn = 1;
+            vcto[3].was.newColumn = 1;
             //noinspection ExceptionCaughtLocallyJS
             throw new Error('Invalid property modification');
           } catch (error) {
@@ -2670,7 +2669,7 @@ module.exports = function(options) {
         });
         it('was cannot be modified', function() {
           try {
-            vcto[3].was().id = 1;
+            vcto[3].was.id = 1;
             //noinspection ExceptionCaughtLocallyJS
             throw new Error('Invalid property modification');
           } catch (error) {
@@ -3251,6 +3250,7 @@ module.exports = function(options) {
       it('should not accept an incomplete value', function() {
         try {
           beth.futureEnum = 'A';
+          beth.validate();
           //noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid column modified');
         } catch (error) {

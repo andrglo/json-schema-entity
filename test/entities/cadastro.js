@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
+var assert = require('assert');
 var entity = require('../../src');
 
 var log = console.log;
@@ -244,6 +245,7 @@ module.exports = function(config) {
     }, this);
   });
   cadAtivo.validate('Teste qualquer', function() {
+    assert(this.entity, 'this should be a instance in validation');
   });
   cadAtivo.validate('Teste de promise', function() {
     var self = this;
@@ -267,8 +269,8 @@ module.exports = function(config) {
     }
   });
 
-  cadAtivo.validate('NOMECAD', function(was) {
-    if (was && this.NOMECAD != was.NOMECAD) {
+  cadAtivo.validate('NOMECAD', function() {
+    if (this.was && this.NOMECAD !== this.was.NOMECAD) {
       throw new Error('Nome não pode ser alterado');
     }
   }, {onCreate: false});
@@ -284,9 +286,9 @@ module.exports = function(config) {
     }
   });
 
-  cadAtivo.docpagvc.validate('Only greater or equal', function(was) {
-    if (this.VALOR < was.VALOR) {
-      throw new Error('New value should be greater or equal')
+  cadAtivo.docpagvc.validate('Only greater or equal', function() {
+    if (this.VALOR < this.was.VALOR) {
+      throw new Error('New value should be greater or equal');
     }
   }, {onCreate: false});
 
