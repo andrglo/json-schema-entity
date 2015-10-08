@@ -243,9 +243,12 @@ const tableRecordInfo = new WeakMap();
 const tableRecordData = new WeakMap();
 const timeStampsColumns = ['createdAt', 'updatedAt'];
 
+var instanceParent = Symbol('parent');
+
 class TableRecord {
 
   constructor(trs, record, isNew, parent) {
+    this[instanceParent] = parent;
     let it = {
       isNew,
       parent,
@@ -317,6 +320,10 @@ class TableRecord {
 
 }
 
+function isSameEntityInstance(value, parent) {
+  return value instanceof TableRecord
+}
+
 class TableRecordSchema {
 
   constructor(data) {
@@ -360,14 +367,19 @@ class TableRecordSchema {
             }
           }
         }
-        this[name] = value;
+        this.values[name] = value;
       });
     });
 
     _.forEach(data.associations, function(association) {
       var name = association.data.key;
       columns.set(name, function(value) {
-        this[name] = value;
+        var build = value => isSameEntityInstance(value, this.parent) ?
+          value :
+          buildEntity(Object.assign({}, value), association.data, this.isNew, false, void 0, this.parent);
+        this.values[name] = Array.isArray(value) ?
+          value.map(value => build(value)) :
+          value ? build(value) : value;
       });
     });
 
@@ -399,7 +411,7 @@ function setIs(instance, record, it, isNew) {
         get: function() {
           return it.values[key];
         },
-        set: it.info.columns.get(key).bind(it.values),
+        set: it.info.columns.get(key).bind(it),
         enumerable: true
       });
     }
@@ -463,7 +475,7 @@ function buildPlainObject(record, data) {
 function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   clearNulls(record);
   parent = parent || {};
-  let associations = instance instanceof TableRecord ? record : {};
+  let associations = isSameEntityInstance(instance, parent) ? record : {};
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     if (record[key]) {
@@ -480,7 +492,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
         recordset[0] : recordset;
     }
   });
-  if (instance instanceof TableRecord) {
+  if (isSameEntityInstance(instance, parent)) {
     setIs(instance, record);
     return instance;
   } else {
@@ -492,7 +504,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   }
 }
 
-function runHooks(hooks, model, transaction, data) {
+function runHooks(hooks, model, transaction, data, validatedInstance) {
 
   var allHooks = [];
   hooks.map(function(name) {
@@ -503,7 +515,7 @@ function runHooks(hooks, model, transaction, data) {
     return chain.then(function() {
       var res;
       try {
-        res = hook.fn.call(model, transaction);
+        res = hook.fn.call(model, transaction, validatedInstance);
       } catch (err) {
         throw new EntityError({
           type: hook.name + 'HookError',
@@ -530,8 +542,8 @@ function create(entity, options, data) {
   return runHooks(['beforeCreate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
       return data.adapter.create(record, data, {transaction: options.transaction})
-        .then(function(instance) {
-          var newEntity = _.pick(instance, data.propertiesList);
+        .then(function(record) {
+          var newEntity = _.pick(record, data.propertiesList);
           return _.reduce(data.associations, function(chain, association) {
             const associationKey = association.data.key;
             var associatedEntity = entity[associationKey];
@@ -563,10 +575,10 @@ function create(entity, options, data) {
             return newEntity;
           });
         });
-    }).then(function(entity) {
-      return runHooks(['afterCreate', 'afterSave'], entity, options.transaction, data)
+    }).then(function(newRecord) {
+      return runHooks(['afterCreate', 'afterSave'], newRecord, options.transaction, data, entity)
         .then(function() {
-          return entity;
+          return newRecord;
         });
     });
 }
@@ -631,15 +643,14 @@ function update(entity, was, options, data) {
                 message: 'Association ' + associationKey + ' can not be an array'
               });
             }
-            associatedIsEntity = _.isArray(associatedIsEntity) ?
-              associatedIsEntity.slice(0) : associatedIsEntity ? [associatedIsEntity] : void 0;
-
-            var associatedWasEntity = was[associationKey];
-            associatedWasEntity = _.isArray(associatedWasEntity) ?
-              associatedWasEntity.slice(0) : associatedWasEntity ? [associatedWasEntity] : void 0;
 
             var primaryKeyValue = entity[data.primaryKeyAttributes[0]];
-            var toBeCreated = _.remove(associatedIsEntity, function(is) {
+
+            associatedIsEntity = _.isArray(associatedIsEntity) ?
+              associatedIsEntity : associatedIsEntity ? [associatedIsEntity] : void 0;
+            var toBeCreated = [];
+            var toBeUpdated = [];
+            _.forEach(associatedIsEntity, function(is) {
               if (is[association.data.foreignKey] !== void 0) {
                 // Should convert to string before comparing
                 if (is[association.data.foreignKey] != primaryKeyValue) { // eslint-disable-line
@@ -650,10 +661,18 @@ function update(entity, was, options, data) {
                   });
                 }
               }
-              return !exists(is);
+              if (exists(is)) {
+                toBeUpdated.push(is);
+              } else {
+                toBeCreated.push(is);
+              }
             });
-            var toBeUpdated = associatedIsEntity;
-            var toBeDeleted = _.remove(associatedWasEntity, function(was) {
+
+            var associatedWasEntity = was[associationKey];
+            associatedWasEntity = _.isArray(associatedWasEntity) ?
+              associatedWasEntity : associatedWasEntity ? [associatedWasEntity] : void 0;
+            var toBeDeleted = [];
+            _.forEach(associatedWasEntity, function(was) {
               var hasIs = false;
               _.forEach(toBeUpdated, function(is) {
                 if (hasEqualPrimaryKey(was, is)) {
@@ -661,7 +680,9 @@ function update(entity, was, options, data) {
                   return false;
                 }
               });
-              return !hasIs;
+              if (!hasIs) {
+                toBeDeleted.push(was);
+              }
             });
 
             return _.reduce(toBeDeleted, function(chain, entity) {
@@ -702,10 +723,10 @@ function update(entity, was, options, data) {
             return modifiedEntity;
           });
         });
-    }).then(function(entity) {
-      return runHooks(['afterUpdate', 'afterSave'], entity, options.transaction, data)
+    }).then(function(updatedRecord) {
+      return runHooks(['afterUpdate', 'afterSave'], updatedRecord, options.transaction, data, entity)
         .then(function() {
-          return entity;
+          return updatedRecord;
         });
     });
 }
@@ -733,8 +754,8 @@ function destroy(entity, options, data) {
         }
         return data.adapter.destroy(data, options);
       });
-    }).then(function(entity) {
-      return runHooks(['afterDestroy', 'afterDelete'], entity, options.transaction, data);
+    }).then(function(deletedEntity) {
+      return runHooks(['afterDestroy', 'afterDelete'], deletedEntity, options.transaction, data, entity);
     });
 }
 
@@ -755,7 +776,17 @@ module.exports = function(schemaName, schema, config) {
       'hasOne',
       'validate',
       'method',
-      'foreignKey'
+      'foreignKey',
+      'beforeCreate',
+      'afterCreate',
+      'beforeUpdate',
+      'afterUpdate',
+      'beforeSave',
+      'afterSave',
+      'beforeDelete',
+      'afterDelete',
+      'beforeDestroy',
+      'afterDestroy'
     ];
     const reservedInstanceMethodsNames = [
       'constructor',

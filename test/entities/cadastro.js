@@ -281,12 +281,14 @@ module.exports = function(config) {
   }, {onSave: false, onDelete: true});
 
   cadAtivo.fornecedor.validate('Only in fornecedor', function() {
+    assert(this.entity, 'this should be a instance in validation');
     if (this.NUMERO !== '99') {
       return false;
     }
   });
 
   cadAtivo.docpagvc.validate('Only greater or equal', function() {
+    assert(this.entity, 'this should be a instance in validation');
     if (this.VALOR < this.was.VALOR) {
       throw new Error('New value should be greater or equal');
     }
@@ -306,7 +308,23 @@ module.exports = function(config) {
         throw new Error('celular error');
     });
   });
-  cadAtivo.beforeDelete('Teste qualquer', function() {
+  cadAtivo.beforeCreate('bc', function() {
+    assert(this.entity, 'this should be a instance in beforeCreate');
+  });
+  cadAtivo.afterCreate('ac', function(t, vi) {
+    assert(vi.entity, 'second parameter should be the validated instance in afterCreate');
+  });
+  cadAtivo.beforeUpdate('bu', function() {
+    assert(this.entity, 'this should be a instance in beforeUpdate');
+  });
+  cadAtivo.afterUpdate('au', function(t, vi) {
+    assert(vi.entity, 'second parameter should be the validated instance in afterUpdate');
+  });
+  cadAtivo.beforeDelete('bd', function() {
+    assert(this.entity, 'this should be a instance in beforeDelete');
+  });
+  cadAtivo.afterDelete('ad', function(t, vi) {
+    assert(vi.entity, 'second parameter should be the validated instance in afterDelete');
   });
   cadAtivo.beforeSave(createClasses); //=> beforeCreate and beforeUpdate
   cadAtivo.afterCreate(createEvs);
@@ -352,10 +370,24 @@ module.exports = function(config) {
     this.quitado = 'S';
   });
 
-  //// Events (Never in transaction)
-  //pf.on('read', function(model) { //todo Use event emitter
-  //  model.EVENTCALLED = 'Yes'
-  //});
+  cadAtivo.ClassificaçãoCad.beforeCreate('bc', function() {
+    assert(this.entity, 'this should be a instance in beforeCreate');
+  });
+  cadAtivo.ClassificaçãoCad.afterCreate('ac', function(t, vi) {
+    assert(vi.entity, 'second parameter should be the validated instance in afterCreate');
+  });
+  cadAtivo.ClassificaçãoCad.beforeUpdate('bu', function() {
+    assert(this.entity, 'this should be a instance in beforeUpdate');
+  });
+  cadAtivo.ClassificaçãoCad.afterUpdate('au', function(t, vi) {
+    assert(vi.entity, 'second parameter should be the validated instance in afterUpdate');
+  });
+  cadAtivo.ClassificaçãoCad.beforeDelete('bd', function() {
+    assert(this.entity, 'this should be a instance in beforeDelete');
+  });
+  cadAtivo.ClassificaçãoCad.afterDelete('ad', function(t, vi) {
+    assert(vi.entity, 'second parameter should be the validated instance in afterDelete');
+  });
 
   return cadAtivo;
 };
