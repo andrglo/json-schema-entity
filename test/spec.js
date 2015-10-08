@@ -434,9 +434,9 @@ module.exports = function(options) {
         it('Should have an instance method in an extra non enumerable property', function() {
           expect(allKeys.length).to.equal(enumerableKeys.length + 1);
         });
-        //it('Should have no symbol properties', function() {
-        //  expect(symbols.length).to.equal(0);
-        //});  //todo
+        it('Should have no symbol properties', function() {
+          expect(symbols.length).to.equal(0);
+        });
         it('Should have six instance (prototypes) methods', function() {
           expect(instanceMethods).to.eql(expectedInstanceMethods);
         });
@@ -1316,7 +1316,7 @@ module.exports = function(options) {
           .catch(logError(done));
       });
       it('add more one vcto', function(done) {
-        joao.docpagvc.push({VALOR: 10, DATAVENC: '2015-09-24'});
+        joao.docpagvc = joao.docpagvc.concat([{VALOR: 10, DATAVENC: '2015-09-24'}]);
         cadAtivo
           .update(joao, joao.id)
           .then(function(record) {
@@ -1972,7 +1972,7 @@ module.exports = function(options) {
           })
       });
       it('add more one vcto to mario', function(done) {
-        mario.fornecedor.docpagvc.push({VALOR: 10.99, DATAVENC: '2015-09-24'});
+        mario.fornecedor.docpagvc = mario.fornecedor.docpagvc.concat([{VALOR: 10.99, DATAVENC: '2015-09-24'}]);
         mario.fornecedor.NUMERO = '99'; // NUMERO is only for tests purposes
         cadAtivo
           .update(mario, mario.id)
@@ -2098,7 +2098,7 @@ module.exports = function(options) {
       before(function() {
         cadAtivo.fornecedor.docpagvc.hasOne('EVENTO as categoria', EVENTO);
         cadAtivo.fornecedor.docpagvc.categoria.validate(function() {
-          //assert(this.entity, 'this should be a instance in validation'); todo getter in associations should create obj
+          assert(this.entity, 'this should be a instance in validation');
         });
       });
       it('should reject a new method already existante', function() {
@@ -2632,23 +2632,22 @@ module.exports = function(options) {
             });
             vcto[0] = lucia.docpagvc[0];
             vcto[1] = lucia.docpagvc[1];
-            //lucia.fornecedor.docpagvc = lucia.fornecedor.docpagvc.concat([{
-            //  VALOR: 600.02,
-            //  DATAVENC: '2015-09-24'
-            //}]);
+            lucia.fornecedor.docpagvc = lucia.fornecedor.docpagvc.concat([{
+              VALOR: 600.02,
+              DATAVENC: '2015-09-24'
+            }]);
             vcto[2] = lucia.fornecedor.docpagvc[0];
             vcto[3] = lucia.fornecedor.docpagvc[1];
-            //vcto[4] = lucia.fornecedor.docpagvc[2];
-            //assert(vcto[4].entity, 'Added array element should be an entity');
-            //assert(vcto[4].entity() === lucia.entity(), 'Added array element should be lucia');
+            vcto[4] = lucia.fornecedor.docpagvc[2];
+            assert(vcto[3].entity, 'Added array element should be an entity');
+            assert(vcto[4].entity() === lucia.entity(), 'Added array element should be lucia');
           } catch (e) {
             error = e;
           }
           done(error);
         });
         it('should be saved to disk using any component', function(done) {
-          //log('lucia', lucia)    todo
-          vcto[3]
+          vcto[4]
             .save()
             .then(function() {
               expect(lucia.id).to.not.equal(undefined);
@@ -2722,7 +2721,7 @@ module.exports = function(options) {
             })
             .catch(logError(done));
         });
-        it('if we push another vcto it should not be mutated to instance after save', function(done) {
+        it('if we push (to push you must set a new or existing array to the property) another vcto it should not be mutated to instance after save', function(done) {
           var newVcto = {
             VALOR: 500.03,
             DATAVENC: '2015-10-23',
@@ -2731,7 +2730,7 @@ module.exports = function(options) {
               DESCEVENTO: 'Category 777'
             }
           };
-          lucia.fornecedor.docpagvc.push(newVcto);
+          lucia.fornecedor.docpagvc = lucia.fornecedor.docpagvc.concat([newVcto]);
           lucia
             .save()
             .then(function() {

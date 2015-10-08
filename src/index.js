@@ -243,12 +243,9 @@ const tableRecordInfo = new WeakMap();
 const tableRecordData = new WeakMap();
 const timeStampsColumns = ['createdAt', 'updatedAt'];
 
-var instanceParent = Symbol('parent');
-
 class TableRecord {
 
   constructor(trs, record, isNew, parent) {
-    this[instanceParent] = parent;
     let it = {
       isNew,
       parent,
@@ -320,8 +317,13 @@ class TableRecord {
 
 }
 
+function instanceParent(value) {
+  return tableRecordData.get(value).parent;
+}
+
 function isSameEntityInstance(value, parent) {
   return value instanceof TableRecord
+    && instanceParent(value).tableRecord === parent.tableRecord;
 }
 
 class TableRecordSchema {
@@ -474,7 +476,8 @@ function buildPlainObject(record, data) {
 
 function buildEntity(record, data, isNew, fromFetch, instance, parent) {
   clearNulls(record);
-  parent = parent || {};
+  let isParent = !parent;
+  parent = parent || instance && instanceParent(instance) || {};
   let associations = isSameEntityInstance(instance, parent) ? record : {};
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
@@ -496,11 +499,14 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
     setIs(instance, record);
     return instance;
   } else {
-    parent.tableRecord = new TableRecord(data.trs,
+    let tableRecord = new TableRecord(data.trs,
       _.extend(_.pick(record, data.propertiesList), associations),
       isNew,
       parent);
-    return parent.tableRecord;
+    if (isParent) {
+      parent.tableRecord = tableRecord;
+    }
+    return tableRecord;
   }
 }
 
@@ -936,7 +942,7 @@ module.exports = function(schemaName, schema, config) {
         },
         create: function(entity, options) {
           options = options || {};
-          var isInstance = entity instanceof TableRecord;
+          var isInstance = entity instanceof TableRecord && entity.entity() === data.public;
           return (isInstance ? Promise.resolve() : validateFields(entity, data))
             .then(function() {
               entity = isInstance ? entity : buildEntity(entity, data, true);
@@ -984,7 +990,8 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
           }
-          return (entity instanceof TableRecord ?
+          var isInstance = entity instanceof TableRecord && entity.entity() === data.public;
+          return (isInstance ?
             Promise.resolve([entity.was]) :
             data.methods.fetch(key, options))
             .then(function(was) {
@@ -996,7 +1003,6 @@ module.exports = function(schemaName, schema, config) {
               }
               assert(was.length === 1);
 
-              var isInstance = entity instanceof TableRecord;
               return (isInstance ? Promise.resolve() : validateFields(entity, data))
                 .then(function() {
                   entity = isInstance ? entity : buildEntity(_.extend({}, was[0], entity), data);
@@ -1044,7 +1050,8 @@ module.exports = function(schemaName, schema, config) {
           if (data.timestamps) {
             key.where.updatedAt = key.where.updatedAt || null;
           }
-          return (entity instanceof TableRecord ?
+          var isInstance = entity instanceof TableRecord && entity.entity() === data.public;
+          return (isInstance ?
             Promise.resolve([entity.was]) :
             data.methods.fetch(key, options))
             .then(function(was) {
@@ -1055,8 +1062,6 @@ module.exports = function(schemaName, schema, config) {
                 });
               }
               assert(was.length === 1);
-
-              var isInstance = entity instanceof TableRecord;
               return (isInstance ? Promise.resolve() : validateFields(entity, data))
                 .then(function() {
                   entity = isInstance ? entity : was[0];
