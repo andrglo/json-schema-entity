@@ -1316,7 +1316,7 @@ module.exports = function(options) {
           .catch(logError(done));
       });
       it('add more one vcto', function(done) {
-        joao.docpagvc = joao.docpagvc.concat([{VALOR: 10, DATAVENC: '2015-09-24'}]);
+        joao.docpagvc = joao.docpagvc.concat([{VALOR: 0, DATAVENC: '2019-09-24'}]);
         cadAtivo
           .update(joao, joao.id)
           .then(function(record) {
@@ -1325,7 +1325,7 @@ module.exports = function(options) {
             expect(record.docpagvc.length).to.equal(3);
             expect(Number(record.docpagvc[0].VALOR)).to.equal(350.01);
             expect(Number(record.docpagvc[1].VALOR)).to.equal(250.02);
-            expect(Number(record.docpagvc[2].VALOR)).to.equal(10);
+            expect(Number(record.docpagvc[2].VALOR)).to.equal(0);
             done();
           })
           .catch(logError(done));

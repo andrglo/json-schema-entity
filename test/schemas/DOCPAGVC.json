@@ -60,8 +60,7 @@
       "type": "number",
       "format": "fixed",
       "maxLength": 12,
-      "decimals": 2,
-      "required": true
+      "decimals": 2
     },
     "SITPGTO": {
       "title": "Situação",
