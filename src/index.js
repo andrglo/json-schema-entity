@@ -521,7 +521,7 @@ function runHooks(hooks, model, transaction, data, validatedInstance) {
     return chain.then(function() {
       var res;
       try {
-        res = hook.fn.call(model, transaction, validatedInstance);
+        res = hook.fn.call(validatedInstance || model, transaction, validatedInstance ? model : void 0);
       } catch (err) {
         throw new EntityError({
           type: hook.name + 'HookError',

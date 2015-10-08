@@ -33,9 +33,9 @@ module.exports = function(config) {
     return insertion;
   }
 
-  function createEvs(t) {
-    var id = this.id;
-    var docpagvc = !this.docpagvc || _.isArray(this.docpagvc) ? this.docpagvc : [this.docpagvc];
+  function createEvs(t, result) {
+    var id = result.id;
+    var docpagvc = !result.docpagvc || _.isArray(result.docpagvc) ? result.docpagvc : [result.docpagvc];
     var insertion = Promise.resolve();
     _.forEach(docpagvc, function() {
       insertion = insertion.then(function() {
@@ -49,11 +49,11 @@ module.exports = function(config) {
     return insertion;
   }
 
-  function updateEvs(t) {
+  function updateEvs(t, result) {
     var self = this;
     return destroyEvs.call(self, t)
       .then(function() {
-        return createEvs.call(self, t)
+        return createEvs.call(self, t, result);
       });
   }
 
@@ -311,20 +311,23 @@ module.exports = function(config) {
   cadAtivo.beforeCreate('bc', function() {
     assert(this.entity, 'this should be a instance in beforeCreate');
   });
-  cadAtivo.afterCreate('ac', function(t, vi) {
-    assert(vi.entity, 'second parameter should be the validated instance in afterCreate');
+  cadAtivo.afterCreate('ac', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterCreate');
+    assert(result && !result.entity, 'second parameter should be the server return afterCreate');
   });
   cadAtivo.beforeUpdate('bu', function() {
     assert(this.entity, 'this should be a instance in beforeUpdate');
   });
-  cadAtivo.afterUpdate('au', function(t, vi) {
-    assert(vi.entity, 'second parameter should be the validated instance in afterUpdate');
+  cadAtivo.afterUpdate('au', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterUpdate');
+    assert(result && !result.entity, 'second parameter should be the server return afterUpdate');
   });
   cadAtivo.beforeDelete('bd', function() {
     assert(this.entity, 'this should be a instance in beforeDelete');
   });
-  cadAtivo.afterDelete('ad', function(t, vi) {
-    assert(vi.entity, 'second parameter should be the validated instance in afterDelete');
+  cadAtivo.afterDelete('ad', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterDelete');
+    assert(result && !result.entity, 'second parameter should be the server return afterDelete');
   });
   cadAtivo.beforeSave(createClasses); //=> beforeCreate and beforeUpdate
   cadAtivo.afterCreate(createEvs);
@@ -341,16 +344,15 @@ module.exports = function(config) {
       if (self.PAIS === 'X') throw new Error('pais cant be X')
     })
   });
-  cadAtivo.afterCreate(function() {
+  cadAtivo.afterCreate(function(t, result) {
     //noinspection JSPotentiallyInvalidUsageOfThis
-    this.afterCreate = 'true';
+    result.afterCreate = 'true';
   });
-  cadAtivo.afterUpdate(function() {
+  cadAtivo.afterUpdate(function(t, result) {
     //noinspection JSPotentiallyInvalidUsageOfThis
-    this.afterUpdate = 'true';
-    var self = this;
+    result.afterUpdate = 'true';
     return Promise.resolve().then(function() {
-      self.afterPromise = 'true';
+      result.afterPromise = 'true';
     });
   });
 
@@ -373,20 +375,23 @@ module.exports = function(config) {
   cadAtivo.ClassificaçãoCad.beforeCreate('bc', function() {
     assert(this.entity, 'this should be a instance in beforeCreate');
   });
-  cadAtivo.ClassificaçãoCad.afterCreate('ac', function(t, vi) {
-    assert(vi.entity, 'second parameter should be the validated instance in afterCreate');
+  cadAtivo.ClassificaçãoCad.afterCreate('ac', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterCreate');
+    assert(result && !result.entity, 'second parameter should be the server return afterCreate');
   });
   cadAtivo.ClassificaçãoCad.beforeUpdate('bu', function() {
     assert(this.entity, 'this should be a instance in beforeUpdate');
   });
-  cadAtivo.ClassificaçãoCad.afterUpdate('au', function(t, vi) {
-    assert(vi.entity, 'second parameter should be the validated instance in afterUpdate');
+  cadAtivo.ClassificaçãoCad.afterUpdate('au', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterUpdate');
+    assert(result && !result.entity, 'second parameter should be the server return afterUpdate');
   });
   cadAtivo.ClassificaçãoCad.beforeDelete('bd', function() {
     assert(this.entity, 'this should be a instance in beforeDelete');
   });
-  cadAtivo.ClassificaçãoCad.afterDelete('ad', function(t, vi) {
-    assert(vi.entity, 'second parameter should be the validated instance in afterDelete');
+  cadAtivo.ClassificaçãoCad.afterDelete('ad', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterDelete');
+    assert(result && !result.entity, 'second parameter should be the server return afterDelete');
   });
 
   return cadAtivo;
