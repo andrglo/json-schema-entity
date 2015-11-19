@@ -2641,6 +2641,7 @@ module.exports = function(options) {
             vcto[4] = lucia.fornecedor.docpagvc[2];
             assert(vcto[3].entity, 'Added array element should be an entity');
             assert(vcto[4].entity() === lucia.entity(), 'Added array element should be lucia');
+            expect(vcto[4].entity().identity).to.eql({name: 'CADASTRO', as: 'cadAtivo'});
           } catch (e) {
             error = e;
           }
