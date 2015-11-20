@@ -880,8 +880,11 @@ module.exports = function(schemaName, schema, config) {
           rebuild();
           return data.public;
         },
-        get identity() {
-          return identity;
+        get id() {
+          return identity.name;
+        },
+        get alias() {
+          return identity.as;
         },
         get schema() {
 
