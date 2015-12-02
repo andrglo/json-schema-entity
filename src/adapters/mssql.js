@@ -166,6 +166,8 @@ module.exports = function(db) {
         return function(value) {
           return new Date(value);
         };
+      case 'integer':
+        return Number;
       default:
         return function(value) {
           return value;
