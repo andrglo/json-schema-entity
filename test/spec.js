@@ -2912,7 +2912,7 @@ module.exports = function(options) {
 
             expect(record.fornecedor.id).to.exist;
             expect(record.fornecedor).to.not.have.property('save');
-            //expect(record.fornecedor.INSCEST).to.be.null;
+            expect(record.fornecedor.INSCEST).to.be.null;
             expect(record.fornecedor.TIPOCONTA).to.equal('1');
             expect(record.fornecedor.SIGLAFOR).to.equal('Catering');
 
