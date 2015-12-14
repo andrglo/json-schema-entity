@@ -44,13 +44,9 @@ function addValidations(validator) {
     return brV.cnpj.validate(value);
   });
   validator.extend('br-phone', function(value) {
-    return new Promise(function(resolve, reject) {
-      if (value.length >= 9) {
-        resolve();
-      } else {
-        reject(new Error('br-phone must be greater than nine'));
-      }
-    });
+    if (value.length < 9) {
+      throw new Error('br-phone must be greater than nine');
+    }
   });
   validator.extend('cep', function(value, p1, p2) {
     expect(p1).to.equal('any string');

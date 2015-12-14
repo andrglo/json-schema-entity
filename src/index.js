@@ -189,17 +189,11 @@ function runFieldValidations(is, data, errors) {
             } catch (err) {
               errors.push({path: validation.id, message: err.message});
             }
-            if (res && res.then) {
-              return res.catch(function(err) {
-                errors.push({path: validation.id, message: err.message});
+            if (res === false) {
+              errors.push({
+                path: validation.id, message: validation.message ||
+                'Invalid ' + validation.id
               });
-            } else {
-              if (res === false) {
-                errors.push({
-                  path: validation.id, message: validation.message ||
-                  'Invalid ' + validation.id
-                });
-              }
             }
           });
         }, chain);
