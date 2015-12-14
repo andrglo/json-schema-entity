@@ -422,13 +422,40 @@ module.exports = function(options) {
       var allKeys;
       var symbols;
       var instanceMethods;
+      var emptyInstance;
       it('should create an empty new instance with no parameters', function() {
-        var emptyInstance = cadAtivo.createInstance();
+        emptyInstance = cadAtivo.createInstance();
         enumerableKeys = Object.keys(emptyInstance);
         allKeys = Object.getOwnPropertyNames(emptyInstance);
         symbols = Object.getOwnPropertySymbols(emptyInstance);
         instanceMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(emptyInstance));
         expect(expectedEnumerableKeys).to.eql(enumerableKeys);
+      });
+      it('should not accept an invalid CEP value in that instance', function(done) {
+        try {
+          emptyInstance.CEP = '30170';
+          done(new Error('Invalid CEP value accepted in instance'));
+        } catch (e) {
+          expect(e.message).to.equal('Validation for \'CEP\' failed: cep');
+          done();
+        }
+      });
+      it('should accept an valid CEP value in that instance', function() {
+        emptyInstance.CEP = '30170912';
+      });
+      it('should not accept an invalid INSCEST value in that instance', function(done) {
+        try {
+          emptyInstance.ESTADO = 'SP';
+          emptyInstance.INSCEST = '1860558000110';
+          done(new Error('Invalid INSCEST value accepted in instance'));
+        } catch (e) {
+          expect(e.message).to.equal('Inscrição estadual inválida');
+          done();
+        }
+      });
+      it('should accept an valid INSCEST value in that instance', function() {
+        emptyInstance.ESTADO = 'MG';
+        emptyInstance.INSCEST = '0620504710493';
       });
       describe('The empty instance', function() {
         it('Should have an instance method in an extra non enumerable property', function() {

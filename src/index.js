@@ -368,6 +368,43 @@ class TableRecordSchema {
                 break;
             }
           }
+
+          var validator = data.validator;
+          if (validator) {
+            var values = this.values;
+            var validations = [];
+            var format = property.format;
+            _.forEach(property.validate, function(validate, key) {
+              var args = _.map(validate.args, function(arg) {
+                if (typeof arg === 'string' && arg.substr(0, 5) === 'this.') {
+                  return values[arg.substring(5)];
+                } else {
+                  return arg;
+                }
+              });
+              validations.push({
+                message: validate.message || key,
+                fn: validator[key],
+                args: [value].concat(args)
+              });
+              if (key === format) {
+                format = null;
+              }
+            });
+            if (format && validator[format]) {
+              validations.push({
+                message: 'Invalid format',
+                fn: validator[format],
+                args: [value]
+              });
+            }
+            _.forEach(validations, function(validation) {
+              if (validation.fn.apply(validator, validation.args) === false) {
+                throw new Error(`Validation for '${name}' failed: ${validation.message}`);
+              }
+            });
+          }
+
         }
         this.values[name] = value;
       });
