@@ -459,7 +459,11 @@ function setIs(instance, record, it, isNew) {
         it.values[key] = newValue;
         was[key] = newValue;
       } else {
-        instance[key] = newValue;
+        try {
+          instance[key] = newValue;
+        } catch (e) {
+          it.values[key] = newValue; // force
+        }
         if (_.isArray(newValue)) {
           was[key] = 'was' in newValue ? newValue.was :
             newValue.map(newValue =>
