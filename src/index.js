@@ -395,7 +395,7 @@ class TableRecordSchema {
             _.forEach(validations, function(validation) {
               if (validation.fn.apply(validator, validation.args) === false) {
                 throw new EntityError({
-                  message: `${name}: ${validation.message}`,
+                  message: `Validation for '${name}' failed: ${validation.message}`,
                   type: 'ValidationError',
                   errors: [{path: name, message: validation.message}]
                 });
