@@ -113,19 +113,26 @@ module.exports = function(db) {
       trim: true,
       arrayNotation: false
     });
-    json = json.replace(xmlSpaceTokenRegExp, ' ');
+
     json = JSON.parse(json);
     json = json.recordset.row;
     assert(json, 'Error converting xml to json: ' + xmlField);
 
-    const isArray = _.isArray(json);
-    _.forEach(isArray ? json : [json], function(record) {
+    json = _.isArray(json) ? json : [json];
+    _.forEach(json, function(record) {
+      Object.keys(record).forEach(function(key) {
+        var newKey = key.replace(xmlSpaceTokenRegExp, ' ');
+        if (newKey !== key) {
+          record[newKey] = record[key];
+          delete record[key];
+        }
+      });
       coerce.map(function(coercion) {
         record[coercion.property] = record[coercion.property] && coercion.fn(record[coercion.property]) || null;
       });
     });
 
-    return isArray ? json : [json];
+    return json;
   };
 
   adapter.buildQuery = function buildQuery(data) {

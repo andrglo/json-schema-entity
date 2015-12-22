@@ -336,7 +336,7 @@ module.exports = function(options) {
         schema.properties.should.have.property('docpagvc');
         schema.properties.docpagvc.should.have.property('items');
         schema.properties.docpagvc.items.should.have.property('properties');
-        expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(6);
+        expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(7);
       });
       it('should have property docpagvc in fornecedor', function() {
         var schema = cadAtivo.schema.get();
@@ -344,7 +344,7 @@ module.exports = function(options) {
         schema.properties.fornecedor.properties.should.have.property('docpagvc');
         schema.properties.fornecedor.properties.docpagvc.should.have.property('items');
         schema.properties.fornecedor.properties.docpagvc.items.should.have.property('properties');
-        expect(Object.keys(schema.properties.fornecedor.properties.docpagvc.items.properties).length).to.equal(4);
+        expect(Object.keys(schema.properties.fornecedor.properties.docpagvc.items.properties).length).to.equal(5);
       });
       it('should not have entity methods in association', function() {
         cadAtivo.fornecedor.should.not.have.property('fetch');
@@ -1283,7 +1283,8 @@ module.exports = function(options) {
               VALOR: 700,
               DATAVENC: '2015-08-23',
               DATAVENCZ: '1999-12-31T00:00:00Z',
-              DATAVENCNOZ: new Date('1999-12-31T19:00:00')
+              DATAVENCNOZ: new Date('1999-12-31T19:00:00'),
+              'Hora do próximo aviso': '1999-12-31T00:00:00Z'
             },
             VALORLCTO: 700,
             updatedAt: joao.updatedAt
@@ -1333,6 +1334,7 @@ module.exports = function(options) {
             expect(record.docpagvc[0].DATAVENCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
             record.docpagvc[0].should.have.property('DATAVENCNOZ');
             expect(record.docpagvc[0].DATAVENCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString());
+            expect(record.docpagvc[0]['Hora do próximo aviso'].toISOString()).to.equal('1999-12-31T00:00:00.000Z');
             done();
           })
           .catch(logError(done));
@@ -1972,7 +1974,8 @@ module.exports = function(options) {
               NUMERO: '99',
               docpagvc: [{
                 VALOR: 350.01,
-                DATAVENC: '2015-08-23'
+                DATAVENC: '2015-08-23',
+                'Hora do próximo aviso': '1999-12-31T00:00:00Z'
               },
                 {
                   VALOR: 250.02,
@@ -2009,6 +2012,7 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc).to.be.a('array');
             expect(record.fornecedor.docpagvc.length).to.equal(2);
             expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01);
+            expect(record.fornecedor.docpagvc[0]['Hora do próximo aviso'].toISOString()).to.equal('1999-12-31T00:00:00.000Z');
             expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02);
             done();
           })

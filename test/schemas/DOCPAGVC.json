@@ -157,10 +157,7 @@
       "defaultValue": "Sim"
     },
     "Hora do próximo aviso": {
-      "description": "Hora do próximo aviso",
-      "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "type": "datetime"
     },
     "HISTORICO": {
       "title": "Histórico",

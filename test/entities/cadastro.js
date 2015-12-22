@@ -213,7 +213,8 @@ module.exports = function(config) {
         'DATAVENCZ',
         'DATAVENCNOZ',
         'SITPGTO',
-        'DATAPGTO'
+        'DATAPGTO',
+        'Hora do próximo aviso'
       ])
     })
     .foreignKey('NUMCAD');
@@ -226,7 +227,8 @@ module.exports = function(config) {
         'VALOR',
         'DATAVENC',
         'SITPGTO',
-        'DATAPGTO'
+        'DATAPGTO',
+        'Hora do próximo aviso'
       ])
     })
     .foreignKey('FORNEC');
