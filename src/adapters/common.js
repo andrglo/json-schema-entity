@@ -66,7 +66,7 @@ exports.update = function(record, data, options) {
   var fields = [];
   var params = [];
   _.forEach(data.properties, function(property, name) {
-    if (!property.autoIncrement) {
+    if (!property.autoIncrement && name !== data.foreignKey) {
       var value = record[name];
       if (value !== void 0) {
         var field = property.field || name;
