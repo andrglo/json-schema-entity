@@ -15,12 +15,12 @@ function toArray(obj) {
   return Array.isArray(obj) ? obj : obj && [obj] || [];
 }
 
-function validateModel(is, was, data) {
+function validateModel(is, was, data, options) {
 
   var errors = [];
 
   function validate(is, was, data) {
-    return runModelValidations(is, was, data, errors).then(function() {
+    return runModelValidations(is, was, data, errors, options).then(function() {
       return _.reduce(data.associations, function(chain, association) {
         return chain.then(function() {
           var associationKey = association.data.key;
@@ -203,7 +203,8 @@ function runFieldValidations(is, data, errors) {
 
 }
 
-function runModelValidations(is, was, data, errors) {
+function runModelValidations(is, was, data, errors, options) {
+  const connection = _.pick(options || {}, ['user', 'password', 'database', 'host', 'port']);
   return _.reduce(data.validate, function(chain, validation) {
     return chain.then(function() {
       if (!(is && !was && validation.options.onCreate ||
@@ -213,7 +214,7 @@ function runModelValidations(is, was, data, errors) {
       }
       var res;
       try {
-        res = validation.fn.call(is || was);
+        res = validation.fn.call(is || was, connection);
       } catch (err) {
         errors.push({path: validation.id, message: err.message});
       }
@@ -239,10 +240,11 @@ const timeStampsColumns = ['createdAt', 'updatedAt'];
 
 class TableRecord {
 
-  constructor(trs, record, isNew, parent) {
+  constructor(trs, record, isNew, parent, options) {
     let it = {
       isNew,
       parent,
+      options,
       info: tableRecordInfo.get(trs),
       values: {}
     };
@@ -261,7 +263,7 @@ class TableRecord {
 
   validate() {
     let it = tableRecordData.get(this);
-    return validateModel(this, this.was, it.info.data);
+    return validateModel(this, this.was, it.info.data, it.options);
   }
 
   save(options) {
@@ -317,7 +319,7 @@ function instanceParent(value) {
 
 function isSameEntityInstance(value, parent) {
   return value instanceof TableRecord
-    && instanceParent(value).tableRecord === parent.tableRecord;
+    && parent && instanceParent(value).tableRecord === parent.tableRecord;
 }
 
 class TableRecordSchema {
@@ -513,7 +515,7 @@ function buildPlainObject(record, data) {
   return record;
 }
 
-function buildEntity(record, data, isNew, fromFetch, instance, parent) {
+function buildEntity(record, data, isNew, fromFetch, instance, parent, options) {
   clearNulls(record);
   let isParent = !parent;
   parent = parent || instance && instanceParent(instance) || {};
@@ -528,7 +530,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
         _.isArray(instance[key]) ? instance[key] : [instance[key]] :
         void 0;
       for (var i = 0; i < recordset.length; i++) {
-        recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent);
+        recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent, options);
       }
       associations[key] = recordset.length === 1 && association.type === 'hasOne' ?
         recordset[0] : recordset;
@@ -541,7 +543,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent) {
     let tableRecord = new TableRecord(data.trs,
       _.extend(_.pick(record, data.propertiesList), associations),
       isNew,
-      parent);
+      parent, options);
     if (isParent) {
       parent.tableRecord = tableRecord;
     }
@@ -586,7 +588,7 @@ function create(entity, options, data) {
   var record = _.pick(entity, data.propertiesList);
   return runHooks(['beforeCreate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
-      return data.adapter.create(record, data, {transaction: options.transaction})
+      return data.adapter.create(record, data, options)
         .then(function(record) {
           var newEntity = _.pick(record, data.propertiesList);
           return _.reduce(data.associations, function(chain, association) {
@@ -605,7 +607,7 @@ function create(entity, options, data) {
             return _.reduce(associatedEntity, function(chain, entity) {
               entity[association.data.foreignKey] = newEntity[data.primaryKeyAttributes[0]];
               return chain.then(function() {
-                return create(entity, {transaction: options.transaction}, association.data)
+                return create(entity, options, association.data)
                   .then(function(associationEntity) {
                     if (hasMany) {
                       newEntity[associationKey] = newEntity[associationKey] || [];
@@ -632,7 +634,7 @@ function update(entity, was, options, data) {
   var record = _.pick(entity, data.propertiesList);
   return runHooks(['beforeUpdate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
-      options = {where: {}, transaction: options.transaction};
+      options = Object.assign({}, options, {where: {}});
       data.primaryKeyAttributes.map(function(field) {
         options.where[field] = entity[field] || null;
       });
@@ -786,11 +788,11 @@ function destroy(entity, options, data) {
         associatedEntity = associatedEntity === void 0 || recordIsArray ? associatedEntity : [associatedEntity];
         return _.reduce(associatedEntity, function(chain, entity) {
           return chain.then(function() {
-            return destroy(entity, {transaction: options.transaction}, association.data);
+            return destroy(entity, options, association.data);
           });
         }, chain);
       }, Promise.resolve()).then(function() {
-        options = {where: {}, transaction: options.transaction};
+        options = Object.assign({}, options, {where: {}});
         data.primaryKeyAttributes.map(function(field) {
           options.where[field] = entity[field] || null;
         });
@@ -975,12 +977,12 @@ module.exports = function(schemaName, schema, config) {
               }
               var view = sv.build(data.query, criteria);
               return db
-                .query(view.statement, view.params, {transaction: options.transaction})
+                .query(view.statement, view.params, options)
                 .then(function(res) {
                   return res.map(function(record) {
                     return options.toPlainObject === true ?
                       buildPlainObject(record, data) :
-                      buildEntity(record, data, false, true);
+                      buildEntity(record, data, false, true, void 0, void 0, options);
                   });
                 });
             });
@@ -990,22 +992,21 @@ module.exports = function(schemaName, schema, config) {
           var isInstance = entity instanceof TableRecord && entity.entity() === data.public;
           return (isInstance ? Promise.resolve() : validateFields(entity, data))
             .then(function() {
-              entity = isInstance ? entity : buildEntity(entity, data, true);
+              entity = isInstance ? entity : buildEntity(entity, data, true, void 0, void 0, void 0, options);
             })
             .then(function() {
-              return validateModel(entity, void 0, data)
+              return validateModel(entity, void 0, data, options)
                 .then(function() {
                   return options.transaction ?
                     create(entity, options, data) :
-                    db.transaction(function(t) {
-                      options.transaction = t;
-                      return create(entity, options, data);
-                    });
+                    db.transaction(function(transaction) {
+                      return create(entity, Object.assign({}, options, {transaction}), data);
+                    }, options);
                 })
                 .then(function(record) {
                   return options.toPlainObject === true && !isInstance ?
                     record :
-                    buildEntity(record, data, false, false, entity);
+                    buildEntity(record, data, false, false, entity, void 0, options);
                 });
             });
         },
@@ -1050,23 +1051,22 @@ module.exports = function(schemaName, schema, config) {
 
               return (isInstance ? Promise.resolve() : validateFields(entity, data))
                 .then(function() {
-                  entity = isInstance ? entity : buildEntity(_.extend({}, was[0], entity), data);
+                  entity = isInstance ? entity : buildEntity(_.extend({}, was[0], entity), data, void 0, void 0, void 0, void 0, options);
                 })
                 .then(function() {
-                  return validateModel(entity, was[0], data);
+                  return validateModel(entity, was[0], data, options);
                 })
                 .then(function() {
                   return options.transaction ?
                     update(entity, was[0], options, data) :
-                    db.transaction(function(t) {
-                      options.transaction = t;
-                      return update(entity, was[0], options, data);
-                    });
+                    db.transaction(function(transaction) {
+                      return update(entity, was[0], Object.assign({}, options, {transaction}), data);
+                    }, options);
                 })
                 .then(function(record) {
                   return options.toPlainObject === true && !isInstance ?
                     record :
-                    buildEntity(record, data, false, false, entity);
+                    buildEntity(record, data, false, false, entity, void 0, options);
                 });
             });
         },
@@ -1112,29 +1112,29 @@ module.exports = function(schemaName, schema, config) {
                   entity = isInstance ? entity : was[0];
                 })
                 .then(function() {
-                  return validateModel(void 0, entity, data);
+                  return validateModel(void 0, entity, data, options);
                 })
                 .then(function() {
                   return options.transaction ?
                     destroy(entity, options, data) :
-                    db.transaction(function(t) {
-                      options.transaction = t;
-                      return destroy(entity, options, data);
-                    });
+                    db.transaction(function(transaction) {
+                      return destroy(entity, Object.assign({}, options, {transaction}), data);
+                    }, options);
                 });
             });
         },
-        createInstance: function(entity) {
-          return buildEntity(entity || {}, data, true);
+        createInstance: function(entity, options) {
+          return buildEntity(entity || {}, data, true, void 0, void 0, void 0, options);
         },
-        createTables: function() {
+        createTables: function(options) {
+          options = Object.assign({}, options, {db});
           return Promise.resolve()
             .then(function() {
               var tables = [];
               getTables(data, tables);
               var jsts = [];
               tables.map(function(table) {
-                jsts.push(jst(table.name, table.schema, {db: db}));
+                jsts.push(jst(table.name, table.schema, options));
               });
               return jsts.reduce(function(promise, jst) {
                 return promise.then(function() {
@@ -1148,14 +1148,15 @@ module.exports = function(schemaName, schema, config) {
               }, Promise.resolve());
             });
         },
-        syncTables: function() {
+        syncTables: function(options) {
+          options = Object.assign({}, options, {db});
           return Promise.resolve()
             .then(function() {
               var tables = [];
               getTables(data, tables);
               var jsts = [];
               tables.map(function(table) {
-                jsts.push(jst(table.name, table.schema, {db: db}));
+                jsts.push(jst(table.name, table.schema, options));
               });
               return jsts.reduce(function(promise, jst) {
                 return promise.then(function() {

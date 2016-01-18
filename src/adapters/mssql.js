@@ -10,24 +10,29 @@ module.exports = function(db) {
 
   var adapter = {};
 
-  adapter.createTimestamps = function(data) {
+  adapter.createTimestamps = function(data, options) {
+    options = options || {};
     var table = db.wrap(data.identity.name);
+    var catalog = options.database || db.config.database;
+    var schema = options.schema || db.config.schema || 'dbo';
     return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\'')
+        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\' AND ' +
+        'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options)
       .then(function(recordset) {
         if (recordset.length === 0) {
           return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('createdAt') + ' datetime2');
+            db.wrap('createdAt') + ' datetime2', null, options);
         }
       })
       .then(function() {
         return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\'');
+          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\' AND ' +
+          'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options);
       })
       .then(function(recordset) {
         if (recordset.length === 0) {
           return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('updatedAt') + ' datetime2');
+            db.wrap('updatedAt') + ' datetime2', null, options);
         }
       });
   };

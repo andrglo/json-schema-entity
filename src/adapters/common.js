@@ -45,7 +45,7 @@ exports.create = function(record, data, options) {
     fields.reduce(function(fields) {
       return fields + (fields ? ',' : '') + '$' + index++;
     }, ''));
-  return data.public.db.execute(insertCommand, params, {transaction: options.transaction})
+  return data.public.db.execute(insertCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, null, recordset.length, 'create');
       var inserted = recordset[0];
@@ -110,7 +110,7 @@ exports.update = function(record, data, options) {
         data.public.db.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
-  return data.public.db.execute(updateCommand, params, {transaction: options.transaction})
+  return data.public.db.execute(updateCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, options.where, recordset.length, 'update');
       var updated = recordset[0];
@@ -146,7 +146,7 @@ exports.destroy = function(data, options) {
         data.public.db.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
-  return data.public.db.execute(deleteCommand, params, {transaction: options.transaction})
+  return data.public.db.execute(deleteCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, options.where, recordset.length, 'delete');
       return recordset.length;
