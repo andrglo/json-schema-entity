@@ -66,27 +66,36 @@ function addValidations(validator) {
 module.exports = function(options) {
 
   var db;
+  var db2;
   describe('single table', function() {
 
     var start;
     var end;
 
+    var entityCadastro;
     var tableCadastro;
+    var tableCadastro2;
     var joao;
 
     var minNanoSecsToSave = 3 * 1000000; // 3 milliseconds (min min = 1)
 
     before(function(done) {
       db = options.db;
-      tableCadastro = entity('CADASTRO', CADASTRO, {db: db}).useTimestamps();
-      tableCadastro.validate('TEST', function() {
+      db2 = options.db2;
+      entityCadastro = entity('CADASTRO', CADASTRO, {dialect: db.dialect}).useTimestamps();
+      entityCadastro.validate('TEST', function() {
         if (!this.NUMERO) {
           throw new Error('NUMERO must be informed');
         }
       });
+      tableCadastro = entityCadastro.new(db);
+      tableCadastro2 = entityCadastro.new(db2);
       tableCadastro.createTables()
         .then(function() {
-          done();
+          return tableCadastro2.createTables()
+            .then(function() {
+              done();
+            });
         })
         .catch(logError(done));
     });
@@ -97,6 +106,20 @@ module.exports = function(options) {
         .then(function(recordset) {
           expect(recordset).to.be.a('array');
           expect(recordset.length).to.equal(0);
+          expect(tableCadastro.db).to.equal(db);
+          done();
+        })
+        .catch(function(err) {
+          done(err);
+        });
+    });
+    it('record should not exist in db 2', function(done) {
+      tableCadastro2
+        .fetch({where: {id: 8}})
+        .then(function(recordset) {
+          expect(recordset).to.be.a('array');
+          expect(recordset.length).to.equal(0);
+          expect(tableCadastro2.db).to.equal(db2);
           done();
         })
         .catch(function(err) {
@@ -132,6 +155,30 @@ module.exports = function(options) {
         .then(function(record) {
           end = process.hrtime(start);
           joao = record;
+          expect(record.id).to.not.equal(undefined);
+          expect(record.createdAt).to.not.equal(undefined);
+          expect(record.updatedAt).to.not.equal(undefined);
+          expect(end[1] > minNanoSecsToSave).to.equal(true); // mssql Macbook 33.700 iMac retina 22.786
+          record.createdAt.toISOString().should.equal(record.updatedAt.toISOString());
+          expect(record.createdAt).to.be.a('date');
+          expect(record.createdAt >= now).to.equal(true);
+          done();
+        })
+        .catch(function(err) {
+          done(err);
+        });
+    });
+    it('record should be created in db2', function(done) {
+      var now = Date.now();
+      start = process.hrtime();
+      tableCadastro2
+        .create({
+          NOMECAD: 'João',
+          NUMERO: '1',
+          Inativo: 'Não'
+        })
+        .then(function(record) {
+          end = process.hrtime(start);
           expect(record.id).to.not.equal(undefined);
           expect(record.createdAt).to.not.equal(undefined);
           expect(record.updatedAt).to.not.equal(undefined);
@@ -191,6 +238,7 @@ module.exports = function(options) {
 
   describe('complex entity', function() {
 
+    var entityCadAtivo;
     var cadAtivo;
     var tableCadastro;
     var tableFornec;
@@ -210,37 +258,40 @@ module.exports = function(options) {
     before(function(done) {
       addValidations(validator);
 
-      var classificacao = entity('Classificação', CLASSE, {db: db});
-      var docpagev = entity('DOCPAGEV', DOCPAGEV, {db: db});
-      cadAtivo = require('./entities/cadastro.js')({
-        db: db,
+      var classificacao = entity('Classificação', CLASSE, {dialect: db.dialect});
+      var docpagev = entity('DOCPAGEV', DOCPAGEV, {dialect: db.dialect});
+      entityCadAtivo = require('./entities/cadastro.js')({
+        dialect: db.dialect,
         validator: validator,
-        classificacao: classificacao,
-        docpagev: docpagev
+        classificacao,
+        docpagev
       });
+      cadAtivo = entityCadAtivo.new(db);
+      classificacao = classificacao.new(db);
+      docpagev = docpagev.new(db);
       cadAtivo
         .createTables()
         .then(function() {
           return cadAtivo.syncTables();
         })
         .then(function() {
-          tableEvento = entity('EVENTO', EVENTO, {db: db});
+          tableEvento = entity('EVENTO', EVENTO, {dialect: db.dialect}).new(db);
           return tableEvento.createTables();
         })
         .then(function() {
-          tableCadastro = entity('CADASTRO', CADASTRO, {db: db});
+          tableCadastro = entity('CADASTRO', CADASTRO, {dialect: db.dialect}).new(db);
           return tableCadastro.syncTables();
         })
         .then(function() {
-          tableFornec = entity('FORNEC', FORNEC, {db: db});
+          tableFornec = entity('FORNEC', FORNEC, {dialect: db.dialect}).new(db);
           return tableFornec.syncTables();
         })
         .then(function() {
-          tableDocpagvc = entity('DOCPAGVC', DOCPAGVC, {db: db});
+          tableDocpagvc = entity('DOCPAGVC', DOCPAGVC, {dialect: db.dialect}).new(db);
           return tableDocpagvc.syncTables();
         })
         .then(function() {
-          tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {db: db});
+          tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {dialect: db.dialect}).new(db);
           return tableDocpagev.createTables();
         })
         .then(function() {
@@ -259,7 +310,7 @@ module.exports = function(options) {
 
       it('should not accept a invalid db layer', function() {
         try {
-          entity('CADASTRO', CADASTRO, {db: {}}).useTimestamps();
+          entity('CADASTRO', CADASTRO, {dialect: 'mysql'}).useTimestamps();
           //noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid entity created');
         } catch (error) {
@@ -268,33 +319,33 @@ module.exports = function(options) {
         }
       });
       it('should have a primary key', function() {
-        var primaryKey = cadAtivo.schema.primaryKey();
+        var primaryKey = entityCadAtivo.schema.primaryKey();
         expect(primaryKey).to.be.a('array');
         expect(primaryKey).to.eql(['id']);
       });
       it('should have 5 tables', function() {
-        var tables = cadAtivo.schema.tables();
+        var tables = entityCadAtivo.schema.tables();
         expect(tables).to.be.a('object');
         var keys = Object.keys(tables);
         expect(keys).to.be.a('array');
         expect(keys).to.eql(['CADASTRO', 'FORNEC', 'DOCPAGVC', 'CLIENTE', 'ClassificaçãoCad']);
       });
       it('should have property destino', function() {
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         schema.properties.should.have.property('destino');
         schema.properties.destino.should.have.property('items');
         schema.properties.destino.items.should.have.property('properties');
         expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(5);
       });
       it('should have property outroDestino', function() {
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         schema.properties.should.have.property('outroDestino');
         schema.properties.outroDestino.should.have.property('items');
         schema.properties.outroDestino.items.should.have.property('properties');
         expect(Object.keys(schema.properties.outroDestino.items.properties).length).to.equal(3);
       });
       it('should have a customized title for property TipoSimplesNacional', function() {
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         var properties = Object.keys(schema.properties);
         expect(properties.length).to.equal(38);
         expect(properties.indexOf('FAX')).to.equal(-1);
@@ -303,7 +354,7 @@ module.exports = function(options) {
         expect(schema.properties.TSN.title).to.equal('TSN')
       });
       it('should have property fornecedor', function() {
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         schema.properties.should.have.property('fornecedor');
         schema.properties.fornecedor.should.have.property('type');
         schema.properties.fornecedor.type.should.equal('object');
@@ -311,8 +362,7 @@ module.exports = function(options) {
         expect(Object.keys(schema.properties.fornecedor.properties).length).to.equal(61);
       });
       it('should have property cliente', function() {
-        cadAtivo.should.have.property('cliente');
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         schema.properties.should.have.property('cliente');
         schema.properties.cliente.should.have.property('type');
         schema.properties.cliente.type.should.equal('object');
@@ -325,21 +375,21 @@ module.exports = function(options) {
         expect(Object.keys(schema.properties.cliente.properties).length).to.equal(66);
       });
       it('should have property classificacaocad', function() {
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         schema.properties.should.have.property('ClassificaçãoCad');
         schema.properties.ClassificaçãoCad.should.have.property('items');
         schema.properties.ClassificaçãoCad.items.should.have.property('properties');
         expect(Object.keys(schema.properties.ClassificaçãoCad.items.properties).length).to.equal(2);
       });
       it('should have property docpagvc', function() {
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         schema.properties.should.have.property('docpagvc');
         schema.properties.docpagvc.should.have.property('items');
         schema.properties.docpagvc.items.should.have.property('properties');
         expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(7);
       });
       it('should have property docpagvc in fornecedor', function() {
-        var schema = cadAtivo.schema.get();
+        var schema = entityCadAtivo.schema.get();
         schema.properties.should.have.property('fornecedor');
         schema.properties.fornecedor.properties.should.have.property('docpagvc');
         schema.properties.fornecedor.properties.docpagvc.should.have.property('items');
@@ -347,18 +397,59 @@ module.exports = function(options) {
         expect(Object.keys(schema.properties.fornecedor.properties.docpagvc.items.properties).length).to.equal(5);
       });
       it('should not have entity methods in association', function() {
-        cadAtivo.fornecedor.should.not.have.property('fetch');
-        cadAtivo.fornecedor.should.not.have.property('setScope');
-        cadAtivo.fornecedor.should.not.have.property('getSchema');
-        cadAtivo.fornecedor.should.not.have.property('create');
-        cadAtivo.fornecedor.should.not.have.property('update');
-        cadAtivo.fornecedor.should.not.have.property('destroy');
-        cadAtivo.fornecedor.docpagvc.should.not.have.property('fetch');
-        cadAtivo.fornecedor.docpagvc.should.not.have.property('setScope');
-        cadAtivo.fornecedor.docpagvc.should.not.have.property('getSchema');
-        cadAtivo.fornecedor.docpagvc.should.not.have.property('create');
-        cadAtivo.fornecedor.docpagvc.should.not.have.property('update');
-        cadAtivo.fornecedor.docpagvc.should.not.have.property('destroy');
+        entityCadAtivo.fornecedor.should.not.have.property('fetch');
+        entityCadAtivo.fornecedor.should.not.have.property('setScope');
+        entityCadAtivo.fornecedor.should.not.have.property('getSchema');
+        entityCadAtivo.fornecedor.should.not.have.property('create');
+        entityCadAtivo.fornecedor.should.not.have.property('update');
+        entityCadAtivo.fornecedor.should.not.have.property('destroy');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('fetch');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('setScope');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('getSchema');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('create');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('update');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('destroy');
+      });
+      it('should not have entity class methods', function() {
+        cadAtivo.should.not.have.property('entityMethod');
+        cadAtivo.should.not.have.property('instanceMethod');
+        cadAtivo.should.not.have.property('validate');
+        cadAtivo.should.not.have.property('hasOne');
+        cadAtivo.should.not.have.property('hasMany');
+        cadAtivo.should.not.have.property('setTitle');
+        cadAtivo.should.not.have.property('setDescription');
+        cadAtivo.should.not.have.property('setProperties');
+        cadAtivo.should.not.have.property('setScope');
+        cadAtivo.should.not.have.property('foreignKey');
+      });
+      it('entity cadAtivo should not have entity methods', function() {
+        entityCadAtivo.should.not.have.property('db');
+        entityCadAtivo.should.not.have.property('adapter');
+        entityCadAtivo.should.not.have.property('fetch');
+        entityCadAtivo.should.not.have.property('create');
+        entityCadAtivo.should.not.have.property('update');
+        entityCadAtivo.should.not.have.property('destroy');
+        entityCadAtivo.should.not.have.property('createInstance');
+        entityCadAtivo.should.not.have.property('createTables');
+        entityCadAtivo.should.not.have.property('syncTables');
+        entityCadAtivo.fornecedor.should.not.have.property('db');
+        entityCadAtivo.fornecedor.should.not.have.property('adapter');
+        entityCadAtivo.fornecedor.should.not.have.property('fetch');
+        entityCadAtivo.fornecedor.should.not.have.property('create');
+        entityCadAtivo.fornecedor.should.not.have.property('update');
+        entityCadAtivo.fornecedor.should.not.have.property('destroy');
+        entityCadAtivo.fornecedor.should.not.have.property('createInstance');
+        entityCadAtivo.fornecedor.should.not.have.property('createTables');
+        entityCadAtivo.fornecedor.should.not.have.property('syncTable');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('db');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('adapter');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('fetch');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('create');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('update');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('destroy');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('createInstance');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('createTables');
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('syncTable');
       });
     });
 
@@ -412,7 +503,8 @@ module.exports = function(options) {
         'validate',
         'save',
         'destroy',
-        'was'
+        'was',
+        'db'
       ];
       var enumerableKeys;
       var allKeys;
@@ -467,7 +559,7 @@ module.exports = function(options) {
       describe('The reserved words', function() {
         it('Should not use instance method name for a column', function() {
           try {
-            cadAtivo.setProperties(function(properties) {
+            entityCadAtivo.setProperties(function(properties) {
               properties.save = {
                 type: 'string',
                 maxLength: 1
@@ -478,14 +570,14 @@ module.exports = function(options) {
           } catch (error) {
             error.should.have.property('message');
             expect(error.message).to.contains('Property save cannot have this name, it is a reserved word, use an alias');
-            cadAtivo.setProperties(function(properties) {
+            entityCadAtivo.setProperties(function(properties) {
               delete properties.save;
             });
           }
         });
         it('Should not use a timestamp column name for a column', function() {
           try {
-            cadAtivo.setProperties(function(properties) {
+            entityCadAtivo.setProperties(function(properties) {
               properties.updatedAt = {
                 type: 'string',
                 maxLength: 1
@@ -496,7 +588,7 @@ module.exports = function(options) {
           } catch (error) {
             error.should.have.property('message');
             expect(error.message).to.contains('Properties cannot have timestamps names createAt or updatedAt, use an alias');
-            cadAtivo.setProperties(function(properties) {
+            entityCadAtivo.setProperties(function(properties) {
               delete properties.updatedAt;
             });
           }
@@ -1064,7 +1156,7 @@ module.exports = function(options) {
           })
           .catch(function(err) {
             done(err);
-          })
+          });
       });
       it('check if the vctos array generate an external table', function(done) {
         tableDocpagev
@@ -1363,7 +1455,10 @@ module.exports = function(options) {
           .catch(logError(done));
       });
       it('add more one vcto', function(done) {
-        joao.docpagvc = joao.docpagvc.concat([{VALOR: 0, DATAVENC: '2019-09-24'}]);
+        joao.docpagvc = joao.docpagvc.concat([{
+          VALOR: 0,
+          DATAVENC: '2019-09-24'
+        }]);
         cadAtivo
           .update(joao, joao.id)
           .then(function(record) {
@@ -2021,7 +2116,10 @@ module.exports = function(options) {
           })
       });
       it('add more one vcto to mario', function(done) {
-        mario.fornecedor.docpagvc = mario.fornecedor.docpagvc.concat([{VALOR: 10.99, DATAVENC: '2015-09-24'}]);
+        mario.fornecedor.docpagvc = mario.fornecedor.docpagvc.concat([{
+          VALOR: 10.99,
+          DATAVENC: '2015-09-24'
+        }]);
         mario.fornecedor.NUMERO = '99'; // NUMERO is only for tests purposes
         cadAtivo
           .update(mario, mario.id)
@@ -2145,25 +2243,25 @@ module.exports = function(options) {
 
     describe('mutation on the third level', function() {
       before(function() {
-        cadAtivo.fornecedor.docpagvc.hasOne('EVENTO as categoria', EVENTO);
-        cadAtivo.fornecedor.docpagvc.categoria.validate(function() {
+        entityCadAtivo.fornecedor.docpagvc.hasOne('EVENTO as categoria', EVENTO);
+        entityCadAtivo.fornecedor.docpagvc.categoria.validate(function() {
           assert(this.entity, 'this should be a instance in validation');
         });
       });
-      it('should reject a new method already existante', function() {
+      it('should reject a new method already existent', function() {
         try {
-          cadAtivo.method('quitar', function() {
+          entityCadAtivo.instanceMethod('quitar', function() {
           });
           //noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid method created');
         } catch (error) {
           error.should.have.property('message');
-          expect(error.message).to.equal('Method quitar is already defined');
+          expect(error.message).to.equal('Instance method quitar is already defined');
         }
       });
       it('should reject a new method with a column with the same name', function() {
         try {
-          cadAtivo.method('NOMECAD', function() {
+          entityCadAtivo.instanceMethod('NOMECAD', function() {
           });
           //noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid method created');
@@ -2491,20 +2589,20 @@ module.exports = function(options) {
 
     describe('using the instance', function() {
       before(function(done) {
-        cadAtivo.fornecedor.docpagvc.categoria.validate(
+        entityCadAtivo.fornecedor.docpagvc.categoria.validate(
           'do not alter id', function() {
             if (this.was && this.id !== this.was.id) {
               throw new Error('id cannot be modified');
             }
           }
         );
-        cadAtivo.validate(
+        entityCadAtivo.validate(
           'do not alter TSN', function() {
             if (this.was.TSN !== this.TSN) {
               throw new Error('TSN cannot be modified');
             }
           }, {onCreate: false});
-        cadAtivo.fornecedor.docpagvc.categoria.validate(
+        entityCadAtivo.fornecedor.docpagvc.categoria.validate(
           'do not alter doCaixa', function() {
             if (this.was.doCaixa !== this.doCaixa) {
               throw new Error('doCaixa cannot be modified');
@@ -2631,7 +2729,7 @@ module.exports = function(options) {
         jessica
           .destroy()
           .then(function() {
-            done(new Error(('Invalid operation')));
+            done(new Error('Invalid operation'));
           })
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
@@ -2689,9 +2787,9 @@ module.exports = function(options) {
             vcto[3] = lucia.fornecedor.docpagvc[1];
             vcto[4] = lucia.fornecedor.docpagvc[2];
             assert(vcto[3].entity, 'Added array element should be an entity');
-            assert(vcto[4].entity() === lucia.entity(), 'Added array element should be lucia');
-            expect(vcto[4].entity().id).to.equal('CADASTRO');
-            expect(vcto[4].entity().alias).to.equal('cadAtivo');
+            assert(vcto[4].entity === lucia.entity, 'Added array element should be lucia');
+            expect(vcto[4].entity.id).to.equal('CADASTRO');
+            expect(vcto[4].entity.alias).to.equal('cadAtivo');
           } catch (e) {
             error = e;
           }
@@ -2746,7 +2844,7 @@ module.exports = function(options) {
         });
         it('could be saved to disk using any component via entity create', function(done) {
           vcto[3]
-            .entity()
+            .entity
             .create({NOMECAD: 'John Doe'})
             .then(function(record) {
               record.should.have.property('id');
@@ -2760,7 +2858,7 @@ module.exports = function(options) {
         });
         it('could be saved to disk using entiy via entity create', function(done) {
           lucia
-            .entity()
+            .entity
             .create({NOMECAD: 'Mary Lou'})
             .then(function(record) {
               record.should.have.property('id');
@@ -3170,10 +3268,11 @@ module.exports = function(options) {
     describe('using the entity', function() {
       before(function(done) {
         var sv = sqlView(cadAtivo.db.dialect);
-        cadAtivo.getExternalData = function() {
+        entityCadAtivo.entityMethod('getExternalData', function() {
           var view = sv.build('Classificação', {limit: 1, select: 'Nome'});
           return this.db.query(view.statement, view.params);
-        };
+        });
+        cadAtivo = entityCadAtivo.new(db);
         done();
       });
       it('should return one record with a column', function(done) {
@@ -3204,7 +3303,7 @@ module.exports = function(options) {
           })
           .then(function(record) {
             beth = record;
-            cadAtivo
+            entityCadAtivo
               .setProperties(function(properties) {
                 properties.futureEnum.enum = [
                   'Abc',
@@ -3409,7 +3508,7 @@ module.exports = function(options) {
   describe('Usage example', function() {
     it('Should log the full database columns', function(done) {
       var jse = entity;
-      var invoice = jse('invoice', {
+      var invoiceClass = jse('invoice', {
         properties: {
           id: {
             type: 'integer',
@@ -3420,8 +3519,8 @@ module.exports = function(options) {
             type: 'string'
           }
         }
-      }, {db: db});
-      invoice.hasMany('items', {
+      }, {dialect: db.dialect});
+      invoiceClass.hasMany('items', {
         properties: {
           id: {
             type: 'integer',
@@ -3446,6 +3545,7 @@ module.exports = function(options) {
         }
       });
       var invoiceInstance;
+      var invoice = invoiceClass.new(db);
       invoice.createTables() // Will create tables invoice and items
         .then(function() {
           return invoice.syncTables(); // Then the reference in items

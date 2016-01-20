@@ -39,13 +39,13 @@ exports.create = function(record, data, options) {
   }
   var index = 1;
   var insertCommand = data.insertCommand.replace('<fields>',
-    fields.reduce(function(fields, field) {
-      return fields + (fields ? ',' : '') + data.public.db.wrap(field);
+    fields.reduce((fields, field) => {
+      return fields + (fields ? ',' : '') + this.wrap(field);
     }, '')).replace('<values>',
     fields.reduce(function(fields) {
       return fields + (fields ? ',' : '') + '$' + index++;
     }, ''));
-  return data.public.db.execute(insertCommand, params, options)
+  return this.db.execute(insertCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, null, recordset.length, 'create');
       var inserted = recordset[0];
@@ -102,15 +102,15 @@ exports.update = function(record, data, options) {
 
   var index = 0;
   var updateCommand = data.updateCommand.replace('<fields-values>',
-    fields.reduce(function(fields, field) {
-      return fields + (fields ? ',' : '') + data.public.db.wrap(field) + '=$' + ++index;
+    fields.reduce((fields, field) => {
+      return fields + (fields ? ',' : '') + this.wrap(field) + '=$' + ++index;
     }, '')).replace('<primary-keys>',
-    findKeys.reduce(function(fields, field) {
+    findKeys.reduce((fields, field) => {
       return fields + (fields ? ' AND ' : '') +
-        data.public.db.wrap(field) +
+        this.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
-  return data.public.db.execute(updateCommand, params, options)
+  return this.db.execute(updateCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, options.where, recordset.length, 'update');
       var updated = recordset[0];
@@ -141,12 +141,12 @@ exports.destroy = function(data, options) {
 
   var index = 0;
   var deleteCommand = data.deleteCommand.replace('<find-keys>',
-    findKeys.reduce(function(fields, field) {
+    findKeys.reduce((fields, field) => {
       return fields + (fields ? ' AND ' : '') +
-        data.public.db.wrap(field) +
+        this.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
-  return data.public.db.execute(deleteCommand, params, options)
+  return this.db.execute(deleteCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, options.where, recordset.length, 'delete');
       return recordset.length;

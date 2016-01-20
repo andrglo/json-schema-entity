@@ -6,33 +6,35 @@ var common = require('./common');
 var xmlSpaceToken = '_-_';
 var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
-module.exports = function(db) {
+module.exports = function() {
 
-  var adapter = {};
+  var adapter = {
+    wrap: (column) => `[${column}]`
+  };
 
   adapter.createTimestamps = function(data, options) {
     options = options || {};
-    var table = db.wrap(data.identity.name);
-    var catalog = options.database || db.config.database;
-    var schema = options.schema || db.config.schema || 'dbo';
-    return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+    var table = this.wrap(data.identity.name);
+    var catalog = options.database || this.db.config.database;
+    var schema = options.schema || this.db.config.schema || 'dbo';
+    return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
         'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\' AND ' +
         'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options)
-      .then(function(recordset) {
+      .then((recordset) => {
         if (recordset.length === 0) {
-          return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('createdAt') + ' datetime2', null, options);
+          return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
+            this.wrap('createdAt') + ' datetime2', null, options);
         }
       })
-      .then(function() {
-        return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+      .then(() => {
+        return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
           'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\' AND ' +
           'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options);
       })
-      .then(function(recordset) {
+      .then((recordset) => {
         if (recordset.length === 0) {
-          return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('updatedAt') + ' datetime2', null, options);
+          return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
+            this.wrap('updatedAt') + ' datetime2', null, options);
         }
       });
   };

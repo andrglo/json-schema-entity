@@ -2,49 +2,51 @@ var _ = require('lodash');
 var assert = require('assert');
 var common = require('./common');
 
-module.exports = function(db) {
+module.exports = function() {
 
-  var adapter = {};
+  var adapter = {
+    wrap: (column) => `"${column}"`
+  };
 
   adapter.createTimestamps = function(data, options) {
     options = options || {};
-    var table = db.wrap(data.identity.name);
-    var catalog = options.database || db.config.database;
-    var schema = options.schema || db.config.schema || 'public';
-    return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+    var table = this.wrap(data.identity.name);
+    var catalog = options.database || this.db.config.database;
+    var schema = options.schema || this.db.config.schema || 'public';
+    return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
         'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\' AND ' +
         'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options)
-      .then(function(recordset) {
+      .then((recordset) => {
         if (recordset.length === 0) {
-          return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('createdAt') + ' TIMESTAMP WITH TIME ZONE', null, options);
+          return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
+            this.wrap('createdAt') + ' TIMESTAMP WITH TIME ZONE', null, options);
         }
       })
-      .then(function() {
-        return db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+      .then(() => {
+        return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
           'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\' AND ' +
           'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options);
       })
-      .then(function(recordset) {
+      .then((recordset) => {
         if (recordset.length === 0) {
-          return db.execute('ALTER TABLE ' + table + ' ADD ' +
-            db.wrap('updatedAt') + ' TIMESTAMP WITH TIME ZONE', null, options);
+          return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
+            this.wrap('updatedAt') + ' TIMESTAMP WITH TIME ZONE', null, options);
         }
       });
   };
 
   adapter.buildInsertCommand = function(data) {
-    data.insertCommand = 'INSERT INTO ' + db.wrap(data.identity.name) +
+    data.insertCommand = 'INSERT INTO ' + this.wrap(data.identity.name) +
       ' (<fields>) VALUES (<values>) RETURNING *';
   };
 
   adapter.buildUpdateCommand = function(data) {
-    data.updateCommand = 'UPDATE ' + db.wrap(data.identity.name) +
+    data.updateCommand = 'UPDATE ' + this.wrap(data.identity.name) +
       ' SET <fields-values> WHERE <primary-keys> RETURNING *';
   };
 
   adapter.buildDeleteCommand = function(data) {
-    data.deleteCommand = 'DELETE FROM ' + db.wrap(data.identity.name) +
+    data.deleteCommand = 'DELETE FROM ' + this.wrap(data.identity.name) +
       ' WHERE <find-keys> RETURNING *';
   };
   adapter.create = common.create;
@@ -66,31 +68,31 @@ module.exports = function(db) {
     _.forEach(data.properties, function(property, name) {
       var fieldName = property.field || name;
       var alias = name;
-      fields.push(db.wrap(fieldName) + (alias !== fieldName ? ' AS ' +
-        db.wrap(alias) : ''));
-    });
+      fields.push(this.wrap(fieldName) + (alias !== fieldName ? ' AS ' +
+        this.wrap(alias) : ''));
+    }, this);
     if (data.timestamps) {
-      fields.push(db.wrap('updatedAt'));
-      fields.push(db.wrap('createdAt'));
+      fields.push(this.wrap('updatedAt'));
+      fields.push(this.wrap('createdAt'));
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {
         return false;
       }
-      buildQuery(association.data);
+      this.buildQuery(association.data);
       var foreignKey = association.data.properties[association.data.foreignKey].field ||
         association.data.foreignKey;
       fields.push(
         '(select array_to_json(array_agg(row_to_json(t))) from (' +
         association.data.query +
-        ' WHERE ' + db.wrap(foreignKey) + '=' +
-        db.wrap(data.key) + '.' + db.wrap(data.primaryKeyFields[0]) +
+        ' WHERE ' + this.wrap(foreignKey) + '=' +
+        this.wrap(data.key) + '.' + this.wrap(data.primaryKeyFields[0]) +
         ') t) AS ' +
-        db.wrap(association.data.key)
+        this.wrap(association.data.key)
       );
-    });
+    }, this);
     data.query = 'SELECT ' + fields.join(',') +
-      ' FROM ' + db.wrap(data.identity.name) + ' AS ' + db.wrap(data.key);
+      ' FROM ' + this.wrap(data.identity.name) + ' AS ' + this.wrap(data.key);
   };
 
   adapter.getCoercionFunction = function(type, timezone) {

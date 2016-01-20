@@ -19,14 +19,14 @@ module.exports = function(config) {
 
   function createClasses(transaction) {
     var insertion = Promise.resolve();
-    _.forEach(this.ClassificaçãoCad, function(classe) {
+    _.forEach(this.ClassificaçãoCad, (classe) => {
       insertion = insertion
-        .then(function() {
-          return classificacao.fetch({where: {id: classe.Classe}}, {transaction: transaction});
+        .then(() => {
+          return classificacao.new(this.db).fetch({where: {id: classe.Classe}}, {transaction: transaction});
         })
-        .then(function(recordset) {
+        .then((recordset) => {
           if (recordset.length === 0) {
-            return classificacao.create({id: classe.Classe}, {transaction: transaction});
+            return classificacao.new(this.db).create({id: classe.Classe}, {transaction: transaction});
           }
         });
     });
@@ -37,9 +37,9 @@ module.exports = function(config) {
     var id = result.id;
     var docpagvc = !result.docpagvc || _.isArray(result.docpagvc) ? result.docpagvc : [result.docpagvc];
     var insertion = Promise.resolve();
-    _.forEach(docpagvc, function() {
-      insertion = insertion.then(function() {
-        return docpagev.create({
+    _.forEach(docpagvc, () => {
+      insertion = insertion.then(() => {
+        return docpagev.new(this.db).create({
           NUMDOC: id,
           CONTAEV: 'any',
           VALOR: 10
@@ -59,13 +59,14 @@ module.exports = function(config) {
 
   function destroyEvs(t) {
     var id = this.id;
-    return docpagev
+    var docpagevEntity = docpagev.new(this.db);
+    return docpagevEntity
       .fetch({where: {NUMDOC: id}}, {transaction: t})
-      .then(function(recordset) {
+      .then((recordset) => {
         var deletion = Promise.resolve();
-        _.forEach(recordset, function(record) {
-          deletion = deletion.then(function() {
-            return docpagev.destroy({
+        _.forEach(recordset, (record) => {
+          deletion = deletion.then(() => {
+            return docpagevEntity.destroy({
               where: {id: record.id}
             }, {transaction: t})
           })
@@ -260,7 +261,7 @@ module.exports = function(config) {
   cadAtivo.validate('Duplicated CPF', function() {
     var self = this;
     if (this.CGCCPF) {
-      return cadAtivo.fetch({where: {CGCCPF: this.CGCCPF}})
+      return this.entity.fetch({where: {CGCCPF: this.CGCCPF}})
         .then(function(recordset) {
           recordset.map(function(record) {
             if (self.CGCCPF === record.CGCCPF && self.id !== record.id) {
@@ -358,7 +359,7 @@ module.exports = function(config) {
     });
   });
 
-  cadAtivo.method('quitar', function() {
+  cadAtivo.instanceMethod('quitar', function() {
     if (!this.id) {
       throw new Error('Id not found');
     }
@@ -366,7 +367,7 @@ module.exports = function(config) {
     this.quitado = 'S';
   });
 
-  cadAtivo.ClassificaçãoCad.method('quitar', function() {
+  cadAtivo.ClassificaçãoCad.instanceMethod('quitar', function() {
     if (!this.Classe) {
       throw new Error('Classe not found');
     }

@@ -15,12 +15,12 @@ function toArray(obj) {
   return Array.isArray(obj) ? obj : obj && [obj] || [];
 }
 
-function validateModel(is, was, data, options) {
+function validateModel(is, was, data) {
 
   var errors = [];
 
   function validate(is, was, data) {
-    return runModelValidations(is, was, data, errors, options).then(function() {
+    return runModelValidations(is, was, data, errors).then(function() {
       return _.reduce(data.associations, function(chain, association) {
         return chain.then(function() {
           var associationKey = association.data.key;
@@ -203,8 +203,7 @@ function runFieldValidations(is, data, errors) {
 
 }
 
-function runModelValidations(is, was, data, errors, options) {
-  const connection = _.pick(options || {}, ['user', 'password', 'database', 'host', 'port']);
+function runModelValidations(is, was, data, errors) {
   return _.reduce(data.validate, function(chain, validation) {
     return chain.then(function() {
       if (!(is && !was && validation.options.onCreate ||
@@ -214,7 +213,7 @@ function runModelValidations(is, was, data, errors, options) {
       }
       var res;
       try {
-        res = validation.fn.call(is || was, connection);
+        res = validation.fn.call(is || was);
       } catch (err) {
         errors.push({path: validation.id, message: err.message});
       }
@@ -240,11 +239,10 @@ const timeStampsColumns = ['createdAt', 'updatedAt'];
 
 class TableRecord {
 
-  constructor(trs, record, isNew, parent, options) {
+  constructor(trs, record, isNew, parent) {
     let it = {
       isNew,
       parent,
-      options,
       info: tableRecordInfo.get(trs),
       values: {}
     };
@@ -257,13 +255,13 @@ class TableRecord {
     Object.freeze(this);
   }
 
-  entity() {
-    return tableRecordData.get(this).info.data.entity.public;
+  get entity() {
+    return tableRecordData.get(this).parent.self;
   }
 
   validate() {
     let it = tableRecordData.get(this);
-    return validateModel(this, this.was, it.info.data, it.options);
+    return validateModel(this, this.was, it.info.data);
   }
 
   save(options) {
@@ -271,12 +269,12 @@ class TableRecord {
     let entity = entityData.parent.tableRecord;
     entityData = entity === this ? entityData : tableRecordData.get(entity);
     if (entityData.isNew) {
-      return entityData.info.data.entity.methods.create(entity, null, options)
+      return entityData.parent.self.create(entity, null, options)
         .then(function() {
           entityData.isNew = false;
         });
     }
-    return entityData.info.data.entity.methods.update(entity, null, options);
+    return entityData.parent.self.update(entity, null, options);
   }
 
   destroy(options) {
@@ -297,7 +295,7 @@ class TableRecord {
     if (entityData.info.data.entity.timestamps) {
       key.where.updatedAt = entity.updatedAt || null;
     }
-    return entityData.info.data.entity.methods.destroy(key, options, entity)
+    return entityData.parent.self.destroy(key, options, entity)
       .then(function() {
         entityData.isNew = true;
         var is = entityData.values;
@@ -309,6 +307,10 @@ class TableRecord {
 
   get was() {
     return tableRecordData.get(this).was;
+  }
+
+  get db() {
+    return tableRecordData.get(this).parent.self.db;
   }
 
 }
@@ -413,9 +415,17 @@ class TableRecordSchema {
     _.forEach(data.associations, function(association) {
       var name = association.data.key;
       columns.set(name, function(value) {
+        //console.log('setter ? this', this === void 0);
+        //console.log('setter ? this.parent', this.parent === void 0);
+        //var entityData = tableRecordData.get(this);
+        //console.log('setter ? entityData', entityData === void 0);
+        ////if (entityData === void 0) {
+        ////  console.log(this)
+        ////}
+        //console.log('setter entityData', entityData === void 0, entityData.parent === void 0);
         var build = value => isSameEntityInstance(value, this.parent) ?
           value :
-          buildEntity(Object.assign({}, value), association.data, this.isNew, false, void 0, this.parent);
+          buildEntity(Object.assign({}, value), association.data, this.isNew, false, void 0, void 0, this.parent);
         this.values[name] = Array.isArray(value) ?
           value.map(value => build(value)) :
           value ? build(value) : value;
@@ -515,10 +525,10 @@ function buildPlainObject(record, data) {
   return record;
 }
 
-function buildEntity(record, data, isNew, fromFetch, instance, parent, options) {
+function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
   clearNulls(record);
   let isParent = !parent;
-  parent = parent || instance && instanceParent(instance) || {};
+  parent = parent || instance && instanceParent(instance) || {self};
   let associations = isSameEntityInstance(instance, parent) ? record : {};
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
@@ -530,7 +540,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent, options) 
         _.isArray(instance[key]) ? instance[key] : [instance[key]] :
         void 0;
       for (var i = 0; i < recordset.length; i++) {
-        recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], parent, options);
+        recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], void 0, parent);
       }
       associations[key] = recordset.length === 1 && association.type === 'hasOne' ?
         recordset[0] : recordset;
@@ -543,7 +553,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, parent, options) 
     let tableRecord = new TableRecord(data.trs,
       _.extend(_.pick(record, data.propertiesList), associations),
       isNew,
-      parent, options);
+      parent);
     if (isParent) {
       parent.tableRecord = tableRecord;
     }
@@ -584,11 +594,11 @@ function runHooks(hooks, model, transaction, data, validatedInstance) {
   }, Promise.resolve());
 }
 
-function create(entity, options, data) {
+function create(entity, options, data, adapter) {
   var record = _.pick(entity, data.propertiesList);
   return runHooks(['beforeCreate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
-      return data.adapter.create(record, data, options)
+      return adapter.create(record, data, options)
         .then(function(record) {
           var newEntity = _.pick(record, data.propertiesList);
           return _.reduce(data.associations, function(chain, association) {
@@ -607,7 +617,7 @@ function create(entity, options, data) {
             return _.reduce(associatedEntity, function(chain, entity) {
               entity[association.data.foreignKey] = newEntity[data.primaryKeyAttributes[0]];
               return chain.then(function() {
-                return create(entity, options, association.data)
+                return create(entity, options, association.data, adapter)
                   .then(function(associationEntity) {
                     if (hasMany) {
                       newEntity[associationKey] = newEntity[associationKey] || [];
@@ -630,7 +640,7 @@ function create(entity, options, data) {
     });
 }
 
-function update(entity, was, options, data) {
+function update(entity, was, options, data, adapter) {
   var record = _.pick(entity, data.propertiesList);
   return runHooks(['beforeUpdate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
@@ -641,7 +651,7 @@ function update(entity, was, options, data) {
       if (data.timestamps) {
         options.where.updatedAt = entity.updatedAt || null;
       }
-      return data.adapter.update(record, data, options)
+      return adapter.update(record, data, options)
         .then(function(res) {
           assert(res[0] === 1 || typeof res === 'object' && res[0] === void 0,
             'Record of ' + data.key + ' found ' + res[0] + ' times for update, expected 1.' +
@@ -734,12 +744,12 @@ function update(entity, was, options, data) {
 
             return _.reduce(toBeDeleted, function(chain, entity) {
               return chain.then(function() {
-                return destroy(entity, options, association.data);
+                return destroy(entity, options, association.data, adapter);
               });
             }, chain).then(function() {
               return _.reduce(toBeUpdated, function(chain, entity) {
                 return chain.then(function() {
-                  return update(entity, find(entity, was[association.data.key]), options, association.data)
+                  return update(entity, find(entity, was[association.data.key]), options, association.data, adapter)
                     .then(function(associationEntity) {
                       if (hasMany) {
                         modifiedEntity[associationKey] = modifiedEntity[associationKey] || [];
@@ -754,7 +764,7 @@ function update(entity, was, options, data) {
               return _.reduce(toBeCreated, function(chain, entity) {
                 entity[association.data.foreignKey] = modifiedEntity[data.primaryKeyAttributes[0]];
                 return chain.then(function() {
-                  return create(entity, options, association.data)
+                  return create(entity, options, association.data, adapter)
                     .then(function(associationEntity) {
                       if (hasMany) {
                         modifiedEntity[associationKey] = modifiedEntity[associationKey] || [];
@@ -778,7 +788,7 @@ function update(entity, was, options, data) {
     });
 }
 
-function destroy(entity, options, data) {
+function destroy(entity, options, data, adapter) {
   return runHooks(['beforeDelete', 'beforeDestroy'], entity, options.transaction, data)
     .then(function() {
       return _.reduce(data.associations, function(chain, association) {
@@ -788,7 +798,7 @@ function destroy(entity, options, data) {
         associatedEntity = associatedEntity === void 0 || recordIsArray ? associatedEntity : [associatedEntity];
         return _.reduce(associatedEntity, function(chain, entity) {
           return chain.then(function() {
-            return destroy(entity, options, association.data);
+            return destroy(entity, options, association.data, adapter);
           });
         }, chain);
       }, Promise.resolve()).then(function() {
@@ -799,7 +809,7 @@ function destroy(entity, options, data) {
         if (data.timestamps) {
           options.where.updatedAt = entity.updatedAt || null;
         }
-        return data.adapter.destroy(data, options);
+        return adapter.destroy(data, options);
       });
     }).then(function(deletedEntity) {
       return runHooks(['afterDestroy', 'afterDelete'], deletedEntity, options.transaction, data, entity);
@@ -807,10 +817,9 @@ function destroy(entity, options, data) {
 }
 
 module.exports = function(schemaName, schema, config) {
-
-  var adapter = getAdapter(config.db);
-  var db = config.db;
-  var sv = sqlView(db.dialect);
+  config = Object.assign({dialect: 'postgres'}, config);
+  var adapter = getAdapter(config.dialect);
+  var sv = sqlView(config.dialect);
   var entity = entityFactory(schemaName, schema, rebuild);
   entity.entity = entity;
 
@@ -822,7 +831,7 @@ module.exports = function(schemaName, schema, config) {
       'hasMany',
       'hasOne',
       'validate',
-      'method',
+      'instanceMethod',
       'foreignKey',
       'beforeCreate',
       'afterCreate',
@@ -841,14 +850,15 @@ module.exports = function(schemaName, schema, config) {
       'validate',
       'save',
       'destroy',
-      'was'
+      'was',
+      'db'
     ];
     const identity = splitAlias(schemaName);
     var data = {
       validator: config.validator,
       identity: identity,
       table: schema || {},
-      adapter: adapter,
+      adapter, // Use only when db access is not required
       title: schema && schema.title,
       description: schema && schema.description,
       key: identity.as || identity.name,
@@ -861,7 +871,234 @@ module.exports = function(schemaName, schema, config) {
       hooks: {},
       coerce: [],
       public: {
-        db: db
+        new(db) {
+          var newEntity = {};
+          data.entityMethods.map(method =>
+            Object.defineProperty(newEntity, method.id, {
+              value: method.fn
+            }));
+          return Object.assign(newEntity, {
+            get db() {
+              return db; // For db access
+            },
+            get adapter() {
+              return Object.assign({db}, adapter); // For db access
+            },
+            get id() {
+              return data.public.id;
+            },
+            get alias() {
+              return data.public.alias;
+            },
+            get schema() {
+              return data.public.schema;
+            },
+            fetch(criteria, options) {
+              criteria = criteria || {};
+              var self = this;
+              return Promise.resolve()
+                .then(function() {
+                  options = options || {};
+                  if (data.scope) {
+                    var where = _.extend({}, criteria.where, data.scope);
+                    criteria = _.extend({}, criteria);
+                    criteria.where = where;
+                  }
+                  var view = sv.build(data.query, criteria);
+                  return db
+                    .query(view.statement, view.params, options)
+                    .then(function(res) {
+                      return res.map(function(record) {
+                        return options.toPlainObject === true ?
+                          buildPlainObject(record, data) :
+                          buildEntity(record, data, false, true, void 0, self);
+                      });
+                    });
+                });
+            },
+            create: function(entity, options) {
+              options = options || {};
+              var self = this;
+              var isInstance = entity instanceof TableRecord && entity.entity === this;
+              return (isInstance ? Promise.resolve() : validateFields(entity, data))
+                .then(function() {
+                  entity = isInstance ? entity : buildEntity(entity, data, true, void 0, void 0, self);
+                })
+                .then(function() {
+                  return validateModel(entity, void 0, data, options)
+                    .then(function() {
+                      return options.transaction ?
+                        create(entity, options, data, self.adapter) :
+                        db.transaction(function(transaction) {
+                          return create(entity, Object.assign({}, options, {transaction}), data, self.adapter);
+                        }, options);
+                    })
+                    .then(function(record) {
+                      return options.toPlainObject === true && !isInstance ?
+                        record :
+                        buildEntity(record, data, false, false, entity, self);
+                    });
+                });
+            },
+            update: function(entity, key, options) {
+              var self = this;
+              key = key || entity[data.primaryKeyAttributes[0]];
+              if (!key) {
+                return Promise.resolve().then(function() {
+                  throw new EntityError({
+                    type: 'InvalidArgument',
+                    message: 'Entity ' + data.key + ' need a primary key for update'
+                  });
+                });
+              }
+              options = options || {};
+              if (typeof key !== 'object') {
+                var id = key;
+                key = {where: {}};
+                key.where[data.primaryKeyAttributes[0]] = id;
+              } else if (!key.where) {
+                return Promise.resolve().then(function() {
+                  throw new EntityError({
+                    type: 'InvalidArgument',
+                    message: 'Where clause not defined for entity ' + data.key + ' update'
+                  });
+                });
+              }
+              if (data.timestamps) {
+                key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
+              }
+              var isInstance = entity instanceof TableRecord && entity.entity === this;
+              return (isInstance ?
+                Promise.resolve([entity.was]) :
+                this.fetch(key, options))
+                .then(function(was) {
+                  if (was.length === 0) {
+                    throw new EntityError({
+                      type: 'RecordModifiedOrDeleted',
+                      message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for update'
+                    });
+                  }
+                  assert(was.length === 1);
+
+                  return (isInstance ? Promise.resolve() : validateFields(entity, data))
+                    .then(function() {
+                      entity = isInstance ? entity : buildEntity(_.extend({}, was[0], entity), data, void 0, void 0, void 0, self);
+                    })
+                    .then(function() {
+                      return validateModel(entity, was[0], data, options);
+                    })
+                    .then(function() {
+                      return options.transaction ?
+                        update(entity, was[0], options, data, self.adapter) :
+                        db.transaction(function(transaction) {
+                          return update(entity, was[0], Object.assign({}, options, {transaction}), data, self.adapter);
+                        }, options);
+                    })
+                    .then(function(record) {
+                      return options.toPlainObject === true && !isInstance ?
+                        record :
+                        buildEntity(record, data, false, false, entity, self);
+                    });
+                });
+            },
+            destroy: function(key, options, entity) {
+              var self = this;
+              if (!key) {
+                return Promise.resolve().then(function() {
+                  throw new EntityError({
+                    type: 'InvalidArgument',
+                    message: 'Entity ' + data.key + ' need a primary key for delete'
+                  });
+                });
+              }
+              options = options || {};
+              if (typeof key !== 'object') {
+                var id = key;
+                key = {where: {}};
+                key.where[data.primaryKeyAttributes[0]] = id;
+              } else if (!key.where) {
+                return Promise.resolve().then(function() {
+                  throw new EntityError({
+                    type: 'InvalidArgument',
+                    message: 'Where clause not defined for entity ' + data.key + ' delete'
+                  });
+                });
+              }
+              if (data.timestamps) {
+                key.where.updatedAt = key.where.updatedAt || null;
+              }
+              var isInstance = entity instanceof TableRecord && entity.entity === this;
+              return (isInstance ?
+                Promise.resolve([entity.was]) :
+                this.fetch(key, options))
+                .then(function(was) {
+                  if (was.length === 0) {
+                    throw new EntityError({
+                      type: 'RecordModifiedOrDeleted',
+                      message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for delete'
+                    });
+                  }
+                  assert(was.length === 1);
+                  return (isInstance ? Promise.resolve() : validateFields(entity, data))
+                    .then(function() {
+                      entity = isInstance ? entity : was[0];
+                    })
+                    .then(function() {
+                      return validateModel(void 0, entity, data, options);
+                    })
+                    .then(function() {
+                      return options.transaction ?
+                        destroy(entity, options, data, self.adapter) :
+                        db.transaction(function(transaction) {
+                          return destroy(entity, Object.assign({}, options, {transaction}), data, self.adapter);
+                        }, options);
+                    });
+                });
+            },
+            createInstance: function(entity) {
+              return buildEntity(entity || {}, data, true, void 0, void 0, this);
+            },
+            createTables: function() {
+              var self = this;
+              return Promise.resolve()
+                .then(function() {
+                  var tables = [];
+                  getTables(data, tables);
+                  var jsts = [];
+                  tables.map(function(table) {
+                    jsts.push(jst(table.name, table.schema, {db: self.db}));
+                  });
+                  return jsts.reduce(function(promise, jst) {
+                    return promise.then(function() {
+                      return jst.create()
+                        .then(function() {
+                          if (data.timestamps) {
+                            return self.adapter.createTimestamps(data);
+                          }
+                        });
+                    });
+                  }, Promise.resolve());
+                });
+            },
+            syncTables: function() {
+              var self = this;
+              return Promise.resolve()
+                .then(function() {
+                  var tables = [];
+                  getTables(data, tables);
+                  var jsts = [];
+                  tables.map(function(table) {
+                    jsts.push(jst(table.name, table.schema, {db: self.db}));
+                  });
+                  return jsts.reduce(function(promise, jst) {
+                    return promise.then(function() {
+                      return jst.sync();
+                    });
+                  }, Promise.resolve());
+                });
+            }
+          });
+        }
       },
       methods: {
         setTitle: function(title) {
@@ -964,206 +1201,6 @@ module.exports = function(schemaName, schema, config) {
 
           };
 
-        },
-        fetch: function(criteria, options) {
-          criteria = criteria || {};
-          return Promise.resolve()
-            .then(function() {
-              options = options || {};
-              if (data.scope) {
-                var where = _.extend({}, criteria.where, data.scope);
-                criteria = _.extend({}, criteria);
-                criteria.where = where;
-              }
-              var view = sv.build(data.query, criteria);
-              return db
-                .query(view.statement, view.params, options)
-                .then(function(res) {
-                  return res.map(function(record) {
-                    return options.toPlainObject === true ?
-                      buildPlainObject(record, data) :
-                      buildEntity(record, data, false, true, void 0, void 0, options);
-                  });
-                });
-            });
-        },
-        create: function(entity, options) {
-          options = options || {};
-          var isInstance = entity instanceof TableRecord && entity.entity() === data.public;
-          return (isInstance ? Promise.resolve() : validateFields(entity, data))
-            .then(function() {
-              entity = isInstance ? entity : buildEntity(entity, data, true, void 0, void 0, void 0, options);
-            })
-            .then(function() {
-              return validateModel(entity, void 0, data, options)
-                .then(function() {
-                  return options.transaction ?
-                    create(entity, options, data) :
-                    db.transaction(function(transaction) {
-                      return create(entity, Object.assign({}, options, {transaction}), data);
-                    }, options);
-                })
-                .then(function(record) {
-                  return options.toPlainObject === true && !isInstance ?
-                    record :
-                    buildEntity(record, data, false, false, entity, void 0, options);
-                });
-            });
-        },
-        update: function(entity, key, options) {
-          key = key || entity[data.primaryKeyAttributes[0]];
-          if (!key) {
-            return Promise.resolve().then(function() {
-              throw new EntityError({
-                type: 'InvalidArgument',
-                message: 'Entity ' + data.key + ' need a primary key for update'
-              });
-            });
-          }
-          options = options || {};
-          if (typeof key !== 'object') {
-            var id = key;
-            key = {where: {}};
-            key.where[data.primaryKeyAttributes[0]] = id;
-          } else if (!key.where) {
-            return Promise.resolve().then(function() {
-              throw new EntityError({
-                type: 'InvalidArgument',
-                message: 'Where clause not defined for entity ' + data.key + ' update'
-              });
-            });
-          }
-          if (data.timestamps) {
-            key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
-          }
-          var isInstance = entity instanceof TableRecord && entity.entity() === data.public;
-          return (isInstance ?
-            Promise.resolve([entity.was]) :
-            data.methods.fetch(key, options))
-            .then(function(was) {
-              if (was.length === 0) {
-                throw new EntityError({
-                  type: 'RecordModifiedOrDeleted',
-                  message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for update'
-                });
-              }
-              assert(was.length === 1);
-
-              return (isInstance ? Promise.resolve() : validateFields(entity, data))
-                .then(function() {
-                  entity = isInstance ? entity : buildEntity(_.extend({}, was[0], entity), data, void 0, void 0, void 0, void 0, options);
-                })
-                .then(function() {
-                  return validateModel(entity, was[0], data, options);
-                })
-                .then(function() {
-                  return options.transaction ?
-                    update(entity, was[0], options, data) :
-                    db.transaction(function(transaction) {
-                      return update(entity, was[0], Object.assign({}, options, {transaction}), data);
-                    }, options);
-                })
-                .then(function(record) {
-                  return options.toPlainObject === true && !isInstance ?
-                    record :
-                    buildEntity(record, data, false, false, entity, void 0, options);
-                });
-            });
-        },
-        destroy: function(key, options, entity) {
-          if (!key) {
-            return Promise.resolve().then(function() {
-              throw new EntityError({
-                type: 'InvalidArgument',
-                message: 'Entity ' + data.key + ' need a primary key for delete'
-              });
-            });
-          }
-          options = options || {};
-          if (typeof key !== 'object') {
-            var id = key;
-            key = {where: {}};
-            key.where[data.primaryKeyAttributes[0]] = id;
-          } else if (!key.where) {
-            return Promise.resolve().then(function() {
-              throw new EntityError({
-                type: 'InvalidArgument',
-                message: 'Where clause not defined for entity ' + data.key + ' delete'
-              });
-            });
-          }
-          if (data.timestamps) {
-            key.where.updatedAt = key.where.updatedAt || null;
-          }
-          var isInstance = entity instanceof TableRecord && entity.entity() === data.public;
-          return (isInstance ?
-            Promise.resolve([entity.was]) :
-            data.methods.fetch(key, options))
-            .then(function(was) {
-              if (was.length === 0) {
-                throw new EntityError({
-                  type: 'RecordModifiedOrDeleted',
-                  message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for delete'
-                });
-              }
-              assert(was.length === 1);
-              return (isInstance ? Promise.resolve() : validateFields(entity, data))
-                .then(function() {
-                  entity = isInstance ? entity : was[0];
-                })
-                .then(function() {
-                  return validateModel(void 0, entity, data, options);
-                })
-                .then(function() {
-                  return options.transaction ?
-                    destroy(entity, options, data) :
-                    db.transaction(function(transaction) {
-                      return destroy(entity, Object.assign({}, options, {transaction}), data);
-                    }, options);
-                });
-            });
-        },
-        createInstance: function(entity, options) {
-          return buildEntity(entity || {}, data, true, void 0, void 0, void 0, options);
-        },
-        createTables: function(options) {
-          options = Object.assign({}, options, {db});
-          return Promise.resolve()
-            .then(function() {
-              var tables = [];
-              getTables(data, tables);
-              var jsts = [];
-              tables.map(function(table) {
-                jsts.push(jst(table.name, table.schema, options));
-              });
-              return jsts.reduce(function(promise, jst) {
-                return promise.then(function() {
-                  return jst.create()
-                    .then(function() {
-                      if (data.timestamps) {
-                        return adapter.createTimestamps(data);
-                      }
-                    });
-                });
-              }, Promise.resolve());
-            });
-        },
-        syncTables: function(options) {
-          options = Object.assign({}, options, {db});
-          return Promise.resolve()
-            .then(function() {
-              var tables = [];
-              getTables(data, tables);
-              var jsts = [];
-              tables.map(function(table) {
-                jsts.push(jst(table.name, table.schema, options));
-              });
-              return jsts.reduce(function(promise, jst) {
-                return promise.then(function() {
-                  return jst.sync();
-                });
-              }, Promise.resolve());
-            });
         }
       }
     };
@@ -1217,22 +1254,41 @@ module.exports = function(schemaName, schema, config) {
     };
 
     data.instanceMethods = [];
-    data.methods.method = function(id, fn) {
-      assert(id, 'Methods should have an identification');
+    data.methods.instanceMethod = function(id, fn) {
+      assert(id, 'Method should have an identification');
       assert(fn, 'Method missing');
       if (_.find(data.instanceMethods, 'id', id)) {
         throw new EntityError({
           type: 'InvalidArgument',
-          message: 'Method ' + id + ' is already defined'
+          message: 'Instance method ' + id + ' is already defined'
         });
       }
       if (data.propertiesList.indexOf(id) !== -1) {
         throw new EntityError({
           type: 'InvalidArgument',
-          message: 'Method ' + id + ' cannot be used, there is already a column with this name'
+          message: 'Instance method ' + id + ' cannot be used, there is already a column with this name'
         });
       }
       data.instanceMethods.push({id: id, fn: fn});
+    };
+
+    data.entityMethods = [];
+    data.methods.entityMethod = function(id, fn) {
+      assert(id, 'Method should have an identification');
+      assert(fn, 'Method missing');
+      if (_.find(data.entityMethods, 'id', id)) {
+        throw new EntityError({
+          type: 'InvalidArgument',
+          message: 'Entity method ' + id + ' is already defined'
+        });
+      }
+      if (data.propertiesList.indexOf(id) !== -1) {
+        throw new EntityError({
+          type: 'InvalidArgument',
+          message: 'Entity method ' + id + ' cannot be used, there is already a column with this name'
+        });
+      }
+      data.entityMethods.push({id: id, fn: fn});
     };
 
     return data;
@@ -1283,11 +1339,11 @@ function getReferencedTableName($ref) {
   return $ref;
 }
 
-function getAdapter(db) {
-  if (db.dialect === 'mssql') {
-    return require('./adapters/mssql')(db);
-  } else if (db.dialect === 'postgres') {
-    return require('./adapters/postgres')(db);
+function getAdapter(dialect) {
+  if (dialect === 'mssql') {
+    return require('./adapters/mssql')();
+  } else if (dialect === 'postgres') {
+    return require('./adapters/postgres')();
   } else {
     throw new Error('Adapter for this conector is not implemented');
   }
@@ -1412,8 +1468,7 @@ function buildTable(data) {
 function findProperty(name, properties) {
   var property = properties[name];
   if (property === void 0) {
-    property = _.
-      reduce(properties,
+    property = _.reduce(properties,
         function(res, prop, propName) {
           return res ? res : name === propName ? prop : void 0;
         }, void 0) ||

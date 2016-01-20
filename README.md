@@ -24,85 +24,83 @@ var config = {
   }
 };
  
-var layer = new PgCrLayer(config)
+var db = new PgCrLayer(config)
  
-layer.connect()
-  .then(function() {
-
-    var invoice = jse('invoice', {
-        properties: {
-          id: {
-            type: 'integer',
-            autoIncrement: true,
-            primaryKey: true
-          },
-          client: {
-            type: 'string'
-          }
-        }
-      }, {db: layer});
-      invoice.hasMany('items', {
-        properties: {
-          id: {
-            type: 'integer',
-            autoIncrement: true,
-            primaryKey: true
-          },
-          name: {
-            type: 'string'
-          },
-          description: {
-            type: 'string'
-          },
-          price: {
-            type: 'number',
-            maxLength: 10,
-            decimals: 2
-          },
-          invoiceId: {
-            type: 'integer',
-            $ref: 'invoice'
-          }
-        }
-      });
-      var invoiceInstance;
-      invoice.createTables() // Will create tables invoice and items
-        .then(function() {
-          return invoice.syncTables(); // Then the reference in items
-        })
-        .then(function() {
-          invoiceInstance = invoice.createInstance({
-            client: 'Jessica',
-            items: [
-              {
-                name: 'diamond',
-                description: 'a beautiful diamond',
-                price: 9999.99
-              }
-            ]
-          });
-          return invoiceInstance.save();
-        })
-        .then(function() {
-          console.log(JSON.stringify(invoiceInstance, null, ' '));
-          /* will log
-           {
-            "id": 1,
-            "client": "Jessica",
-            "items": [
-             {
-              "id": 1,
-              "name": "diamond",
-              "description": "a beautiful diamond",
-              "price": 9999.99,
-              "invoiceId": 1
-             }
-            ]
-           }
-          */
-        })
-	});
+var invoiceClass = jse('invoice', {
+    properties: {
+      id: {
+        type: 'integer',
+        autoIncrement: true,
+        primaryKey: true
+      },
+      client: {
+        type: 'string'
+      }
+    }
+  });
   
+invoiceClass.hasMany('items', {
+  properties: {
+    id: {
+      type: 'integer',
+      autoIncrement: true,
+      primaryKey: true
+    },
+    name: {
+      type: 'string'
+    },
+    description: {
+      type: 'string'
+    },
+    price: {
+      type: 'number',
+      maxLength: 10,
+      decimals: 2
+    },
+    invoiceId: {
+      type: 'integer',
+      $ref: 'invoice'
+    }
+  }
+});
+
+var invoiceInstance;
+var invoice = invoiceClass.new(db);
+invoice.createTables() // Will create tables invoice and items
+  .then(function() {
+    return invoice.syncTables(); // Then the reference in items
+  })
+  .then(function() {
+    invoiceInstance = invoice.createInstance({
+      client: 'Jessica',
+      items: [
+        {
+          name: 'diamond',
+          description: 'a beautiful diamond',
+          price: 9999.99
+        }
+      ]
+    });
+    return invoiceInstance.save();
+  })
+  .then(function() {
+    console.log(JSON.stringify(invoiceInstance, null, ' '));
+    /* will log
+     {
+      "id": 1,
+      "client": "Jessica",
+      "items": [
+       {
+        "id": 1,
+        "name": "diamond",
+        "description": "a beautiful diamond",
+        "price": 9999.99,
+        "invoiceId": 1
+       }
+      ]
+     }
+    */
+
 ```
 
 ## License
