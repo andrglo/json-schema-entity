@@ -817,7 +817,8 @@ function destroy(entity, options, data, adapter) {
 }
 
 module.exports = function(schemaName, schema, config) {
-  config = Object.assign({dialect: 'postgres'}, config);
+  config = config || {};
+  config.dialect = config.dialect || 'postgres';
   var adapter = getAdapter(config.dialect);
   var sv = sqlView(config.dialect);
   var entity = entityFactory(schemaName, schema, rebuild);
