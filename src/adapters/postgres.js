@@ -11,11 +11,10 @@ module.exports = function() {
   adapter.createTimestamps = function(data, options) {
     options = options || {};
     var table = this.wrap(data.identity.name);
-    var catalog = options.database || this.db.config.database;
-    var schema = options.schema || this.db.config.schema || 'public';
+    var schema = options.schema || 'public';
     return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
         'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\' AND ' +
-        'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options)
+        'TABLE_CATALOG=current_database() AND TABLE_SCHEMA=\'' + schema + '\'', null, options)
       .then((recordset) => {
         if (recordset.length === 0) {
           return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
@@ -25,7 +24,7 @@ module.exports = function() {
       .then(() => {
         return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
           'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\' AND ' +
-          'TABLE_CATALOG=\'' + catalog + '\' AND TABLE_SCHEMA=\'' + schema + '\'', null, options);
+          'TABLE_CATALOG=current_database() AND TABLE_SCHEMA=\'' + schema + '\'', null, options);
       })
       .then((recordset) => {
         if (recordset.length === 0) {
