@@ -34,33 +34,33 @@ var logError = function(done) {
 };
 
 function addValidations(validator) {
-  validator.extend('cpfcnpj', function(value) {
+  validator.cpfcnpj = function(value) {
     return brV.cpf.validate(value) || brV.cnpj.validate(value);
-  });
-  validator.extend('cpf', function(value) {
+  };
+  validator.cpf = function(value) {
     return brV.cpf.validate(value);
-  });
-  validator.extend('cnpj', function(value) {
+  };
+  validator.cnpj = function(value) {
     return brV.cnpj.validate(value);
-  });
-  validator.extend('br-phone', function(value) {
+  };
+  validator['br-phone'] = function(value) {
     if (value.length < 9) {
       throw new Error('br-phone must be greater than nine');
     }
-  });
-  validator.extend('cep', function(value, p1, p2) {
+  };
+  validator.cep = function(value, p1, p2) {
     expect(p1).to.equal('any string');
     expect(p2).to.be.a('array');
     expect(p2.length).to.equal(2);
     expect(p2[0]).to.equal('a');
     expect(p2[1]).to.equal('array');
     return value.length === 8;
-  });
-  validator.extend('ie', function(value, estado) {
+  };
+  validator.ie = function(value, estado) {
     if (value && !brV.ie(estado).validate(value)) {
       throw new Error('Inscrição estadual inválida');
     }
-  });
+  };
 }
 
 module.exports = function(options) {
@@ -1496,7 +1496,8 @@ module.exports = function(options) {
             expect(error.name).to.equal('EntityError');
             expect(error.errors).to.be.a('array');
             expect(error.errors.length).to.equal(2);
-            var classes, suframa;
+            var classes;
+            var suframa;
             error.errors.forEach(function(detail) {
               if (detail.path === 'Classes') {
                 classes = true
@@ -3139,7 +3140,7 @@ module.exports = function(options) {
           promise = promise.then(function() {
             return cadAtivo
               .create({
-                NOMECAD: _.padLeft(String(order), 3, '00'),
+                NOMECAD: _.padStart(String(order), 3, '00'),
                 NUMERO: 'QRYTST',
                 fornecedor: {
                   SIGLAFOR: 'query test',

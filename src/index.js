@@ -1258,7 +1258,7 @@ module.exports = function(schemaName, schema, config) {
     data.methods.instanceMethod = function(id, fn) {
       assert(id, 'Method should have an identification');
       assert(fn, 'Method missing');
-      if (_.find(data.instanceMethods, 'id', id)) {
+      if (_.find(data.instanceMethods, ['id', id])) {
         throw new EntityError({
           type: 'InvalidArgument',
           message: 'Instance method ' + id + ' is already defined'
@@ -1277,7 +1277,7 @@ module.exports = function(schemaName, schema, config) {
     data.methods.entityMethod = function(id, fn) {
       assert(id, 'Method should have an identification');
       assert(fn, 'Method missing');
-      if (_.find(data.entityMethods, 'id', id)) {
+      if (_.find(data.entityMethods, ['id', id])) {
         throw new EntityError({
           type: 'InvalidArgument',
           message: 'Entity method ' + id + ' is already defined'

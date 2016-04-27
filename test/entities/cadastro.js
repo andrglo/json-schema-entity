@@ -242,10 +242,10 @@ module.exports = function(config) {
       fornec: 'Fornecedor'
     };
     _.forEach(rules, function(classe, property) {
-      if (this[property] && !_.find(this.ClassificaçãoCad, 'Classe', classe)) {
+      if (this[property] && !_.find(this.ClassificaçãoCad, ['Classe', classe])) {
         throw new Error('Classe \'' + classe + '\' deve ser informada')
       }
-    }, this);
+    }.bind(this));
   });
   cadAtivo.validate('Teste qualquer', function() {
     assert(this.entity, 'this should be a instance in validation');

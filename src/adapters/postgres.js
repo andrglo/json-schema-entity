@@ -69,7 +69,7 @@ module.exports = function() {
       var alias = name;
       fields.push(this.wrap(fieldName) + (alias !== fieldName ? ' AS ' +
         this.wrap(alias) : ''));
-    }, this);
+    }.bind(this));
     if (data.timestamps) {
       fields.push(this.wrap('updatedAt'));
       fields.push(this.wrap('createdAt'));
@@ -89,7 +89,7 @@ module.exports = function() {
         ') t) AS ' +
         this.wrap(association.data.key)
       );
-    }, this);
+    }.bind(this));
     data.query = 'SELECT ' + fields.join(',') +
       ' FROM ' + this.wrap(data.identity.name) + ' AS ' + this.wrap(data.key);
   };
