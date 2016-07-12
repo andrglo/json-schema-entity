@@ -27,19 +27,19 @@
   "devDependencies": {
     "br-validations": "0.2.4",
     "chai": "^3.4.1",
-    "glob": "^7.0.3",
+    "glob": "^7.0.5",
     "gulp": "^3.9.1",
     "gulp-coveralls": "^0.1.4",
-    "gulp-eslint": "^2.0.0",
-    "gulp-istanbul": "^0.10.4",
+    "gulp-eslint": "^3.0.1",
+    "gulp-istanbul": "^1.0.0",
     "gulp-mocha": "^2.2.0",
-    "gulp-nsp": "^2.4.0",
+    "gulp-nsp": "^2.4.1",
     "gulp-util": "^3.0.7",
-    "mssql-cr-layer": "^1.0.5",
-    "pg-cr-layer": "^1.0.3",
+    "mssql-cr-layer": "^1.0.7",
+    "pg-cr-layer": "^1.0.5",
     "pretty-hrtime": "^1.0.2",
     "unorm": "^1.4.1",
-    "validator": "^5.2.0"
+    "validator": "^5.4.0"
   },
   "scripts": {
     "prepublish": "gulp prepublish",
@@ -47,9 +47,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "json-schema-table": "^1.0.3",
-    "lodash": "^4.11.1",
+    "json-schema-table": "^1.0.4",
+    "lodash": "^4.13.1",
     "sql-view": "0.0.2",
-    "xml2json": "^0.9.0"
+    "xml2json": "^0.9.1"
   }
 }
