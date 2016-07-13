@@ -257,6 +257,13 @@ module.exports = function(config) {
         throw new Error('Teste de promise');
     });
   });
+  cadAtivo.validate('Teste de generator', function*() {
+    var self = this;
+    yield Promise.resolve().then(function() {
+      if (self.Suframa)
+        throw new Error('Teste de generator');
+    });
+  });
 
   cadAtivo.validate('Duplicated CPF', function() {
     var self = this;
@@ -314,21 +321,42 @@ module.exports = function(config) {
   cadAtivo.beforeCreate('bc', function() {
     assert(this.entity, 'this should be a instance in beforeCreate');
   });
+  cadAtivo.beforeCreate('bcWithGenerator', function*() {
+    assert(this.entity, 'this should be a instance in beforeCreate');
+  });
   cadAtivo.afterCreate('ac', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterCreate');
+    assert(result && !result.entity, 'second parameter should be the server return afterCreate');
+  });
+  cadAtivo.afterCreate('acWithGenerator', function*(t, result) {
     assert(this.entity, 'this should be a instance in afterCreate');
     assert(result && !result.entity, 'second parameter should be the server return afterCreate');
   });
   cadAtivo.beforeUpdate('bu', function() {
     assert(this.entity, 'this should be a instance in beforeUpdate');
   });
+  cadAtivo.beforeUpdate('buWithGenerator', function*() {
+    assert(this.entity, 'this should be a instance in beforeUpdate');
+  });
   cadAtivo.afterUpdate('au', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterUpdate');
+    assert(result && !result.entity, 'second parameter should be the server return afterUpdate');
+  });
+  cadAtivo.afterUpdate('auWithGenerator', function*(t, result) {
     assert(this.entity, 'this should be a instance in afterUpdate');
     assert(result && !result.entity, 'second parameter should be the server return afterUpdate');
   });
   cadAtivo.beforeDelete('bd', function() {
     assert(this.entity, 'this should be a instance in beforeDelete');
   });
+  cadAtivo.beforeDelete('bdWithGenerator', function*() {
+    assert(this.entity, 'this should be a instance in beforeDelete');
+  });
   cadAtivo.afterDelete('ad', function(t, result) {
+    assert(this.entity, 'this should be a instance in afterDelete');
+    assert(result && !result.entity, 'second parameter should be the server return afterDelete');
+  });
+  cadAtivo.afterDelete('adWithGenerator', function*(t, result) {
     assert(this.entity, 'this should be a instance in afterDelete');
     assert(result && !result.entity, 'second parameter should be the server return afterDelete');
   });

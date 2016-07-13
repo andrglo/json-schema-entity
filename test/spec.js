@@ -914,8 +914,9 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
             expect(error.errors).to.be.a('array');
-            expect(error.errors.length).to.equal(1);
+            expect(error.errors.length).to.equal(2);
             expect(error.errors[0].path).to.equal('Teste de promise');
+            expect(error.errors[1].path).to.equal('Teste de generator');
             done();
           })
           .catch(logError(done));
@@ -945,21 +946,21 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
             expect(error.errors).to.be.a('array');
-            expect(error.errors.length).to.equal(3);
+            expect(error.errors.length).to.equal(4);
             var classes;
-            var suframa;
+            var suframa = 0;
             var fornecedor;
             error.errors.forEach(function(detail) {
               if (detail.path === 'Classes') {
                 classes = true
-              } else if (detail.path === 'Teste de promise') {
-                suframa = true
+              } else if (detail.path === 'Teste de promise' || detail.path === 'Teste de generator') {
+                suframa++
               } else if (detail.path === 'Only in fornecedor') {
                 fornecedor = true
               }
             });
             expect(classes).to.equal(true);
-            expect(suframa).to.equal(true);
+            expect(suframa).to.equal(2);
             expect(fornecedor).to.equal(true);
             done();
           })
@@ -1495,18 +1496,18 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
             expect(error.errors).to.be.a('array');
-            expect(error.errors.length).to.equal(2);
+            expect(error.errors.length).to.equal(3);
             var classes;
-            var suframa;
+            var suframa = 0;
             error.errors.forEach(function(detail) {
               if (detail.path === 'Classes') {
                 classes = true
-              } else if (detail.path === 'Teste de promise') {
-                suframa = true
+              } else if (detail.path === 'Teste de promise' || detail.path === 'Teste de generator') {
+                suframa++
               }
             });
             expect(classes).to.equal(true);
-            expect(suframa).to.equal(true);
+            expect(suframa).to.equal(2);
             done();
           })
           .catch(logError(done));

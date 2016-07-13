@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
+var co = require('@ayk/co');
 var assert = require('assert');
 var sqlView = require('sql-view');
 var jst = require('json-schema-table');
@@ -10,6 +11,8 @@ var EntityError = require('./entity-error');
 //  console.log.apply(null, Array.prototype.slice.call(arguments)
 //    .map(arg => JSON.stringify(arg, null, '  ')));
 //};
+
+const isGenerator = obj => typeof obj.next === 'function' && typeof obj.throw === 'function';
 
 function toArray(obj) {
   return Array.isArray(obj) ? obj : obj && [obj] || [];
@@ -214,6 +217,9 @@ function runModelValidations(is, was, data, errors) {
       var res;
       try {
         res = validation.fn.call(is || was);
+        if (res && isGenerator(res)) {
+          res = co(res);
+        }
       } catch (err) {
         errors.push({path: validation.id, message: err.message});
       }
@@ -573,6 +579,9 @@ function runHooks(hooks, model, transaction, data, validatedInstance) {
       var res;
       try {
         res = hook.fn.call(validatedInstance || model, transaction, validatedInstance ? model : void 0);
+        if (res && isGenerator(res)) {
+          res = co(res);
+        }
       } catch (err) {
         throw new EntityError({
           type: hook.name + 'HookError',

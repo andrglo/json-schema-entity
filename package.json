@@ -35,8 +35,8 @@
     "gulp-mocha": "^2.2.0",
     "gulp-nsp": "^2.4.1",
     "gulp-util": "^3.0.7",
-    "mssql-cr-layer": "^1.0.7",
-    "pg-cr-layer": "^1.0.5",
+    "mssql-cr-layer": "^1.0.8",
+    "pg-cr-layer": "^1.0.6",
     "pretty-hrtime": "^1.0.2",
     "unorm": "^1.4.1",
     "validator": "^5.4.0"
@@ -47,6 +47,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@ayk/co": "^4.6.3",
     "json-schema-table": "^1.0.4",
     "lodash": "^4.13.1",
     "sql-view": "0.0.2",
