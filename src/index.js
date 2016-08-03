@@ -1224,7 +1224,10 @@ module.exports = function(schemaName, schema, config) {
               var tables = [];
               getTables(data, tables);
               var res = {};
-              tables.forEach(table => res[table.name] = res[table.name] || table.schema);
+              tables.forEach(table => {
+                res[table.name] = res[table.name] || table.schema;
+                return res[table.name];
+              });
               return res;
             }
 
