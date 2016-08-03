@@ -7,16 +7,20 @@ var sqlView = require('sql-view');
 var jst = require('json-schema-table');
 var EntityError = require('./entity-error');
 
-//var log = function() {
-//  console.log.apply(null, Array.prototype.slice.call(arguments)
-//    .map(arg => JSON.stringify(arg, null, '  ')));
-//};
-
 const isGenerator = obj => typeof obj.next === 'function' && typeof obj.throw === 'function';
 
 function toArray(obj) {
   return Array.isArray(obj) ? obj : obj && [obj] || [];
 }
+
+const hasEqualPrimaryKey = function(a, b, data) {
+  let same = false;
+  _.forEach(data.primaryKeyAttributes, function(name) {
+    same = a[name] === b[name] || Number(a[name]) === Number(b[name]);
+    return same;
+  });
+  return same;
+};
 
 function validateModel(is, was, data) {
 
@@ -34,18 +38,9 @@ function validateModel(is, was, data) {
             to = _.isArray(to) ? to.slice(0) : to ? [to] : [];
             var pairs = [];
 
-            var hasEqualPrimaryKey = function(a, b) {
-              var same = false;
-              _.forEach(association.data.primaryKeyAttributes, function(name) {
-                same = a[name] === b[name] || Number(a[name]) === Number(b[name]);
-                return same;
-              });
-              return same;
-            };
-
             var findAndRemove = function(arr, obj) {
               var res = _.remove(arr, function(e) {
-                if (hasEqualPrimaryKey(e, obj)) {
+                if (hasEqualPrimaryKey(e, obj, association.data)) {
                   return true;
                 }
               });
@@ -93,7 +88,7 @@ function decimalPlaces(num) {
       0,
       // Number of digits right of decimal point.
       (match[1] ? match[1].length : 0)
-        // Adjust for scientific notation.
+      // Adjust for scientific notation.
       - (match[2] ? +match[2] : 0)) || 0;
 }
 
@@ -421,14 +416,6 @@ class TableRecordSchema {
     _.forEach(data.associations, function(association) {
       var name = association.data.key;
       columns.set(name, function(value) {
-        //console.log('setter ? this', this === void 0);
-        //console.log('setter ? this.parent', this.parent === void 0);
-        //var entityData = tableRecordData.get(this);
-        //console.log('setter ? entityData', entityData === void 0);
-        ////if (entityData === void 0) {
-        ////  console.log(this)
-        ////}
-        //console.log('setter entityData', entityData === void 0, entityData.parent === void 0);
         var build = value => isSameEntityInstance(value, this.parent) ?
           value :
           buildEntity(Object.assign({}, value), association.data, this.isNew, false, void 0, void 0, this.parent);
@@ -529,6 +516,46 @@ function buildPlainObject(record, data) {
     }
   });
   return record;
+}
+
+function updateEntity(entity, values, data) {
+  data.propertiesList
+    .filter(key => key !== 'updatedAt' && key !== 'createdAt')
+    .forEach(key => {
+      if (values[key] !== undefined) {
+        entity[key] = values[key];
+      }
+    });
+  _.forEach(data.associations, function(association) {
+
+    const extract = function(set, record) {
+      set = _.isArray(set) ? set : [set].filter(Boolean);
+      for (const item of set) {
+        if (hasEqualPrimaryKey(item, record, association.data)) {
+          return item;
+        }
+      }
+    };
+
+    const key = association.data.key;
+    if (values[key] === null) {
+      entity[key] = null;
+    } else if (values[key] !== undefined) {
+      if (association.type === 'hasMany') {
+        const valueSet = _.isArray(values[key]) ? values[key] : [values[key]].filter(Boolean);
+        entity[key] = valueSet.map(value => {
+          return updateEntity(
+            extract(entity[key], value) || {}, value, association.data
+          );
+        });
+      } else {
+        entity[key] = updateEntity(
+          entity[key] || {}, values[key], association.data
+        );
+      }
+    }
+  });
+  return entity;
 }
 
 function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
@@ -668,20 +695,10 @@ function update(entity, was, options, data, adapter) {
           var modifiedEntity = record;
           return _.reduce(data.associations, function(chain, association) {
             const associationKey = association.data.key;
-            const associationPrimaryKey = association.data.primaryKeyAttributes;
 
             function exists(a) {
               return a[association.data.foreignKey];
             }
-
-            var hasEqualPrimaryKey = function(a, b) {
-              var same = false;
-              _.forEach(associationPrimaryKey, function(name) {
-                same = a[name] === b[name] || Number(a[name]) === Number(b[name]);
-                return same;
-              });
-              return same;
-            };
 
             var find = function(entity, entities) {
               if (!_.isArray(entities)) {
@@ -689,7 +706,7 @@ function update(entity, was, options, data, adapter) {
               }
               for (var i = 0; i < entities.length; i++) {
                 var obj = entities[i];
-                if (hasEqualPrimaryKey(entity, obj)) {
+                if (hasEqualPrimaryKey(entity, obj, association.data)) {
                   return obj;
                 }
               }
@@ -741,7 +758,7 @@ function update(entity, was, options, data, adapter) {
             _.forEach(associatedWasEntity, function(was) {
               var hasIs = false;
               _.forEach(toBeUpdated, function(is) {
-                if (hasEqualPrimaryKey(was, is)) {
+                if (hasEqualPrimaryKey(was, is, association.data)) {
                   hasIs = true;
                   return false;
                 }
@@ -992,7 +1009,9 @@ module.exports = function(schemaName, schema, config) {
 
                   return (isInstance ? Promise.resolve() : validateFields(entity, data))
                     .then(function() {
-                      entity = isInstance ? entity : buildEntity(_.extend({}, was[0], entity), data, void 0, void 0, void 0, self);
+                      entity = isInstance ? entity : updateEntity(
+                        buildEntity(JSON.parse(JSON.stringify(was[0])), data, void 0, void 0, void 0, self), entity, data
+                      );
                     })
                     .then(function() {
                       return validateModel(entity, was[0], data, options);

@@ -56,7 +56,7 @@ var pgOptions = {};
 var mssqlOptions = {};
 
 before(function(done) {
-  return pg.connect()
+  pg.connect()
     .then(function() {
       return createPostgresDb(pgDatabaseName)
         .then(function() {

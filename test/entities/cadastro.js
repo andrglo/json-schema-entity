@@ -4,8 +4,6 @@ var _ = require('lodash');
 var assert = require('assert');
 var entity = require('../../src');
 
-var log = console.log;
-
 module.exports = function(config) {
 
   var CADASTRO = _.cloneDeep(require('../schemas/CADASTRO.json'));

@@ -1064,6 +1064,7 @@ module.exports = function(options) {
           .create({
             NOMECAD: 'Joana',
             NUMERO: '10',
+            BAIRRO: 'belvedere',
             destino: [{
               nome: 'Maria',
               IDENT: 'Fatima',
@@ -1091,6 +1092,7 @@ module.exports = function(options) {
             record.outroDestino[0].NOMECAD.should.equal('Gilda');
             record.outroDestino[0].IDENT.should.equal('Jessica');
             record.outroDestino[0].FKOUTRO.should.equal(record.id);
+            expect(record.BAIRRO).equal('belvedere');
             done();
           })
           .catch(function(err) {
@@ -1114,6 +1116,7 @@ module.exports = function(options) {
             joana.outroDestino[0].NOMECAD.should.equal('Gilda');
             joana.outroDestino[0].IDENT.should.equal('Jessica');
             joana.outroDestino[0].FKOUTRO.should.equal(joana.id);
+            expect(joana.BAIRRO).equal('belvedere');
             done();
           })
           .catch(function(err) {
@@ -1597,9 +1600,10 @@ module.exports = function(options) {
           .catch(logError(done));
       });
       it('should not save a smaller valor in vctos', function(done) {
-        joao.docpagvc[0].VALOR = 350;
+        const plain = JSON.parse(JSON.stringify(joao));
+        plain.docpagvc[0].VALOR = 350;
         cadAtivo
-          .update(joao)
+          .update(plain)
           .then(function() {
             done(new Error('Invalid update'));
           })
@@ -1731,7 +1735,8 @@ module.exports = function(options) {
           })
           .catch(logError(done));
       });
-      it('should update Joana to be a client', function(done) {
+      it('should update Joana to be a client, using plain object', function(done) {
+        joana = JSON.parse(JSON.stringify(joana));
         joana.ClassificaçãoCad = [
           {
             Classe: 'Cliente'
@@ -1740,6 +1745,8 @@ module.exports = function(options) {
         joana.cliente = {
           SIGLACLI: 'Sigla'
         };
+        joana.outroDestino[0].IDENT = null;
+        joana.BAIRRO = null;
         cadAtivo
           .update(joana, joana.id)
           .then(function(record) {
@@ -1750,7 +1757,7 @@ module.exports = function(options) {
             record.destino[1].NUMLANORI.should.equal(record.id);
             record.should.have.property('outroDestino');
             record.outroDestino[0].NOMECAD.should.equal('Gilda');
-            record.outroDestino[0].IDENT.should.equal('Jessica');
+            expect(record.outroDestino[0].IDENT).equal(undefined);
             record.outroDestino[0].FKOUTRO.should.equal(record.id);
             record.should.have.property('cliente');
             expect(record.cliente.SIGLACLI).to.equal('Sigla');
@@ -1760,6 +1767,7 @@ module.exports = function(options) {
             record.should.have.property('updatedAt');
 
             expect(record.cliente.DATMAIA).to.equal(undefined);
+            expect(record.BAIRRO).to.equal(undefined);
 
             expect(record.afterCreate).to.be.undefined;
             expect(record.afterUpdate).to.equal('true');
@@ -1779,7 +1787,7 @@ module.exports = function(options) {
             expect(record.destino.length).to.equal(2);
             record.should.have.property('outroDestino');
             record.outroDestino[0].NOMECAD.should.equal('Gilda');
-            record.outroDestino[0].IDENT.should.equal('Jessica');
+            expect(record.outroDestino[0].IDENT).equal(undefined);
             record.should.have.property('cliente');
             expect(record.cliente.SIGLACLI).to.equal('Sigla');
             record.should.have.property('ClassificaçãoCad');
