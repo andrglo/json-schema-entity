@@ -1010,7 +1010,7 @@ module.exports = function(schemaName, schema, config) {
                   return (isInstance ? Promise.resolve() : validateFields(entity, data))
                     .then(function() {
                       entity = isInstance ? entity : updateEntity(
-                        buildEntity(JSON.parse(JSON.stringify(was[0])), data, void 0, void 0, void 0, self), entity, data
+                        buildEntity(_.cloneDeep(was[0]), data, void 0, void 0, void 0, self), entity, data
                       );
                     })
                     .then(function() {
