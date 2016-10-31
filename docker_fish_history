@@ -1,0 +1,5 @@
+- cmd: npm-check --skip-unused --update
+   when: 1470615608
+- cmd: npm run test
+   when: 1470615608
+

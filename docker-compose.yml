@@ -1,7 +1,23 @@
-postgres:
-  image: postgres:9.4
-  ports:
-    - 5432:5432
-  environment:
-    POSTGRES_PASSWORD: postgres
-  restart: always
+version: '2'
+
+services:
+
+  dms:
+    image: andrglo/everest
+    hostname: json-schema-entity
+    command: tail -f /dev/null
+    working_dir: /andrglo/json-schema-entity
+    volumes:
+      - ./docker_fish_history:/root/.config/fish/fish_history
+      - .:/andrglo/json-schema-entity
+    environment:
+      - NODE_ENV=development
+      - MSSQL_HOST=$MSSQL_HOST
+      - MSSQL_PASSWORD=$MSSQL_PASSWORD
+      - MSSQL_USER=$MSSQL_USER
+      - NPM_TOKEN=$NPM_TOKEN
+    restart: always
+
+  postgres:
+    image: postgres:9.6
+    restart: always

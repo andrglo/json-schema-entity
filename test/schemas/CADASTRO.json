@@ -200,13 +200,7 @@
       "description": "Centro de Custo",
       "type": "string",
       "maxLength": 20,
-      "mask": "ccusto",
-      "format": "list",
-      "display": "LCBA9.A09_DESCST",
-      "schema": {
-        "$ref": "LCBA9",
-        "key": "CONTACC"
-      }
+      "mask": "ccusto"
     },
     "InscriçãoMunicipal": {
       "title": "Inscrição municipal",

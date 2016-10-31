@@ -7,7 +7,8 @@ var sqlView = require('sql-view');
 var jst = require('json-schema-table');
 var EntityError = require('./entity-error');
 
-const isGenerator = obj => typeof obj.next === 'function' && typeof obj.throw === 'function';
+const isGenerator = obj => typeof obj.next === 'function' &&
+typeof obj.throw === 'function';
 
 function toArray(obj) {
   return Array.isArray(obj) ? obj : obj && [obj] || [];
@@ -44,7 +45,9 @@ function validateModel(is, was, data) {
                   return true;
                 }
               });
-              assert(res.length < 2, 'Pair this was for validation should be 1 but found ' + res.length);
+              assert(res.length <
+                2, 'Pair this was for validation should be 1 but found ' +
+                res.length);
               return res.length === 0 ? void 0 : res[0];
             };
 
@@ -133,26 +136,31 @@ function runFieldValidations(is, data, errors) {
               .indexOf(value) === -1)) {
             errors.push({
               path: key,
-              message: 'Value \'' + value + '\' not valid. Options are: ' + property.enum.join()
+              message: 'Value \'' + value + '\' not valid. Options are: ' +
+              property.enum.join()
             });
           }
-          if (!property.enum && property.maxLength && String(value).length > property.maxLength) {
+          if (!property.enum && property.maxLength &&
+            String(value).length > property.maxLength) {
             errors.push({
               path: key,
-              message: 'Value \'' + value + '\' exceeds maximum length: ' + property.maxLength
+              message: 'Value \'' + value + '\' exceeds maximum length: ' +
+              property.maxLength
             });
           }
           if (property.decimals && decimalPlaces(value) > property.decimals) {
             errors.push({
               path: key,
-              message: 'Value \'' + value + '\' exceeds maximum decimals length: ' + property.decimals
+              message: 'Value \'' + value +
+              '\' exceeds maximum decimals length: ' + property.decimals
             });
           }
         }
       });
     })
     .then(function() {
-      return _.reduce(is && validator && data.properties, function(chain, property, key) {
+      return _.reduce(is && validator &&
+        data.properties, function(chain, property, key) {
 
         var validations = {};
         if (is[key]) {
@@ -171,7 +179,8 @@ function runFieldValidations(is, data, errors) {
               args: [is[key]].concat(args)
             };
           });
-          if (property.format && !validations[property.format] && validator[property.format]) {
+          if (property.format && !validations[property.format] &&
+            validator[property.format]) {
             validations[property.format] = {
               id: key,
               fn: validator[property.format],
@@ -340,7 +349,8 @@ class TableRecordSchema {
           if (property.enum) {
             let found;
             _.forEach(property.enum, function(item) {
-              if (item === value || item.substring(0, property.maxLength) === value) {
+              if (item === value ||
+                item.substring(0, property.maxLength) === value) {
                 value = item;
                 found = true;
                 return false;
@@ -352,7 +362,8 @@ class TableRecordSchema {
                 message: 'Invalid value', errors: [
                   {
                     path: name,
-                    message: 'Value \'' + value + '\' not valid. Options are: ' + property.enum.join()
+                    message: 'Value \'' + value +
+                    '\' not valid. Options are: ' + property.enum.join()
                   }
                 ]
               });
@@ -360,7 +371,8 @@ class TableRecordSchema {
           } else {
             switch (property.type) {
               case 'date':
-                value = value instanceof Date ? value.toISOString().substr(0, 10) : value;
+                value = value instanceof
+                Date ? value.toISOString().substr(0, 10) : value;
                 break;
               case 'number':
                 value = Number(value);
@@ -474,7 +486,8 @@ function setIs(instance, record, it, isNew) {
             newValue.map(newValue =>
               'was' in newValue ? newValue.was : _.cloneDeep(instance[key]));
         } else if (_.isObject(newValue)) {
-          was[key] = 'was' in newValue ? newValue.was : _.cloneDeep(instance[key]);
+          was[key] = 'was' in
+          newValue ? newValue.was : _.cloneDeep(instance[key]);
         } else {
           was[key] = instance[key];
         }
@@ -573,9 +586,11 @@ function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
         _.isArray(instance[key]) ? instance[key] : [instance[key]] :
         void 0;
       for (var i = 0; i < recordset.length; i++) {
-        recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet && instanceSet[i], void 0, parent);
+        recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet &&
+          instanceSet[i], void 0, parent);
       }
-      associations[key] = recordset.length === 1 && association.type === 'hasOne' ?
+      associations[key] = recordset.length === 1 &&
+      association.type === 'hasOne' ?
         recordset[0] : recordset;
     }
   });
@@ -605,7 +620,8 @@ function runHooks(hooks, model, transaction, data, validatedInstance) {
     return chain.then(function() {
       var res;
       try {
-        res = hook.fn.call(validatedInstance || model, transaction, validatedInstance ? model : void 0);
+        res = hook.fn.call(validatedInstance ||
+          model, transaction, validatedInstance ? model : void 0);
         if (res && isGenerator(res)) {
           res = co(res);
         }
@@ -646,17 +662,20 @@ function create(entity, options, data, adapter) {
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
                 type: 'InvalidData',
-                message: 'Association ' + associationKey + ' can not be an array'
+                message: 'Association ' + associationKey +
+                ' can not be an array'
               });
             }
-            associatedEntity = associatedEntity === void 0 || recordIsArray ? associatedEntity : [associatedEntity];
+            associatedEntity = associatedEntity === void 0 ||
+            recordIsArray ? associatedEntity : [associatedEntity];
             return _.reduce(associatedEntity, function(chain, entity) {
               entity[association.data.foreignKey] = newEntity[data.primaryKeyAttributes[0]];
               return chain.then(function() {
                 return create(entity, options, association.data, adapter)
                   .then(function(associationEntity) {
                     if (hasMany) {
-                      newEntity[associationKey] = newEntity[associationKey] || [];
+                      newEntity[associationKey] = newEntity[associationKey] ||
+                        [];
                       newEntity[associationKey].push(associationEntity);
                     } else {
                       newEntity[associationKey] = associationEntity;
@@ -690,7 +709,8 @@ function update(entity, was, options, data, adapter) {
       return adapter.update(record, data, options)
         .then(function(res) {
           assert(res[0] === 1 || typeof res === 'object' && res[0] === void 0,
-            'Record of ' + data.key + ' found ' + res[0] + ' times for update, expected 1.' +
+            'Record of ' + data.key + ' found ' + res[0] +
+            ' times for update, expected 1.' +
             ' Check if your entity has two association with the same foreign key');
           var modifiedEntity = record;
           return _.reduce(data.associations, function(chain, association) {
@@ -712,18 +732,21 @@ function update(entity, was, options, data, adapter) {
               }
               throw new EntityError({
                 type: 'InvalidData',
-                message: 'Record ' + JSON.stringify(entity) + ' in association ' +
+                message: 'Record ' + JSON.stringify(entity) +
+                ' in association ' +
                 associationKey + ' has no previous data'
               });
             };
 
             var associatedIsEntity = entity[associationKey];
-            var hasMany = _.isArray(associatedIsEntity) && associatedIsEntity.length > 1 ||
+            var hasMany = _.isArray(associatedIsEntity) &&
+              associatedIsEntity.length > 1 ||
               association.type === 'hasMany';
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
                 type: 'InvalidData',
-                message: 'Association ' + associationKey + ' can not be an array'
+                message: 'Association ' + associationKey +
+                ' can not be an array'
               });
             }
 
@@ -778,7 +801,8 @@ function update(entity, was, options, data, adapter) {
                   return update(entity, find(entity, was[association.data.key]), options, association.data, adapter)
                     .then(function(associationEntity) {
                       if (hasMany) {
-                        modifiedEntity[associationKey] = modifiedEntity[associationKey] || [];
+                        modifiedEntity[associationKey] = modifiedEntity[associationKey] ||
+                          [];
                         modifiedEntity[associationKey].push(associationEntity);
                       } else {
                         modifiedEntity[associationKey] = associationEntity;
@@ -793,7 +817,8 @@ function update(entity, was, options, data, adapter) {
                   return create(entity, options, association.data, adapter)
                     .then(function(associationEntity) {
                       if (hasMany) {
-                        modifiedEntity[associationKey] = modifiedEntity[associationKey] || [];
+                        modifiedEntity[associationKey] = modifiedEntity[associationKey] ||
+                          [];
                         modifiedEntity[associationKey].push(associationEntity);
                       } else {
                         modifiedEntity[associationKey] = associationEntity;
@@ -821,7 +846,8 @@ function destroy(entity, options, data, adapter) {
         const associationKey = association.data.key;
         var associatedEntity = entity[associationKey];
         const recordIsArray = _.isArray(associatedEntity);
-        associatedEntity = associatedEntity === void 0 || recordIsArray ? associatedEntity : [associatedEntity];
+        associatedEntity = associatedEntity === void 0 ||
+        recordIsArray ? associatedEntity : [associatedEntity];
         return _.reduce(associatedEntity, function(chain, entity) {
           return chain.then(function() {
             return destroy(entity, options, association.data, adapter);
@@ -931,12 +957,16 @@ module.exports = function(schemaName, schema, config) {
                     criteria = _.extend({}, criteria);
                     criteria.where = where;
                   }
-                  var view = sv.build(data.query, criteria);
+                  var view = sv.build(
+                    adapter.buildQuery(entity, options),
+                    criteria
+                  );
                   return db
                     .query(view.statement, view.params, options)
                     .then(function(res) {
                       return res.map(function(record) {
-                        return options.toPlainObject === true ?
+                        return options.toPlainObject === true ||
+                        options.fetchExternalDescription === true ?
                           buildPlainObject(record, data) :
                           buildEntity(record, data, false, true, void 0, self);
                       });
@@ -946,7 +976,8 @@ module.exports = function(schemaName, schema, config) {
             create: function(entity, options) {
               options = options || {};
               var self = this;
-              var isInstance = entity instanceof TableRecord && entity.entity === this;
+              var isInstance = entity instanceof TableRecord &&
+                entity.entity === this;
               return (isInstance ? Promise.resolve() : validateFields(entity, data))
                 .then(function() {
                   entity = isInstance ? entity : buildEntity(entity, data, true, void 0, void 0, self);
@@ -974,7 +1005,8 @@ module.exports = function(schemaName, schema, config) {
                 return Promise.resolve().then(function() {
                   throw new EntityError({
                     type: 'InvalidArgument',
-                    message: 'Entity ' + data.key + ' need a primary key for update'
+                    message: 'Entity ' + data.key +
+                    ' need a primary key for update'
                   });
                 });
               }
@@ -987,14 +1019,17 @@ module.exports = function(schemaName, schema, config) {
                 return Promise.resolve().then(function() {
                   throw new EntityError({
                     type: 'InvalidArgument',
-                    message: 'Where clause not defined for entity ' + data.key + ' update'
+                    message: 'Where clause not defined for entity ' + data.key +
+                    ' update'
                   });
                 });
               }
               if (data.timestamps) {
-                key.where.updatedAt = entity.updatedAt || key.where.updatedAt || null;
+                key.where.updatedAt = entity.updatedAt || key.where.updatedAt ||
+                  null;
               }
-              var isInstance = entity instanceof TableRecord && entity.entity === this;
+              var isInstance = entity instanceof TableRecord &&
+                entity.entity === this;
               return (isInstance ?
                 Promise.resolve([entity.was]) :
                 this.fetch(key, options))
@@ -1002,7 +1037,8 @@ module.exports = function(schemaName, schema, config) {
                   if (was.length === 0) {
                     throw new EntityError({
                       type: 'RecordModifiedOrDeleted',
-                      message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for update'
+                      message: 'Entity {' + data.key + '} key ' +
+                      JSON.stringify(key.where) + ' not found for update'
                     });
                   }
                   assert(was.length === 1);
@@ -1036,7 +1072,8 @@ module.exports = function(schemaName, schema, config) {
                 return Promise.resolve().then(function() {
                   throw new EntityError({
                     type: 'InvalidArgument',
-                    message: 'Entity ' + data.key + ' need a primary key for delete'
+                    message: 'Entity ' + data.key +
+                    ' need a primary key for delete'
                   });
                 });
               }
@@ -1049,14 +1086,16 @@ module.exports = function(schemaName, schema, config) {
                 return Promise.resolve().then(function() {
                   throw new EntityError({
                     type: 'InvalidArgument',
-                    message: 'Where clause not defined for entity ' + data.key + ' delete'
+                    message: 'Where clause not defined for entity ' + data.key +
+                    ' delete'
                   });
                 });
               }
               if (data.timestamps) {
                 key.where.updatedAt = key.where.updatedAt || null;
               }
-              var isInstance = entity instanceof TableRecord && entity.entity === this;
+              var isInstance = entity instanceof TableRecord &&
+                entity.entity === this;
               return (isInstance ?
                 Promise.resolve([entity.was]) :
                 this.fetch(key, options))
@@ -1064,7 +1103,8 @@ module.exports = function(schemaName, schema, config) {
                   if (was.length === 0) {
                     throw new EntityError({
                       type: 'RecordModifiedOrDeleted',
-                      message: 'Entity {' + data.key + '} key ' + JSON.stringify(key.where) + ' not found for delete'
+                      message: 'Entity {' + data.key + '} key ' +
+                      JSON.stringify(key.where) + ' not found for delete'
                     });
                   }
                   assert(was.length === 1);
@@ -1085,7 +1125,8 @@ module.exports = function(schemaName, schema, config) {
                 });
             },
             createInstance: function(entity) {
-              return buildEntity(entity || {}, data, true, void 0, void 0, this);
+              return buildEntity(entity ||
+                {}, data, true, void 0, void 0, this);
             },
             createTables: function() {
               var self = this;
@@ -1298,7 +1339,8 @@ module.exports = function(schemaName, schema, config) {
       if (data.propertiesList.indexOf(id) !== -1) {
         throw new EntityError({
           type: 'InvalidArgument',
-          message: 'Instance method ' + id + ' cannot be used, there is already a column with this name'
+          message: 'Instance method ' + id +
+          ' cannot be used, there is already a column with this name'
         });
       }
       data.instanceMethods.push({id: id, fn: fn});
@@ -1317,7 +1359,8 @@ module.exports = function(schemaName, schema, config) {
       if (data.propertiesList.indexOf(id) !== -1) {
         throw new EntityError({
           type: 'InvalidArgument',
-          message: 'Entity method ' + id + ' cannot be used, there is already a column with this name'
+          message: 'Entity method ' + id +
+          ' cannot be used, there is already a column with this name'
         });
       }
       data.entityMethods.push({id: id, fn: fn});
@@ -1331,7 +1374,6 @@ module.exports = function(schemaName, schema, config) {
 
   function rebuild() {
     buildTable(entity);
-    adapter.buildQuery(entity);
   }
 
 };
@@ -1409,7 +1451,8 @@ function buildTable(data) {
   data.properties = {};
   _.forEach(data.requestedProperties, function(property, name) {
     data.properties[name] = data.requestedProperties[name];
-    if (data.properties[name].format !== 'hidden' && !((data.properties[name].autoIncrement || data.foreignKey === name) &&
+    if (data.properties[name].format !== 'hidden' &&
+      !((data.properties[name].autoIncrement || data.foreignKey === name) &&
       data.isAssociation)) {
       data.schema.properties[name] = data.properties[name];
     }
@@ -1443,7 +1486,8 @@ function buildTable(data) {
       }
     });
   }
-  assert(data.primaryKeyAttributes.length > 0, 'Primary key not defined for table ' + data.key);
+  assert(data.primaryKeyAttributes.length >
+    0, 'Primary key not defined for table ' + data.key);
 
   data.adapter.buildInsertCommand(data);
   data.adapter.buildUpdateCommand(data);
@@ -1465,7 +1509,8 @@ function buildTable(data) {
     });
   });
   if (data.timestamps) {
-    if (data.propertiesList.indexOf('updatedAt') !== -1 || data.propertiesList.indexOf('createdAt') !== -1) {
+    if (data.propertiesList.indexOf('updatedAt') !== -1 ||
+      data.propertiesList.indexOf('createdAt') !== -1) {
       throw new EntityError({
         message: 'Properties cannot have timestamps names createAt or updatedAt, use an alias',
         type: 'InvalidIdentifier'

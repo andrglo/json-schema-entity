@@ -1,0 +1,78 @@
+{
+  "type": "object",
+  "title": "Estados",
+  "description": "Estado",
+  "properties": {
+    "ESTADO": {
+      "title": "UF",
+      "description": "Estado",
+      "type": "string",
+      "maxLength": 2,
+      "format": "masked",
+      "mask": "AA",
+      "required": true
+    },
+    "NOME": {
+      "title": "Nome",
+      "description": "Nome do estado",
+      "type": "string",
+      "maxLength": 20,
+      "required": true
+    },
+    "Código IBGE": {
+      "title": "Código IBGE",
+      "description": "Código na tabela do IBGE",
+      "type": "string",
+      "maxLength": 2
+    },
+    "ICMS": {
+      "title": "Aliquota ICMS operação externa",
+      "description": "Alíquota do ICMS para operações fora do estado",
+      "type": "number",
+      "format": "fixed",
+      "maxLength": 5,
+      "decimals": 2
+    },
+    "ICMSI": {
+      "title": "Alíquota ICMS operação interna",
+      "description": "Alíquota do ICMS para operações internas",
+      "type": "number",
+      "format": "fixed",
+      "maxLength": 5,
+      "decimals": 2
+    },
+    "FRETE": {
+      "title": "Frete",
+      "description": "Percentual do frete",
+      "type": "number",
+      "format": "percentage",
+      "maxLength": 5,
+      "decimals": 2
+    },
+    "SEGURO": {
+      "title": "Seguro",
+      "description": "Percentual do seguro",
+      "type": "number",
+      "format": "percentage",
+      "maxLength": 5,
+      "decimals": 2
+    },
+    "InscriçãoEstadual": {
+      "title": "Inscrição estadual",
+      "description": "Inscrição estadual do usuário substituto tributário",
+      "type": "string",
+      "maxLength": 20,
+      "format": "ie",
+      "validate": {
+        "ie": {
+          "args": [
+            "this.ESTADO"
+          ]
+        }
+      }
+    }
+  },
+  "primaryKey": [
+    "ESTADO"
+  ]
+}

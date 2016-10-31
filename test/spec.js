@@ -18,6 +18,7 @@ var FORNEC = require('./schemas/FORNEC.json');
 var EVENTO = require('./schemas/EVENTO.json');
 var DOCPAGEV = require('./schemas/DOCPAGEV.json');
 var CLASSE = require('./schemas/Classificação.json');
+var ESTADOS = require('./schemas/ESTADOS.json');
 
 var log = function() {
   console.log.apply(null, Array.prototype.slice.call(arguments)
@@ -245,6 +246,7 @@ module.exports = function(options) {
     var tableEvento;
     var tableDocpagvc;
     var tableDocpagev;
+    var tableEstados;
 
     var joao;
     var joana;
@@ -293,6 +295,10 @@ module.exports = function(options) {
         .then(function() {
           tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {dialect: db.dialect}).new(db);
           return tableDocpagev.createTables();
+        })
+        .then(function() {
+          tableEstados = entity('ESTADOS', ESTADOS, {dialect: db.dialect}).new(db);
+          return tableEstados.createTables();
         })
         .then(function() {
           return docpagev.syncTables();
@@ -3138,7 +3144,7 @@ module.exports = function(options) {
 
     describe('querying', function() {
       var numberOfRecordsToGenerate = 10;
-      var minMiliSecsToGenerate = 450;
+      var minMiliSecsToGenerate = 1000;
       it('should create ' + numberOfRecordsToGenerate + ' records in an minimum time', function(done) {
         gutil.log('Is generating ' + numberOfRecordsToGenerate + ' entities...');
         var duration = process.hrtime();
@@ -3151,6 +3157,7 @@ module.exports = function(options) {
               .create({
                 NOMECAD: _.padStart(String(order), 3, '00'),
                 NUMERO: 'QRYTST',
+                ESTADO: 'MG',
                 fornecedor: {
                   SIGLAFOR: 'query test',
                   NUMERO: '99',
@@ -3238,7 +3245,19 @@ module.exports = function(options) {
           });
       });
 
-      it('should read the 3 records in the expected page', function(done) {
+      it('should create a new related ESTADO', function(done) {
+        tableEstados
+          .create({
+            ESTADO: 'MG',
+            NOME: 'Minas'
+          })
+          .then(function(record) {
+            done();
+          })
+          .catch(logError(done));
+      });
+
+      it('should read the 3 records in the expected page showing external description', function(done) {
         cadAtivo
           .fetch({
             where: {
@@ -3247,10 +3266,13 @@ module.exports = function(options) {
             limit: 3,
             skip: 3,
             order: ['NOMECAD']
+          }, {
+            fetchExternalDescription: true
           })
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(3);
+            expect(recordset[0].cadastroEstadoNome).to.equal('Minas');
             var i = 4;
             recordset.map(function(record) {
               expect(i++).to.equal(Number(record.NOMECAD));

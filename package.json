@@ -27,30 +27,33 @@
   "devDependencies": {
     "br-validations": "0.2.4",
     "chai": "^3.4.1",
-    "glob": "^7.0.5",
+    "eslint": "^3.7.1",
+    "eslint-config-google": "^0.6.0",
+    "glob": "^7.1.1",
     "gulp": "^3.9.1",
     "gulp-coveralls": "^0.1.4",
     "gulp-eslint": "^3.0.1",
-    "gulp-istanbul": "^1.0.0",
-    "gulp-mocha": "^3.0.0",
+    "gulp-istanbul": "^1.1.1",
+    "gulp-mocha": "^3.0.1",
     "gulp-nsp": "^2.4.2",
     "gulp-util": "^3.0.7",
-    "mssql-cr-layer": "^1.0.8",
-    "pg-cr-layer": "^1.0.6",
+    "mssql-cr-layer": "^1.0.9",
+    "pg-cr-layer": "^1.0.7",
     "pretty-hrtime": "^1.0.2",
     "unorm": "^1.4.1",
-    "validator": "^5.5.0"
+    "validator": "^6.1.0"
   },
   "scripts": {
     "prepublish": "gulp prepublish",
-    "test": "gulp"
+    "test": "gulp",
+    "ssh": "docker exec -it jsonschemaentity_dms_1 fish"
   },
   "license": "MIT",
   "dependencies": {
     "@ayk/co": "^4.6.4",
     "json-schema-table": "^1.0.4",
-    "lodash": "^4.14.1",
+    "lodash": "^4.16.5",
     "sql-view": "0.0.2",
-    "xml2json": "^0.9.1"
+    "xml2json": "^0.10.0"
   }
 }

@@ -61,7 +61,7 @@ module.exports = function() {
     return jsonset;
   };
 
-  adapter.buildQuery = function buildQuery(data) {
+  adapter.buildQuery = function buildQuery(data, options) {
 
     var fields = [];
     _.forEach(data.properties, function(property, name) {
@@ -69,6 +69,18 @@ module.exports = function() {
       var alias = name;
       fields.push(this.wrap(fieldName) + (alias !== fieldName ? ' AS ' +
         this.wrap(alias) : ''));
+      if (options.fetchExternalDescription &&
+          property.display &&
+          property.schema &&
+          property.schema.$ref &&
+          property.schema.key) {
+        let display = property.display;
+        const point = display.indexOf('.');
+        if (point > -1) {
+          display = display.substr(point + 1);
+        }
+        fields.push(`(select "${display}" from "${property.schema.$ref}" where "${property.schema.key}"="${data.key}"."${fieldName}") as "${_.camelCase(`${data.identity.name} ${fieldName} ${display}`)}"`);
+      }
     }.bind(this));
     if (data.timestamps) {
       fields.push(this.wrap('updatedAt'));
@@ -78,19 +90,19 @@ module.exports = function() {
       if (!association.data.foreignKey) {
         return false;
       }
-      this.buildQuery(association.data);
+      const query = this.buildQuery(association.data, options);
       var foreignKey = association.data.properties[association.data.foreignKey].field ||
         association.data.foreignKey;
       fields.push(
         '(select array_to_json(array_agg(row_to_json(t))) from (' +
-        association.data.query +
+        query +
         ' WHERE ' + this.wrap(foreignKey) + '=' +
         this.wrap(data.key) + '.' + this.wrap(data.primaryKeyFields[0]) +
         ') t) AS ' +
         this.wrap(association.data.key)
       );
     }.bind(this));
-    data.query = 'SELECT ' + fields.join(',') +
+    return 'SELECT ' + fields.join(',') +
       ' FROM ' + this.wrap(data.identity.name) + ' AS ' + this.wrap(data.key);
   };
 

@@ -141,12 +141,24 @@ module.exports = function() {
     return json;
   };
 
-  adapter.buildQuery = function buildQuery(data) {
+  adapter.buildQuery = function buildQuery(data, options) {
     var fields = [];
     _.forEach(data.properties, function(property, name) {
       var fieldName = property.field || name;
       var alias = name.replace(/ /g, xmlSpaceToken);
       fields.push('[' + fieldName + ']' + (alias !== fieldName ? ' AS [' + alias + ']' : ''));
+      if (options.fetchExternalDescription &&
+        property.display &&
+        property.schema &&
+        property.schema.$ref &&
+        property.schema.key) {
+        let display = property.display;
+        const point = display.indexOf('.');
+        if (point > -1) {
+          display = display.substr(point + 1);
+        }
+        fields.push(`(select [${display}] from [${property.schema.$ref}] where [${property.schema.key}]=[${data.key}].[${fieldName}]) as [${_.camelCase(`${data.identity.name} ${fieldName} ${display}`)}]`);
+      }
     });
     if (data.timestamps) {
       fields.push('updatedAt');
@@ -156,11 +168,11 @@ module.exports = function() {
       if (!association.data.foreignKey) {
         return false;
       }
-      buildQuery(association.data);
+      const query = buildQuery(association.data, options);
       var foreignKey = association.data.properties[association.data.foreignKey].field ||
         association.data.foreignKey;
       fields.push(
-        '(' + association.data.query +
+        '(' + query +
         ' WHERE [' + foreignKey + ']=[' +
         data.key + '].[' +
         data.primaryKeyFields[0] +
@@ -168,7 +180,7 @@ module.exports = function() {
         association.data.key + ']'
       );
     });
-    data.query = 'SELECT ' + fields.join(',') +
+    return 'SELECT ' + fields.join(',') +
       ' FROM [' + data.identity.name + '] AS [' + data.key + ']';
   };
 
