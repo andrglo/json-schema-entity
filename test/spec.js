@@ -3022,7 +3022,7 @@ module.exports = function(options) {
             expect(record.id).to.exist;
             expect(record).to.not.have.property('save');
             expect(record.IDENT).to.be.undefined;
-            expect(record.DATNASC).to.be.a('date');
+            expect(record.DATNASC).to.be.a('string');
 
             expect(record.fornecedor.id).to.exist;
             expect(record.fornecedor).to.not.have.property('save');
@@ -3033,7 +3033,7 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0].id).to.exist;
             expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.undefined;
-            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('string');
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('Pendente');
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
@@ -3158,6 +3158,9 @@ module.exports = function(options) {
                 NOMECAD: _.padStart(String(order), 3, '00'),
                 NUMERO: 'QRYTST',
                 ESTADO: 'MG',
+                DATNASC: '1999-12-31',
+                DATNASCZ: '1999-12-31T00:00:00Z',
+                DATNASCNOZ: new Date('1999-12-31T19:00:00'),
                 fornecedor: {
                   SIGLAFOR: 'query test',
                   NUMERO: '99',
@@ -3275,6 +3278,9 @@ module.exports = function(options) {
             expect(recordset[0].cadastroEstadoNome).to.equal('Minas');
             expect(recordset[0].Inativo).to.equal('Não');
             expect(recordset[0].fornecedor.RetemCSLL).to.equal('Sim');
+            expect(recordset[0].DATNASC).to.equal('1999-12-31');
+            expect(recordset[0].DATNASCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z');
+            expect(recordset[0].DATNASCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString());
             var i = 4;
             recordset.map(function(record) {
               expect(i++).to.equal(Number(record.NOMECAD));

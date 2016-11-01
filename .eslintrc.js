@@ -20,6 +20,7 @@ module.exports = {
       "ignoreStrings": true,
       "ignoreTemplateLiterals": true
     }],
-    "no-var": 0
+    "no-var": 0,
+    "default-case": 0
   }
 };

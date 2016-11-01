@@ -523,8 +523,21 @@ function buildPlainObject(record, data) {
   const props = data.schema.properties;
   Object.keys(record).forEach(key => {
     const prop = props[key];
-    if (prop && prop.enum) {
-      const value = record[key];
+    if (!prop) {
+      return;
+    }
+    const value = record[key];
+    switch (prop.type) {
+      case 'date':
+        record[key] = value instanceof Date ?
+          value.toISOString().substr(0, 10) :
+          value;
+        break;
+      case 'number':
+        record[key] = Number(value);
+        break;
+    }
+    if (prop.enum) {
       _.forEach(prop.enum, item => {
         if (item === value ||
             item.substring(0, prop.maxLength) === value) {
