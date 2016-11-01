@@ -3027,18 +3027,18 @@ module.exports = function(options) {
             expect(record.fornecedor.id).to.exist;
             expect(record.fornecedor).to.not.have.property('save');
             expect(record.fornecedor.INSCEST).to.be.undefined;
-            expect(record.fornecedor.TIPOCONTA).to.equal('1');
+            expect(record.fornecedor.TIPOCONTA).to.equal('1-Conta_corrente');
             expect(record.fornecedor.SIGLAFOR).to.equal('Catering');
 
             expect(record.fornecedor.docpagvc[0].id).to.exist;
             expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.undefined;
             expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
-            expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P');
+            expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('Pendente');
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
             expect(record.fornecedor.docpagvc[0].categoria).to.not.have.property('save');
-            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('D');
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('Devedora');
 
             expect(record.ClassificaçãoCad[0].NUMCAD).to.exist;
             expect(record.ClassificaçãoCad[0]).to.not.have.property('save');
@@ -3273,6 +3273,8 @@ module.exports = function(options) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(3);
             expect(recordset[0].cadastroEstadoNome).to.equal('Minas');
+            expect(recordset[0].Inativo).to.equal('Não');
+            expect(recordset[0].fornecedor.RetemCSLL).to.equal('Sim');
             var i = 4;
             recordset.map(function(record) {
               expect(i++).to.equal(Number(record.NOMECAD));

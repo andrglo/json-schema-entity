@@ -8,7 +8,7 @@ var jst = require('json-schema-table');
 var EntityError = require('./entity-error');
 
 const isGenerator = obj => typeof obj.next === 'function' &&
-typeof obj.throw === 'function';
+                           typeof obj.throw === 'function';
 
 function toArray(obj) {
   return Array.isArray(obj) ? obj : obj && [obj] || [];
@@ -46,8 +46,8 @@ function validateModel(is, was, data) {
                 }
               });
               assert(res.length <
-                2, 'Pair this was for validation should be 1 but found ' +
-                res.length);
+                     2, 'Pair this was for validation should be 1 but found ' +
+                        res.length);
               return res.length === 0 ? void 0 : res[0];
             };
 
@@ -131,28 +131,29 @@ function runFieldValidations(is, data, errors) {
         if (is[key] && is[key] !== null) {
           var value = is[key];
           if (property.enum && property.enum.indexOf(value) === -1 &&
-            (property.maxLength && property.enum
-              .map(value => value.substr(0, property.maxLength))
-              .indexOf(value) === -1)) {
+              (property.maxLength && property.enum
+                                       .map(value => value.substr(0, property.maxLength))
+                                       .indexOf(value) === -1)) {
             errors.push({
               path: key,
               message: 'Value \'' + value + '\' not valid. Options are: ' +
-              property.enum.join()
+                       property.enum.join()
             });
           }
           if (!property.enum && property.maxLength &&
-            String(value).length > property.maxLength) {
+              String(value).length > property.maxLength) {
             errors.push({
               path: key,
               message: 'Value \'' + value + '\' exceeds maximum length: ' +
-              property.maxLength
+                       property.maxLength
             });
           }
           if (property.decimals && decimalPlaces(value) > property.decimals) {
             errors.push({
               path: key,
               message: 'Value \'' + value +
-              '\' exceeds maximum decimals length: ' + property.decimals
+                       '\' exceeds maximum decimals length: ' +
+                       property.decimals
             });
           }
         }
@@ -160,7 +161,7 @@ function runFieldValidations(is, data, errors) {
     })
     .then(function() {
       return _.reduce(is && validator &&
-        data.properties, function(chain, property, key) {
+                      data.properties, function(chain, property, key) {
 
         var validations = {};
         if (is[key]) {
@@ -180,7 +181,7 @@ function runFieldValidations(is, data, errors) {
             };
           });
           if (property.format && !validations[property.format] &&
-            validator[property.format]) {
+              validator[property.format]) {
             validations[property.format] = {
               id: key,
               fn: validator[property.format],
@@ -199,7 +200,7 @@ function runFieldValidations(is, data, errors) {
             if (res === false) {
               errors.push({
                 path: validation.id, message: validation.message ||
-                'Invalid ' + validation.id
+                                              'Invalid ' + validation.id
               });
             }
           });
@@ -214,8 +215,8 @@ function runModelValidations(is, was, data, errors) {
   return _.reduce(data.validate, function(chain, validation) {
     return chain.then(function() {
       if (!(is && !was && validation.options.onCreate ||
-        is && was && validation.options.onUpdate ||
-        !is && was && validation.options.onDestroy)) {
+            is && was && validation.options.onUpdate ||
+            !is && was && validation.options.onDestroy)) {
         return;
       }
       var res;
@@ -331,7 +332,7 @@ function instanceParent(value) {
 
 function isSameEntityInstance(value, parent) {
   return value instanceof TableRecord
-    && parent && instanceParent(value).tableRecord === parent.tableRecord;
+         && parent && instanceParent(value).tableRecord === parent.tableRecord;
 }
 
 class TableRecordSchema {
@@ -350,7 +351,7 @@ class TableRecordSchema {
             let found;
             _.forEach(property.enum, function(item) {
               if (item === value ||
-                item.substring(0, property.maxLength) === value) {
+                  item.substring(0, property.maxLength) === value) {
                 value = item;
                 found = true;
                 return false;
@@ -363,7 +364,8 @@ class TableRecordSchema {
                   {
                     path: name,
                     message: 'Value \'' + value +
-                    '\' not valid. Options are: ' + property.enum.join()
+                             '\' not valid. Options are: ' +
+                             property.enum.join()
                   }
                 ]
               });
@@ -372,7 +374,7 @@ class TableRecordSchema {
             switch (property.type) {
               case 'date':
                 value = value instanceof
-                Date ? value.toISOString().substr(0, 10) : value;
+                        Date ? value.toISOString().substr(0, 10) : value;
                 break;
               case 'number':
                 value = Number(value);
@@ -487,7 +489,7 @@ function setIs(instance, record, it, isNew) {
               'was' in newValue ? newValue.was : _.cloneDeep(instance[key]));
         } else if (_.isObject(newValue)) {
           was[key] = 'was' in
-          newValue ? newValue.was : _.cloneDeep(instance[key]);
+                     newValue ? newValue.was : _.cloneDeep(instance[key]);
         } else {
           was[key] = instance[key];
         }
@@ -518,6 +520,20 @@ function clearNulls(obj) {
 
 function buildPlainObject(record, data) {
   clearNulls(record);
+  const props = data.schema.properties;
+  Object.keys(record).forEach(key => {
+    const prop = props[key];
+    if (prop && prop.enum) {
+      const value = record[key];
+      _.forEach(prop.enum, item => {
+        if (item === value ||
+            item.substring(0, prop.maxLength) === value) {
+          record[key] = item;
+          return false;
+        }
+      });
+    }
+  });
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     if (record[key]) {
@@ -588,10 +604,10 @@ function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
         void 0;
       for (var i = 0; i < recordset.length; i++) {
         recordset[i] = buildEntity(recordset[i], association.data, isNew, fromFetch, instanceSet &&
-          instanceSet[i], void 0, parent);
+                                                                                     instanceSet[i], void 0, parent);
       }
       associations[key] = recordset.length === 1 &&
-      association.type === 'hasOne' ?
+                          association.type === 'hasOne' ?
         recordset[0] : recordset;
     }
   });
@@ -622,7 +638,7 @@ function runHooks(hooks, model, transaction, data, validatedInstance) {
       var res;
       try {
         res = hook.fn.call(validatedInstance ||
-          model, transaction, validatedInstance ? model : void 0);
+                           model, transaction, validatedInstance ? model : void 0);
         if (res && isGenerator(res)) {
           res = co(res);
         }
@@ -659,16 +675,16 @@ function create(entity, options, data, adapter) {
             var associatedEntity = entity[associationKey];
             const recordIsArray = _.isArray(associatedEntity);
             var hasMany = recordIsArray && associatedEntity.length > 1 ||
-              association.type === 'hasMany';
+                          association.type === 'hasMany';
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
                 type: 'InvalidData',
                 message: 'Association ' + associationKey +
-                ' can not be an array'
+                         ' can not be an array'
               });
             }
             associatedEntity = associatedEntity === void 0 ||
-            recordIsArray ? associatedEntity : [associatedEntity];
+                               recordIsArray ? associatedEntity : [associatedEntity];
             return _.reduce(associatedEntity, function(chain, entity) {
               entity[association.data.foreignKey] = newEntity[data.primaryKeyAttributes[0]];
               return chain.then(function() {
@@ -734,20 +750,20 @@ function update(entity, was, options, data, adapter) {
               throw new EntityError({
                 type: 'InvalidData',
                 message: 'Record ' + JSON.stringify(entity) +
-                ' in association ' +
-                associationKey + ' has no previous data'
+                         ' in association ' +
+                         associationKey + ' has no previous data'
               });
             };
 
             var associatedIsEntity = entity[associationKey];
             var hasMany = _.isArray(associatedIsEntity) &&
-              associatedIsEntity.length > 1 ||
-              association.type === 'hasMany';
+                          associatedIsEntity.length > 1 ||
+                          association.type === 'hasMany';
             if (association.type === 'hasOne' && hasMany) {
               throw new EntityError({
                 type: 'InvalidData',
                 message: 'Association ' + associationKey +
-                ' can not be an array'
+                         ' can not be an array'
               });
             }
 
@@ -764,7 +780,7 @@ function update(entity, was, options, data, adapter) {
                   throw new EntityError({
                     type: 'InvalidData',
                     message: 'Foreign key in ' + association.data.key +
-                    ' does not match primary key of ' + data.key
+                             ' does not match primary key of ' + data.key
                   });
                 }
               }
@@ -848,7 +864,7 @@ function destroy(entity, options, data, adapter) {
         var associatedEntity = entity[associationKey];
         const recordIsArray = _.isArray(associatedEntity);
         associatedEntity = associatedEntity === void 0 ||
-        recordIsArray ? associatedEntity : [associatedEntity];
+                           recordIsArray ? associatedEntity : [associatedEntity];
         return _.reduce(associatedEntity, function(chain, entity) {
           return chain.then(function() {
             return destroy(entity, options, association.data, adapter);
@@ -967,7 +983,7 @@ module.exports = function(schemaName, schema, config) {
                     .then(function(res) {
                       return res.map(function(record) {
                         return options.toPlainObject === true ||
-                        options.fetchExternalDescription === true ?
+                               options.fetchExternalDescription === true ?
                           buildPlainObject(record, data) :
                           buildEntity(record, data, false, true, void 0, self);
                       });
@@ -978,7 +994,7 @@ module.exports = function(schemaName, schema, config) {
               options = options || {};
               var self = this;
               var isInstance = entity instanceof TableRecord &&
-                entity.entity === this;
+                               entity.entity === this;
               return (isInstance ? Promise.resolve() : validateFields(entity, data))
                 .then(function() {
                   entity = isInstance ? entity : buildEntity(entity, data, true, void 0, void 0, self);
@@ -1007,7 +1023,7 @@ module.exports = function(schemaName, schema, config) {
                   throw new EntityError({
                     type: 'InvalidArgument',
                     message: 'Entity ' + data.key +
-                    ' need a primary key for update'
+                             ' need a primary key for update'
                   });
                 });
               }
@@ -1021,16 +1037,16 @@ module.exports = function(schemaName, schema, config) {
                   throw new EntityError({
                     type: 'InvalidArgument',
                     message: 'Where clause not defined for entity ' + data.key +
-                    ' update'
+                             ' update'
                   });
                 });
               }
               if (data.timestamps) {
                 key.where.updatedAt = entity.updatedAt || key.where.updatedAt ||
-                  null;
+                                      null;
               }
               var isInstance = entity instanceof TableRecord &&
-                entity.entity === this;
+                               entity.entity === this;
               return (isInstance ?
                 Promise.resolve([entity.was]) :
                 this.fetch(key, options))
@@ -1039,7 +1055,8 @@ module.exports = function(schemaName, schema, config) {
                     throw new EntityError({
                       type: 'RecordModifiedOrDeleted',
                       message: 'Entity {' + data.key + '} key ' +
-                      JSON.stringify(key.where) + ' not found for update'
+                               JSON.stringify(key.where) +
+                               ' not found for update'
                     });
                   }
                   assert(was.length === 1);
@@ -1074,7 +1091,7 @@ module.exports = function(schemaName, schema, config) {
                   throw new EntityError({
                     type: 'InvalidArgument',
                     message: 'Entity ' + data.key +
-                    ' need a primary key for delete'
+                             ' need a primary key for delete'
                   });
                 });
               }
@@ -1088,7 +1105,7 @@ module.exports = function(schemaName, schema, config) {
                   throw new EntityError({
                     type: 'InvalidArgument',
                     message: 'Where clause not defined for entity ' + data.key +
-                    ' delete'
+                             ' delete'
                   });
                 });
               }
@@ -1096,7 +1113,7 @@ module.exports = function(schemaName, schema, config) {
                 key.where.updatedAt = key.where.updatedAt || null;
               }
               var isInstance = entity instanceof TableRecord &&
-                entity.entity === this;
+                               entity.entity === this;
               return (isInstance ?
                 Promise.resolve([entity.was]) :
                 this.fetch(key, options))
@@ -1105,7 +1122,8 @@ module.exports = function(schemaName, schema, config) {
                     throw new EntityError({
                       type: 'RecordModifiedOrDeleted',
                       message: 'Entity {' + data.key + '} key ' +
-                      JSON.stringify(key.where) + ' not found for delete'
+                               JSON.stringify(key.where) +
+                               ' not found for delete'
                     });
                   }
                   assert(was.length === 1);
@@ -1341,7 +1359,7 @@ module.exports = function(schemaName, schema, config) {
         throw new EntityError({
           type: 'InvalidArgument',
           message: 'Instance method ' + id +
-          ' cannot be used, there is already a column with this name'
+                   ' cannot be used, there is already a column with this name'
         });
       }
       data.instanceMethods.push({id: id, fn: fn});
@@ -1361,7 +1379,7 @@ module.exports = function(schemaName, schema, config) {
         throw new EntityError({
           type: 'InvalidArgument',
           message: 'Entity method ' + id +
-          ' cannot be used, there is already a column with this name'
+                   ' cannot be used, there is already a column with this name'
         });
       }
       data.entityMethods.push({id: id, fn: fn});
@@ -1453,8 +1471,8 @@ function buildTable(data) {
   _.forEach(data.requestedProperties, function(property, name) {
     data.properties[name] = data.requestedProperties[name];
     if (data.properties[name].format !== 'hidden' &&
-      !((data.properties[name].autoIncrement || data.foreignKey === name) &&
-      data.isAssociation)) {
+        !((data.properties[name].autoIncrement || data.foreignKey === name) &&
+        data.isAssociation)) {
       data.schema.properties[name] = data.properties[name];
     }
   });
@@ -1488,7 +1506,7 @@ function buildTable(data) {
     });
   }
   assert(data.primaryKeyAttributes.length >
-    0, 'Primary key not defined for table ' + data.key);
+         0, 'Primary key not defined for table ' + data.key);
 
   data.adapter.buildInsertCommand(data);
   data.adapter.buildUpdateCommand(data);
@@ -1496,7 +1514,7 @@ function buildTable(data) {
 
   _.forEach(data.associations, function(association) {
     association.data.foreignKey = association.data.foreignKey ||
-      getForeignKey(data.identity.name, association.data.requestedProperties);
+                                  getForeignKey(data.identity.name, association.data.requestedProperties);
     buildTable(association.data);
   });
 
@@ -1511,7 +1529,7 @@ function buildTable(data) {
   });
   if (data.timestamps) {
     if (data.propertiesList.indexOf('updatedAt') !== -1 ||
-      data.propertiesList.indexOf('createdAt') !== -1) {
+        data.propertiesList.indexOf('createdAt') !== -1) {
       throw new EntityError({
         message: 'Properties cannot have timestamps names createAt or updatedAt, use an alias',
         type: 'InvalidIdentifier'
@@ -1550,9 +1568,10 @@ function findProperty(name, properties) {
         function(res, prop, propName) {
           return res ? res : name === propName ? prop : void 0;
         }, void 0) ||
-      _.reduce(properties, function(res, prop) {
-        return res ? res : prop.field && name === prop.field ? prop : void 0;
-      }, void 0);
+               _.reduce(properties, function(res, prop) {
+                 return res ? res : prop.field &&
+                                    name === prop.field ? prop : void 0;
+               }, void 0);
   }
   assert(property, 'Property "' + name + '" not found');
   return property;
