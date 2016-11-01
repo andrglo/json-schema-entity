@@ -517,6 +517,7 @@ function clearNulls(obj) {
 }
 
 function buildPlainObject(record, data) {
+  clearNulls(record);
   _.forEach(data.associations, function(association) {
     var key = association.data.key;
     if (record[key]) {

@@ -3021,18 +3021,18 @@ module.exports = function(options) {
             var record = recordset[0];
             expect(record.id).to.exist;
             expect(record).to.not.have.property('save');
-            expect(record.IDENT).to.be.null;
+            expect(record.IDENT).to.be.undefined;
             expect(record.DATNASC).to.be.a('date');
 
             expect(record.fornecedor.id).to.exist;
             expect(record.fornecedor).to.not.have.property('save');
-            expect(record.fornecedor.INSCEST).to.be.null;
+            expect(record.fornecedor.INSCEST).to.be.undefined;
             expect(record.fornecedor.TIPOCONTA).to.equal('1');
             expect(record.fornecedor.SIGLAFOR).to.equal('Catering');
 
             expect(record.fornecedor.docpagvc[0].id).to.exist;
             expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
-            expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null;
+            expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.undefined;
             expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P');
 
@@ -3042,7 +3042,7 @@ module.exports = function(options) {
 
             expect(record.ClassificaçãoCad[0].NUMCAD).to.exist;
             expect(record.ClassificaçãoCad[0]).to.not.have.property('save');
-            expect(record.ClassificaçãoCad[0].quitado).to.be.null;
+            expect(record.ClassificaçãoCad[0].quitado).to.be.undefined;
 
             done();
           })
@@ -3203,7 +3203,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array');
             expect(recordset.length).to.equal(numberOfRecordsToGenerate);
-            expect(recordset[0].IDENT).to.be.null;
+            expect(recordset[0].IDENT).to.be.undefined;
             expect(recordset[0]).to.not.have.property('save');
             done();
           })
