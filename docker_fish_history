@@ -1,5 +1,7 @@
-- cmd: npm-check --skip-unused --update
+- cmd: yarn upgrade-interactive
    when: 1470615608
-- cmd: npm run test
+- cmd: yarn self-update
+   when: 1470615608
+- cmd: yarn test
    when: 1470615608
 

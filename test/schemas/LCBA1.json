@@ -1,0 +1,193 @@
+{
+  "type": "object",
+  "title": "Lcba1",
+  "description": "Plano de Contas",
+  "properties": {
+    "A01_CODCTA": {
+      "title": "Conta",
+      "description": "Codigo da conta contabil",
+      "type": "string",
+      "maxLength": 30,
+      "mask": "pconta",
+      "required": true
+    },
+    "NUMPLC": {
+      "description": "Número do plano de contas",
+      "type": "integer",
+      "format": "fixed",
+      "required": true
+    },
+    "Inativa": {
+      "title": "Inativa desde",
+      "description": "Data a partir da qual esta conta ficará inativa",
+      "type": "date",
+      "timezone": "ignore"
+    },
+    "A01_CODRED": {
+      "title": "Reduzido",
+      "description": "Código reduzido",
+      "type": "integer",
+      "format": "fixed"
+    },
+    "A01_DESCTA": {
+      "title": "Descrição da conta",
+      "description": "Descricao da conta contabil",
+      "type": "string",
+      "maxLength": 50,
+      "required": true
+    },
+    "A01_TIPCTA": {
+      "title": "Tipo",
+      "description": "Tipo da conta",
+      "type": "string",
+      "maxLength": 1,
+      "enum": [
+        "Sintética",
+        "Analítica"
+      ],
+      "format": "select",
+      "defaultValue": "Sintética",
+      "required": true
+    },
+    "A01_NATCTA": {
+      "title": "Natureza",
+      "description": "Natureza da conta contabil",
+      "type": "string",
+      "maxLength": 1,
+      "enum": [
+        "Devedora",
+        "Credora"
+      ],
+      "format": "select",
+      "defaultValue": "Devedora"
+    },
+    "A01_SDOINI": {
+      "title": "Saldo Inicial",
+      "description": "Saldo Inicial da conta",
+      "type": "number",
+      "format": "fixed",
+      "maxLength": 18,
+      "decimals": 2
+    },
+    "Rateio": {
+      "title": "Rateio",
+      "description": "Código do rateio",
+      "type": "string",
+      "maxLength": 3,
+      "format": "list",
+      "display": "Rateio.Descrição",
+      "schema": {
+        "$ref": "Rateio",
+        "key": "Código"
+      }
+    },
+    "Filial": {
+      "title": "Filial",
+      "description": "Filial Vinculada",
+      "type": "string",
+      "maxLength": 3,
+      "format": "list",
+      "display": "FILIAL.DESCFIL",
+      "schema": {
+        "$ref": "FILIAL",
+        "key": "FILIAL"
+      }
+    },
+    "Resultado": {
+      "title": "Resultado",
+      "description": "Indica se a conta é de apuração de resultado",
+      "type": "string",
+      "maxLength": 1,
+      "enum": [
+        "Não",
+        "Sim"
+      ],
+      "format": "checkbox",
+      "defaultValue": "Não"
+    },
+    "ContaReferencial": {
+      "title": "Conta Referencial",
+      "description": "Conta do Plano de Contas Referencial - ECD",
+      "type": "string",
+      "maxLength": 30
+    },
+    "NaturezaSPED": {
+      "title": "Natureza SPED",
+      "description": "Natureza da conta conforme SPED Contábil",
+      "type": "string",
+      "maxLength": 2,
+      "enum": [
+        "00-Indefinido",
+        "01-Conta de Ativo",
+        "02-Conta de Passivo",
+        "03-Patrimônio Líquido",
+        "04-Conta de Resultado",
+        "05-Conta de Compensação",
+        "09-Outras"
+      ],
+      "format": "select",
+      "defaultValue": "00-Indefinido"
+    },
+    "Demonstrativo": {
+      "title": "Demonstrativo",
+      "description": "Linha do Demonstrativo a que esta conta pertence.",
+      "type": "string",
+      "maxLength": 30
+    },
+    "NaturezaMANAD": {
+      "title": "Natureza MANAD",
+      "description": "Natureza da conta conforme MANAD",
+      "type": "string",
+      "maxLength": 1,
+      "enum": [
+        "0-Indefinido",
+        "1-Conta de Ativo",
+        "2-Conta de Passivo",
+        "3-Patrimônio Líquido",
+        "4-Custo/Despesa",
+        "5-Receita",
+        "9-Outras"
+      ],
+      "format": "select",
+      "defaultValue": "0-Indefinido"
+    },
+    "ItemAPD": {
+      "description": "DIME - Item do Ativo / Passivo / Despesas",
+      "type": "string",
+      "maxLength": 3
+    },
+    "ItemDRE": {
+      "description": "DIME - Item do Demonstrativo de Resultados",
+      "type": "string",
+      "maxLength": 3
+    },
+    "ContaCorrelata": {
+      "title": "Conta correlata",
+      "description": "Conta com a qual essa conta tem correlação",
+      "type": "string",
+      "maxLength": 30
+    },
+    "GrupoSubConta": {
+      "title": "Grupo de Subcontas",
+      "description": "Grupo de SubContas Correlatas",
+      "type": "string",
+      "maxLength": 6,
+      "format": "list",
+      "display": "GrupoSubContas.Descrição",
+      "schema": {
+        "$ref": "GrupoSubContas",
+        "key": "Código"
+      }
+    },
+    "ContaReferencialFCONT": {
+      "title": "ContaReferencialFCONT",
+      "description": "Conta do Plano de Contas Referencial - FCONT",
+      "type": "string",
+      "maxLength": 30
+    }
+  },
+  "primaryKey": [
+    "A01_CODCTA",
+    "NUMPLC"
+  ]
+}

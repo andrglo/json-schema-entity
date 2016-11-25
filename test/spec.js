@@ -753,7 +753,7 @@ module.exports = function(options) {
           });
       });
       it('should throw only a CEP not a NUMERO validation error because model ' +
-        'validations are executed only when no errors occurs in field validation', function(done) {
+         'validations are executed only when no errors occurs in field validation', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'CEP incompleto',
@@ -816,7 +816,8 @@ module.exports = function(options) {
             expect(error.errors.length).to.equal(2);
             expect(error.errors[0].path).to.equal('VALORLCTO');
             expect(error.errors[1].path).to.equal('VALORLCTO');
-            var message = error.errors[0].message + ' - ' + error.errors[1].message;
+            var message = error.errors[0].message + ' - ' +
+                          error.errors[1].message;
             expect(message).to.contains('decimals');
             expect(message).to.contains('exceeds maximum length');
             done();
@@ -840,7 +841,8 @@ module.exports = function(options) {
             expect(error.errors.length).to.equal(2);
             expect(error.errors[0].path).to.equal('ENDERECO');
             expect(error.errors[1].path).to.equal('ENDERECO');
-            var message = error.errors[0].message + ' - ' + error.errors[1].message;
+            var message = error.errors[0].message + ' - ' +
+                          error.errors[1].message;
             expect(message).to.contains('STREET or AVENUE');
             expect(message).to.contains('uppercase');
             done();
@@ -928,7 +930,7 @@ module.exports = function(options) {
           .catch(logError(done));
       });
       it('should not accept a new cliente without classe cliente and with Suframa ' +
-        'and fornecedor with no NUMERO=99', function(done) {
+         'and fornecedor with no NUMERO=99', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'Falta classe cliente and have suframa',
@@ -959,7 +961,8 @@ module.exports = function(options) {
             error.errors.forEach(function(detail) {
               if (detail.path === 'Classes') {
                 classes = true
-              } else if (detail.path === 'Teste de promise' || detail.path === 'Teste de generator') {
+              } else if (detail.path === 'Teste de promise' ||
+                         detail.path === 'Teste de generator') {
                 suframa++
               } else if (detail.path === 'Only in fornecedor') {
                 fornecedor = true
@@ -1043,7 +1046,7 @@ module.exports = function(options) {
           })
       });
       it('hook test should not accept a new cadastro with field BAIRRO=X, PAIS=X but ' +
-        'only one error can be reported and should be the first hook added', function(done) {
+         'only one error can be reported and should be the first hook added', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'Bairro and pais are invalid',
@@ -1511,7 +1514,8 @@ module.exports = function(options) {
             error.errors.forEach(function(detail) {
               if (detail.path === 'Classes') {
                 classes = true
-              } else if (detail.path === 'Teste de promise' || detail.path === 'Teste de generator') {
+              } else if (detail.path === 'Teste de promise' ||
+                         detail.path === 'Teste de generator') {
                 suframa++
               }
             });
@@ -1654,7 +1658,8 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
             expect(error.type).to.equal('InvalidArgument');
-            expect(error.message.indexOf('need a primary key') !== -1).to.equal(true);
+            expect(error.message.indexOf('need a primary key') !==
+                   -1).to.equal(true);
             done();
           })
           .catch(logError(done));
@@ -1668,7 +1673,8 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
             expect(error.type).to.equal('InvalidArgument');
-            expect(error.message.indexOf('Where clause not defined') !== -1).to.equal(true);
+            expect(error.message.indexOf('Where clause not defined') !==
+                   -1).to.equal(true);
             done();
           })
           .catch(logError(done));
@@ -1682,7 +1688,8 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
             expect(error.type).to.equal('InvalidArgument');
-            expect(error.message.indexOf('need a primary key') !== -1).to.equal(true);
+            expect(error.message.indexOf('need a primary key') !==
+                   -1).to.equal(true);
             done();
           })
           .catch(logError(done));
@@ -1696,7 +1703,8 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError');
             expect(error.type).to.equal('InvalidArgument');
-            expect(error.message.indexOf('Where clause not defined') !== -1).to.equal(true);
+            expect(error.message.indexOf('Where clause not defined') !==
+                   -1).to.equal(true);
             done();
           })
           .catch(logError(done));
@@ -2468,18 +2476,18 @@ module.exports = function(options) {
         var command;
         if (cadAtivo.db.dialect === 'mssql') {
           command = 'CREATE TRIGGER reminder ON CADASTRO ' +
-            'AFTER INSERT ' +
-            'AS ' +
-            'IF (SELECT NUMERO FROM INSERTED)=\'INVLD\' RAISERROR (\'INVLD\', 11, 1)';
+                    'AFTER INSERT ' +
+                    'AS ' +
+                    'IF (SELECT NUMERO FROM INSERTED)=\'INVLD\' RAISERROR (\'INVLD\', 11, 1)';
         } else {
           command = 'CREATE FUNCTION rec_insert() RETURNS trigger ' +
-            'AS $rec_insert$ BEGIN ' +
-            'IF new."NUMERO" =\'INVLD\' THEN RAISE EXCEPTION \'INVLD\'; END IF; ' +
-            'RETURN new; END; ' +
-            '$rec_insert$ LANGUAGE plpgsql; ' +
-            'CREATE TRIGGER reminder AFTER INSERT ON "CADASTRO" ' +
-            'FOR EACH ROW ' +
-            'EXECUTE PROCEDURE rec_insert();';
+                    'AS $rec_insert$ BEGIN ' +
+                    'IF new."NUMERO" =\'INVLD\' THEN RAISE EXCEPTION \'INVLD\'; END IF; ' +
+                    'RETURN new; END; ' +
+                    '$rec_insert$ LANGUAGE plpgsql; ' +
+                    'CREATE TRIGGER reminder AFTER INSERT ON "CADASTRO" ' +
+                    'FOR EACH ROW ' +
+                    'EXECUTE PROCEDURE rec_insert();';
         }
         cadAtivo.db.execute(command)
           .then(function() {
@@ -2493,7 +2501,7 @@ module.exports = function(options) {
               })
               .catch(function(error) {
                 expect(error.name === 'RequestError' ||
-                  error.name === 'error').to.equal(true);
+                       error.name === 'error').to.equal(true);
                 expect(error.message).to.equal('INVLD');
                 done();
               });
@@ -2803,7 +2811,8 @@ module.exports = function(options) {
             vcto[3] = lucia.fornecedor.docpagvc[1];
             vcto[4] = lucia.fornecedor.docpagvc[2];
             assert(vcto[3].entity, 'Added array element should be an entity');
-            assert(vcto[4].entity === lucia.entity, 'Added array element should be lucia');
+            assert(vcto[4].entity ===
+                   lucia.entity, 'Added array element should be lucia');
             expect(vcto[4].entity.id).to.equal('CADASTRO');
             expect(vcto[4].entity.alias).to.equal('cadAtivo');
           } catch (e) {
@@ -3145,8 +3154,10 @@ module.exports = function(options) {
     describe('querying', function() {
       var numberOfRecordsToGenerate = 10;
       var minMiliSecsToGenerate = 1000;
-      it('should create ' + numberOfRecordsToGenerate + ' records in an minimum time', function(done) {
-        gutil.log('Is generating ' + numberOfRecordsToGenerate + ' entities...');
+      it('should create ' + numberOfRecordsToGenerate +
+         ' records in an minimum time', function(done) {
+        gutil.log('Is generating ' + numberOfRecordsToGenerate +
+                  ' entities...');
         var duration = process.hrtime();
         var promise = Promise.resolve();
         var i = 1;
@@ -3620,6 +3631,59 @@ module.exports = function(options) {
            ]
            }
            */
+          done();
+        })
+        .catch(logError(done));
+    });
+  });
+  describe('multiple primary key', function() {
+    var plano;
+    var conta;
+    var db;
+    let planoEntity;
+
+    before(function() {
+      db = options.db;
+      plano = entity(
+        'LCBA1', require('./schemas/LCBA1.json'), {dialect: db.dialect}
+      ).useTimestamps();
+      planoEntity = plano.new(db);
+    });
+
+    it('plano should be created', function(done) {
+      planoEntity
+        .createTables()
+        .then(() => planoEntity.create({
+          A01_CODCTA: '1',
+          NUMPLC: 0,
+          A01_DESCTA: 'test',
+          A01_TIPCTA: 'Analítica',
+        })
+        .then(function(record) {
+          conta = record;
+          expect(conta.id).to.equal(undefined);
+          expect(record.createdAt).to.not.equal(undefined);
+          expect(record.updatedAt).to.not.equal(undefined);
+          done();
+        })
+        .catch(function(err) {
+          done(err);
+        }));
+    });
+    it('then can have only one field updated', function(done) {
+      plano
+        .new(db)
+        .update({
+          A01_DESCTA: 'test2'
+        }, {
+          where: {
+            A01_CODCTA: '1',
+            NUMPLC: 0,
+            updatedAt: conta.updatedAt
+          }
+        })
+        .then(function(record) {
+          expect(record.A01_DESCTA).equal('test2');
           done();
         })
         .catch(logError(done));
