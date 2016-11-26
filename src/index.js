@@ -886,7 +886,7 @@ function destroy(entity, options, data, adapter) {
       }, Promise.resolve()).then(function() {
         options = Object.assign({}, options, {where: {}});
         data.primaryKeyAttributes.map(function(field) {
-          options.where[field] = entity[field] || null;
+          options.where[field] = entity[field] === undefined ? null : entity[field];
         });
         if (data.timestamps) {
           options.where.updatedAt = entity.updatedAt || null;
