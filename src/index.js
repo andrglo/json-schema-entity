@@ -280,7 +280,7 @@ class TableRecord {
     let entity = entityData.parent.tableRecord;
     entityData = entity === this ? entityData : tableRecordData.get(entity);
     if (entityData.isNew) {
-      return entityData.parent.self.create(entity, null, options)
+      return entityData.parent.self.create(entity, options)
         .then(function() {
           entityData.isNew = false;
         });
