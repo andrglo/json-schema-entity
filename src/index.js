@@ -677,9 +677,10 @@ function runHooks(hooks, model, transaction, data, validatedInstance) {
 }
 
 function create(entity, options, data, adapter) {
-  var record = _.pick(entity, data.propertiesList);
+  var record;
   return runHooks(['beforeCreate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
+      record = _.pick(entity, data.propertiesList);
       return adapter.create(record, data, options)
         .then(function(record) {
           var newEntity = _.pick(record, data.propertiesList);
@@ -726,9 +727,10 @@ function create(entity, options, data, adapter) {
 }
 
 function update(entity, was, options, data, adapter) {
-  var record = _.pick(entity, data.propertiesList);
+  var record;
   return runHooks(['beforeUpdate', 'beforeSave'], entity, options.transaction, data)
     .then(function() {
+      record = _.pick(entity, data.propertiesList);
       options = Object.assign({}, options, {where: {}});
       data.primaryKeyAttributes.map(function(field) {
         options.where[field] = entity[field] === undefined ? null : entity[field];
