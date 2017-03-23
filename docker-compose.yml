@@ -15,6 +15,7 @@ services:
       - MSSQL_HOST=$MSSQL_HOST
       - MSSQL_PASSWORD=$MSSQL_PASSWORD
       - MSSQL_USER=$MSSQL_USER
+      - MSSQL_PORT=$MSSQL_PORT
       - NPM_TOKEN=$NPM_TOKEN
     restart: always
 

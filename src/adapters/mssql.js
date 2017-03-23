@@ -1,10 +1,6 @@
 var _ = require('lodash');
 var assert = require('assert');
-var xml2json = require('xml2json');
 var common = require('./common');
-
-var xmlSpaceToken = '_-_';
-var xmlSpaceTokenRegExp = new RegExp(xmlSpaceToken, 'g');
 
 module.exports = function() {
 
@@ -110,43 +106,22 @@ module.exports = function() {
   adapter.update = common.update;
   adapter.destroy = common.destroy;
 
-  adapter.extractRecordset = function(xmlField, coerce) {
-    var json = xml2json.toJson('<recordset>' + xmlField + '</recordset>', {
-      object: false,
-      reversible: false,
-      coerce: false,
-      sanitize: false,
-      trim: true,
-      arrayNotation: false
-    });
-
-    json = JSON.parse(json);
-    json = json.recordset.row;
-    assert(json, 'Error converting xml to json: ' + xmlField);
-
-    json = _.isArray(json) ? json : [json];
-    _.forEach(json, function(record) {
-      Object.keys(record).forEach(function(key) {
-        var newKey = key.replace(xmlSpaceTokenRegExp, ' ');
-        if (newKey !== key) {
-          record[newKey] = record[key];
-          delete record[key];
-        }
-      });
+  adapter.extractRecordset = function(jsonset, coerce) {
+    jsonset = typeof jsonset === 'string' ? JSON.parse(jsonset) : jsonset;
+    assert(_.isArray(jsonset), 'jsonset is not an array');
+    _.forEach(jsonset, function(record) {
       coerce.map(function(coercion) {
         record[coercion.property] = record[coercion.property] && coercion.fn(record[coercion.property]) || null;
       });
     });
-
-    return json;
+    return jsonset;
   };
 
   adapter.buildQuery = function buildQuery(data, options) {
     var fields = [];
     _.forEach(data.properties, function(property, name) {
       var fieldName = property.field || name;
-      var alias = name.replace(/ /g, xmlSpaceToken);
-      fields.push('[' + fieldName + ']' + (alias !== fieldName ? ' AS [' + alias + ']' : ''));
+      fields.push('[' + fieldName + ']' + (name !== fieldName ? ' AS [' + name + ']' : ''));
       if (options.fetchExternalDescription &&
         property.display &&
         property.schema &&
@@ -176,7 +151,7 @@ module.exports = function() {
         ' WHERE [' + foreignKey + ']=[' +
         data.key + '].[' +
         data.primaryKeyFields[0] +
-        '] FOR XML PATH) AS [' +
+        '] FOR JSON PATH) AS [' +
         association.data.key + ']'
       );
     });
