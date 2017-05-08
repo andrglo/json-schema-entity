@@ -28,15 +28,6 @@ exports.create = function(record, data, options) {
       }
     }
   });
-  if (data.timestamps) {
-    var now = new Date();
-    record.createdAt = now;
-    record.updatedAt = now;
-    params.push(record.createdAt);
-    params.push(record.updatedAt);
-    fields.push('createdAt');
-    fields.push('updatedAt');
-  }
   var index = 1;
   var insertCommand = data.insertCommand.replace('<fields>',
     fields.reduce((fields, field) => {
@@ -85,11 +76,6 @@ exports.update = function(record, data, options) {
     }
   });
 
-  if (data.timestamps) {
-    record.updatedAt = new Date();
-    params.push(record.updatedAt);
-    fields.push('updatedAt');
-  }
   var findKeys = data.primaryKeyFields.map(function(name, index) {
     const attribute = data.primaryKeyAttributes[index];
     params.push(options.where[attribute]);

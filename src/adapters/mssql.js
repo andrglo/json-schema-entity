@@ -18,7 +18,7 @@ module.exports = function() {
       .then((recordset) => {
         if (recordset.length === 0) {
           return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
-            this.wrap('createdAt') + ' datetime2', null, options);
+            this.wrap('createdAt') + ' datetime2(3) default getUtcDate()', null, options);
         }
       })
       .then(() => {
@@ -29,7 +29,7 @@ module.exports = function() {
       .then((recordset) => {
         if (recordset.length === 0) {
           return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
-            this.wrap('updatedAt') + ' datetime2', null, options);
+            this.wrap('updatedAt') + ' datetime2(3)', null, options);
         }
       });
   };
@@ -68,11 +68,11 @@ module.exports = function() {
     var fields = [];
     buildReturningFields(fields, fieldsWithType, data);
     var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
-    commands.push('INSERT INTO [' + data.identity.name + '] (<fields>) OUTPUT ' +
+    commands.push('INSERT INTO [' + data.identity.name + '] (<fields>' + (data.timestamps ? ',updatedAt' : '') + ') OUTPUT ' +
       fields.map(function(field) {
         return 'INSERTED.[' + field + ']';
       }).join(',') +
-      ' INTO @tmp VALUES (<values>)');
+      ' INTO @tmp VALUES (<values>' + (data.timestamps ? ',getUtcDate()' : '') + ')');
     commands.push('SELECT * FROM @tmp');
     data.insertCommand = commands.join(';');
   };
@@ -81,7 +81,7 @@ module.exports = function() {
     var fields = [];
     buildReturningFields(fields, fieldsWithType, data);
     var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
-    commands.push('UPDATE [' + data.identity.name + '] SET <fields-values> OUTPUT ' +
+    commands.push('UPDATE [' + data.identity.name + '] SET <fields-values>' + (data.timestamps ? ',updatedAt=getUtcDate()' : '') + ' OUTPUT ' +
       fields.map(function(field) {
         return 'INSERTED.[' + field + ']';
       }).join(',') +
