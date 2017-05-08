@@ -1,5 +1,5 @@
 # json-schema-entity [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Coverage percentage][coveralls-image]][coveralls-url]
-> Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL dtaabase
+> Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity
 
 ## Install
 
@@ -7,11 +7,11 @@
 $ npm install --save json-schema-entity
 ```
 
-## Usage (require pg-cr-layer or mssql-cr-layer)
+## Usage (require mssql-cr-layer)
 
 ```js
 var jse = require('json-schema-entity');
-var pgCrLayer = require('pg-cr-layer');
+var MssqlCrLayer = require('mssql-cr-layer');
  
 var config = {
   user: 'me',
@@ -24,7 +24,7 @@ var config = {
   }
 };
  
-var db = new PgCrLayer(config)
+var db = new MssqlCrLayer(config)
  
 var invoiceClass = jse('invoice', {
     properties: {
