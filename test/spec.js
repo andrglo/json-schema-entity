@@ -1713,7 +1713,7 @@ module.exports = function(options) {
       });
       it('then lets delete Joao', function(done) {
         cadAtivo
-          .destroy({where: {id: joao.id, updatedAt: joao.updatedAt}})
+          .destroy({where: {id: joao.id, updatedAt: joao.updatedAt}}, {schema: 'public'})
           .then(function(record) {
             expect(record).to.equal(undefined);
             done();
@@ -2959,7 +2959,7 @@ module.exports = function(options) {
           ]
         };
         cadAtivo
-          .create(marianne, {toPlainObject: true})
+          .create(marianne, {toPlainObject: true, schema: 'public'})
           .then(function(record) {
             expect(record.id).to.exist;
             expect(record).to.not.have.property('save');
@@ -2998,7 +2998,7 @@ module.exports = function(options) {
       it('Will return a plain object after update', function(done) {
         marianne.fornecedor.SIGLAFOR = 'Catering';
         cadAtivo
-          .update(marianne, null, {toPlainObject: true})
+          .update(marianne, null, {toPlainObject: true, schema: 'public'})
           .then(function(record) {
             expect(record.id).to.exist;
             expect(record).to.not.have.property('save');
@@ -3035,7 +3035,7 @@ module.exports = function(options) {
       });
       it('Will return a plain object after fetch', function(done) {
         cadAtivo
-          .fetch({where: {id: marianne.id}}, {toPlainObject: true})
+          .fetch({where: {id: marianne.id}}, {toPlainObject: true, schema: 'public'})
           .then(function(recordset) {
             var record = recordset[0];
             expect(record.id).to.exist;

@@ -36,6 +36,9 @@ exports.create = function(record, data, options) {
     fields.reduce(function(fields) {
       return fields + (fields ? ',' : '') + '$' + index++;
     }, ''));
+  if (options.schema && this.db.dialect === 'postgres') {
+    insertCommand = `INSERT INTO ${options.schema}.${insertCommand.substr(12)}`;
+  }
   return this.db.execute(insertCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, null, recordset.length, 'create');
@@ -96,6 +99,9 @@ exports.update = function(record, data, options) {
         this.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
+  if (options.schema && this.db.dialect === 'postgres') {
+    updateCommand = `UPDATE ${options.schema}.${updateCommand.substr(7)}`;
+  }
   return this.db.execute(updateCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, options.where, recordset.length, 'update');
@@ -132,6 +138,9 @@ exports.destroy = function(data, options) {
         this.wrap(field) +
         (params[index] === null ? params.splice(index, 1) && ' IS NULL' : '=$' + ++index);
     }, ''));
+  if (options.schema && this.db.dialect === 'postgres') {
+    deleteCommand = `DELETE FROM ${options.schema}.${deleteCommand.substr(12)}`;
+  }
   return this.db.execute(deleteCommand, params, options)
     .then(function(recordset) {
       checkRecordsetLength(data, options.where, recordset.length, 'delete');

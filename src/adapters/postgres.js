@@ -59,7 +59,7 @@ module.exports = function() {
     return jsonset;
   };
 
-  adapter.buildQuery = function buildQuery(data, options) {
+  adapter.buildQuery = function buildQuery(data, options, isAssociation) {
 
     var fields = [];
     _.forEach(data.properties, function(property, name) {
@@ -88,7 +88,7 @@ module.exports = function() {
       if (!association.data.foreignKey) {
         return false;
       }
-      const query = this.buildQuery(association.data, options);
+      const query = this.buildQuery(association.data, options, true);
       var foreignKey = association.data.properties[association.data.foreignKey].field ||
         association.data.foreignKey;
       fields.push(
@@ -100,8 +100,12 @@ module.exports = function() {
         this.wrap(association.data.key)
       );
     }.bind(this));
-    return 'SELECT ' + fields.join(',') +
-      ' FROM ' + this.wrap(data.identity.name) + ' AS ' + this.wrap(data.key);
+    let fetchCommand = 'SELECT ' + fields.join(',') +
+           ' FROM ' + this.wrap(data.identity.name) + ' AS ' + this.wrap(data.key);
+    if (options.schema && !isAssociation) {
+      fetchCommand = fetchCommand.replace(/" FROM "/g, `" FROM ${options.schema}."`);
+    }
+    return fetchCommand;
   };
 
   adapter.getCoercionFunction = function(type, timezone) {

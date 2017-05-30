@@ -895,7 +895,7 @@ function destroy(entity, options, data, adapter) {
 }
 
 module.exports = function(schemaName, schema, config) {
-  config = config || {};
+  config = Object.assign({}, config);
   config.dialect = config.dialect || 'postgres';
   var adapter = getAdapter(config.dialect);
   var sv = sqlView(config.dialect);
