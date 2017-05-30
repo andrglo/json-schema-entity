@@ -161,7 +161,6 @@ module.exports = function() {
 
   adapter.getCoercionFunction = function(type) {
     switch (type) {
-      case 'date':
       case 'datetime':
         return function(value) {
           return new Date(value);

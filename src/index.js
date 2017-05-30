@@ -376,9 +376,6 @@ class TableRecordSchema {
                 value = value instanceof
                         Date ? value.toISOString().substr(0, 10) : value;
                 break;
-              case 'number':
-                value = Number(value);
-                break;
             }
           }
 
@@ -532,9 +529,6 @@ function buildPlainObject(record, data) {
         record[key] = value instanceof Date ?
           value.toISOString().substr(0, 10) :
           value;
-        break;
-      case 'number':
-        record[key] = Number(value);
         break;
     }
     if (prop.enum) {

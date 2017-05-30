@@ -106,10 +106,6 @@ module.exports = function() {
 
   adapter.getCoercionFunction = function(type, timezone) {
     switch (type) {
-      case 'date':
-        return function(value) {
-          return new Date(value + 'T00:00:00.000Z');
-        };
       case 'datetime':
         return function(value) {
           if (timezone === 'ignore') {

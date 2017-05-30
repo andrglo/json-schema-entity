@@ -2964,7 +2964,9 @@ module.exports = function(options) {
             expect(record.id).to.exist;
             expect(record).to.not.have.property('save');
             expect(record.IDENT).to.be.null;
-            expect(record.DATNASC).to.be.a('date');
+            expect(record.DATNASC).to.be.a(
+               cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+            );
 
             expect(record.fornecedor.id).to.exist;
             expect(record.fornecedor).to.not.have.property('save');
@@ -2974,7 +2976,9 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0].id).to.exist;
             expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null;
-            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a(
+              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+            );
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P');
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;
@@ -2999,7 +3003,9 @@ module.exports = function(options) {
             expect(record.id).to.exist;
             expect(record).to.not.have.property('save');
             expect(record.IDENT).to.be.null;
-            expect(record.DATNASC).to.be.a('date');
+            expect(record.DATNASC).to.be.a(
+              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+            );
 
             expect(record.fornecedor.id).to.exist;
             expect(record.fornecedor).to.not.have.property('save');
@@ -3010,7 +3016,9 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0].id).to.exist;
             expect(record.fornecedor.docpagvc[0]).to.not.have.property('save');
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null;
-            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a('date');
+            expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a(
+              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+            );
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P');
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist;

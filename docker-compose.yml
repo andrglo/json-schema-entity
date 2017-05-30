@@ -22,10 +22,9 @@ services:
   postgres:
     image: sameersbn/postgresql:9.6-2
     ports:
-      - 5432:5432
+      - 5438:5432
     environment:
       PG_PASSWORD: postgres
-      DB_EXTENSION: unaccent,pg_trgm
     restart: always
 
 
