@@ -48,8 +48,8 @@ exports.create = function(record, data, options) {
         record[name] = inserted[fieldName];
       });
       if (data.timestamps) {
-        record.createdAt = inserted.createdAt;
-        record.updatedAt = inserted.updatedAt;
+        record.createdAt = inserted.created_at;
+        record.updatedAt = inserted.updated_at;
       }
       return record;
     });
@@ -86,7 +86,7 @@ exports.update = function(record, data, options) {
   });
   if (data.timestamps) {
     params.push(options.where.updatedAt || null);
-    findKeys.push('updatedAt');
+    findKeys.push('updated_at');
   }
 
   var index = 0;
@@ -111,8 +111,8 @@ exports.update = function(record, data, options) {
         record[name] = updated[fieldName];
       });
       if (data.timestamps) {
-        record.createdAt = updated.createdAt;
-        record.updatedAt = updated.updatedAt;
+        record.createdAt = updated.created_at;
+        record.updatedAt = updated.updated_at;
       }
       return record;
     });
@@ -128,7 +128,7 @@ exports.destroy = function(data, options) {
   });
   if (data.timestamps) {
     params.push(options.where.updatedAt || null);
-    findKeys.push('updatedAt');
+    findKeys.push('updated_at');
   }
 
   var index = 0;

@@ -13,23 +13,23 @@ module.exports = function() {
     var table = this.wrap(data.identity.name);
     var schema = options.schema || 'dbo';
     return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\' AND ' +
+        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'created_at\' AND ' +
         'TABLE_CATALOG=db_name() AND TABLE_SCHEMA=\'' + schema + '\'', null, options)
       .then((recordset) => {
         if (recordset.length === 0) {
           return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
-            this.wrap('createdAt') + ' datetime2(3) default getUtcDate()', null, options);
+            this.wrap('created_at') + ' datetime2(3) default getUtcDate()', null, options);
         }
       })
       .then(() => {
         return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\' AND ' +
+          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updated_at\' AND ' +
           'TABLE_CATALOG=db_name() AND TABLE_SCHEMA=\'' + schema + '\'', null, options);
       })
       .then((recordset) => {
         if (recordset.length === 0) {
           return this.db.execute('ALTER TABLE ' + table + ' ADD ' +
-            this.wrap('updatedAt') + ' datetime2(3)', null, options);
+            this.wrap('updated_at') + ' datetime2(3)', null, options);
         }
       });
   };
@@ -56,10 +56,10 @@ module.exports = function() {
       fields.push(property.field || name);
     });
     if (data.timestamps) {
-      fieldsWithType.push('createdAt DATETIME2');
-      fields.push('createdAt');
-      fieldsWithType.push('updatedAt DATETIME2');
-      fields.push('updatedAt');
+      fieldsWithType.push('created_at DATETIME2(3)');
+      fields.push('created_at');
+      fieldsWithType.push('updated_at DATETIME2(3)');
+      fields.push('updated_at');
     }
   }
 
@@ -68,7 +68,7 @@ module.exports = function() {
     var fields = [];
     buildReturningFields(fields, fieldsWithType, data);
     var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
-    commands.push('INSERT INTO [' + data.identity.name + '] (<fields>' + (data.timestamps ? ',updatedAt' : '') + ') OUTPUT ' +
+    commands.push('INSERT INTO [' + data.identity.name + '] (<fields>' + (data.timestamps ? ',updated_at' : '') + ') OUTPUT ' +
       fields.map(function(field) {
         return 'INSERTED.[' + field + ']';
       }).join(',') +
@@ -81,7 +81,7 @@ module.exports = function() {
     var fields = [];
     buildReturningFields(fields, fieldsWithType, data);
     var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'];
-    commands.push('UPDATE [' + data.identity.name + '] SET <fields-values>' + (data.timestamps ? ',updatedAt=getUtcDate()' : '') + ' OUTPUT ' +
+    commands.push('UPDATE [' + data.identity.name + '] SET <fields-values>' + (data.timestamps ? ',updated_at=getUtcDate()' : '') + ' OUTPUT ' +
       fields.map(function(field) {
         return 'INSERTED.[' + field + ']';
       }).join(',') +
@@ -136,8 +136,8 @@ module.exports = function() {
       }
     });
     if (data.timestamps) {
-      fields.push('updatedAt');
-      fields.push('createdAt');
+      fields.push('updated_at');
+      fields.push('created_at');
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {

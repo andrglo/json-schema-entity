@@ -456,7 +456,7 @@ class TableRecordSchema {
 function setIs(instance, record, it, isNew) {
   let alreadyBuilt = it === void 0;
   it = it || tableRecordData.get(instance);
-  let was = {};
+  const was = {};
   it.info.columns.forEach(function(value, key) {
 
     if (!alreadyBuilt) {
@@ -622,8 +622,15 @@ function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
     setIs(instance, record);
     return instance;
   } else {
+    const r = _.extend(_.pick(record, data.propertiesList), associations);
+    if (record.created_at) {
+      r.createdAt = record.created_at;
+    }
+    if (record.updated_at) {
+      r.updatedAt = record.updated_at;
+    }
     let tableRecord = new TableRecord(data.trs,
-      _.extend(_.pick(record, data.propertiesList), associations),
+      r,
       isNew,
       parent);
     if (isParent) {
@@ -978,11 +985,17 @@ module.exports = function(schemaName, schema, config) {
               return Promise.resolve()
                 .then(function() {
                   options = options || {};
-                  if (data.scope) {
-                    var where = _.extend({}, criteria.where, data.scope);
-                    criteria = _.extend({}, criteria);
-                    criteria.where = where;
+                  var where = _.extend({}, criteria.where, data.scope);
+                  if (where.updatedAt !== undefined) {
+                    where.updated_at = where.updatedAt;
+                    delete where.updatedAt;
                   }
+                  if (where.createdAt !== undefined) {
+                    where.created_at = where.createdAt;
+                    delete where.createdAt;
+                  }
+                  criteria = _.extend({}, criteria);
+                  criteria.where = where;
                   var view = sv.build(
                     adapter.buildQuery(entity, options),
                     criteria

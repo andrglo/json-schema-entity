@@ -13,33 +13,33 @@ module.exports = function() {
     var table = this.wrap(data.identity.name);
     var schema = options.schema || 'public';
     return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'createdAt\' AND ' +
+        'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'created_at\' AND ' +
         'TABLE_CATALOG=current_database() AND TABLE_SCHEMA=\'' + schema + '\'', null, options)
       .then((recordset) => {
         if (recordset.length === 0) {
           return this.db.execute(
-            `ALTER TABLE ${table} ADD ${this.wrap('createdAt')} TIMESTAMP(3) WITHOUT TIME ZONE default (now() at time zone 'utc')`, null, options
+            `ALTER TABLE ${table} ADD ${this.wrap('created_at')} TIMESTAMP(3) WITHOUT TIME ZONE default (now() at time zone 'utc')`, null, options
             );
         }
       })
       .then(() => {
         return this.db.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updatedAt\' AND ' +
+          'TABLE_NAME=\'' + data.identity.name + '\' AND COLUMN_NAME=\'updated_at\' AND ' +
           'TABLE_CATALOG=current_database() AND TABLE_SCHEMA=\'' + schema + '\'', null, options);
       })
       .then((recordset) => {
         if (recordset.length === 0) {
-          return this.db.execute(`ALTER TABLE ${table} ADD ${this.wrap('updatedAt')} TIMESTAMP(3) WITHOUT TIME ZONE`, null, options);
+          return this.db.execute(`ALTER TABLE ${table} ADD ${this.wrap('updated_at')} TIMESTAMP(3) WITHOUT TIME ZONE`, null, options);
         }
       });
   };
 
   adapter.buildInsertCommand = function(data) {
-    data.insertCommand = `INSERT INTO ${this.wrap(data.identity.name)} (<fields>${data.timestamps ? `,"updatedAt"` : ''}) VALUES (<values>${data.timestamps ? `,(now() at time zone 'utc')` : ''}) RETURNING *`;
+    data.insertCommand = `INSERT INTO ${this.wrap(data.identity.name)} (<fields>${data.timestamps ? `,"updated_at"` : ''}) VALUES (<values>${data.timestamps ? `,(now() at time zone 'utc')` : ''}) RETURNING *`;
   };
 
   adapter.buildUpdateCommand = function(data) {
-    data.updateCommand = `UPDATE ${this.wrap(data.identity.name)} SET <fields-values>${data.timestamps ? `,"updatedAt"=(now() at time zone 'utc')` : ''} WHERE <primary-keys> RETURNING *`;
+    data.updateCommand = `UPDATE ${this.wrap(data.identity.name)} SET <fields-values>${data.timestamps ? `,"updated_at"=(now() at time zone 'utc')` : ''} WHERE <primary-keys> RETURNING *`;
   };
 
   adapter.buildDeleteCommand = function(data) {
@@ -81,8 +81,8 @@ module.exports = function() {
       }
     }.bind(this));
     if (data.timestamps) {
-      fields.push(this.wrap('updatedAt'));
-      fields.push(this.wrap('createdAt'));
+      fields.push(this.wrap('updated_at'));
+      fields.push(this.wrap('created_at'));
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {
