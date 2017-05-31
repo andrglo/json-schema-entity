@@ -552,6 +552,14 @@ function buildPlainObject(record, data) {
         recordset[0] : recordset;
     }
   });
+  if (record.created_at) {
+    record.createdAt = record.created_at;
+    delete record.created_at;
+  }
+  if (record.updated_at) {
+    record.updatedAt = record.updated_at;
+    delete record.updated_at;
+  }
   return record;
 }
 

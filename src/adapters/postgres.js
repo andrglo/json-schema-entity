@@ -77,7 +77,7 @@ module.exports = function() {
         if (point > -1) {
           display = display.substr(point + 1);
         }
-        fields.push(`(select "${display}" from "${property.schema.$ref}" where "${property.schema.key}"="${data.key}"."${fieldName}") as "${_.camelCase(`${data.identity.name} ${fieldName} ${display}`)}"`);
+        fields.push(`(select "${display}" FROM "${property.schema.$ref}" where "${property.schema.key}"="${data.key}"."${fieldName}") as "${_.camelCase(`${data.identity.name} ${fieldName} ${display}`)}"`);
       }
     }.bind(this));
     if (data.timestamps) {
