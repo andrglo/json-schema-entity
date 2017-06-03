@@ -648,19 +648,18 @@ function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
   }
 }
 
-function runHooks(hooks, model, transaction, data, validatedInstance) {
+function runHooks(hooks, model, options, data, validatedInstance) {
 
   var allHooks = [];
   hooks.map(function(name) {
     allHooks = allHooks.concat(data.hooks[name]);
   });
-
   return _.reduce(allHooks, function(chain, hook) {
     return chain.then(function() {
       var res;
       try {
         res = hook.fn.call(validatedInstance ||
-                           model, transaction, validatedInstance ? model : void 0);
+                           model, options, validatedInstance ? model : void 0);
         if (res && isGenerator(res)) {
           res = co(res);
         }
@@ -687,7 +686,7 @@ function runHooks(hooks, model, transaction, data, validatedInstance) {
 
 function create(entity, options, data, adapter) {
   var record;
-  return runHooks(['beforeCreate', 'beforeSave'], entity, options.transaction, data)
+  return runHooks(['beforeCreate', 'beforeSave'], entity, options, data)
     .then(function() {
       record = _.pick(entity, data.propertiesList);
       return adapter.create(record, data, options)
@@ -728,7 +727,7 @@ function create(entity, options, data, adapter) {
           });
         });
     }).then(function(newRecord) {
-      return runHooks(['afterCreate', 'afterSave'], newRecord, options.transaction, data, entity)
+      return runHooks(['afterCreate', 'afterSave'], newRecord, options, data, entity)
         .then(function() {
           return newRecord;
         });
@@ -737,7 +736,7 @@ function create(entity, options, data, adapter) {
 
 function update(entity, was, options, data, adapter) {
   var record;
-  return runHooks(['beforeUpdate', 'beforeSave'], entity, options.transaction, data)
+  return runHooks(['beforeUpdate', 'beforeSave'], entity, options, data)
     .then(function() {
       record = _.pick(entity, data.propertiesList);
       options = Object.assign({}, options, {where: {}});
@@ -873,7 +872,7 @@ function update(entity, was, options, data, adapter) {
           });
         });
     }).then(function(updatedRecord) {
-      return runHooks(['afterUpdate', 'afterSave'], updatedRecord, options.transaction, data, entity)
+      return runHooks(['afterUpdate', 'afterSave'], updatedRecord, options, data, entity)
         .then(function() {
           return updatedRecord;
         });
@@ -881,7 +880,7 @@ function update(entity, was, options, data, adapter) {
 }
 
 function destroy(entity, options, data, adapter) {
-  return runHooks(['beforeDelete', 'beforeDestroy'], entity, options.transaction, data)
+  return runHooks(['beforeDelete', 'beforeDestroy'], entity, options, data)
     .then(function() {
       return _.reduce(data.associations, function(chain, association) {
         const associationKey = association.data.key;
@@ -905,7 +904,7 @@ function destroy(entity, options, data, adapter) {
         return adapter.destroy(data, options);
       });
     }).then(function(deletedEntity) {
-      return runHooks(['afterDestroy', 'afterDelete'], deletedEntity, options.transaction, data, entity);
+      return runHooks(['afterDestroy', 'afterDelete'], deletedEntity, options, data, entity);
     });
 }
 

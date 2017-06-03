@@ -1,3 +1,4 @@
+/* eslint-disable no-invalid-this */
 'use strict';
 
 var _ = require('lodash');
@@ -15,23 +16,26 @@ module.exports = function(config) {
   var classificacao = config.classificacao;
   var docpagev = config.docpagev;
 
-  function createClasses(transaction) {
+  function createClasses(options) {
     var insertion = Promise.resolve();
     _.forEach(this.ClassificaçãoCad, (classe) => {
       insertion = insertion
         .then(() => {
-          return classificacao.new(this.db).fetch({where: {id: classe.Classe}}, {transaction: transaction});
+          return classificacao.new(this.db).fetch({where: {id: classe.Classe}}, options);
         })
         .then((recordset) => {
           if (recordset.length === 0) {
-            return classificacao.new(this.db).create({id: classe.Classe}, {transaction: transaction});
+            return classificacao.new(this.db).create({id: classe.Classe}, options);
           }
         });
     });
     return insertion;
   }
 
-  function createEvs(t, result) {
+  function createEvs(options, result) {
+    if (this.NOMECAD === 'Marianne') {
+      assert(options.schema === 'public', 'Missing schema in createEvs');
+    }
     var id = result.id;
     var docpagvc = !result.docpagvc || _.isArray(result.docpagvc) ? result.docpagvc : [result.docpagvc];
     var insertion = Promise.resolve();
@@ -41,32 +45,38 @@ module.exports = function(config) {
           NUMDOC: id,
           CONTAEV: 'any',
           VALOR: 10
-        }, {transaction: t});
+        }, options);
       })
     });
     return insertion;
   }
 
-  function updateEvs(t, result) {
+  function updateEvs(options, result) {
+    if (this.NOMECAD === 'Marianne') {
+      assert(options.schema === 'public', 'Missing schema in updateEvs');
+    }
     var self = this;
-    return destroyEvs.call(self, t)
+    return destroyEvs.call(self, options)
       .then(function() {
-        return createEvs.call(self, t, result);
+        return createEvs.call(self, options, result);
       });
   }
 
-  function destroyEvs(t) {
+  function destroyEvs(options) {
     var id = this.id;
+    if (this.NOMECAD === 'Marianne') {
+      assert(options.schema === 'public', 'Missing schema in destroyEvs');
+    }
     var docpagevEntity = docpagev.new(this.db);
     return docpagevEntity
-      .fetch({where: {NUMDOC: id}}, {transaction: t})
+      .fetch({where: {NUMDOC: id}}, options)
       .then((recordset) => {
         var deletion = Promise.resolve();
         _.forEach(recordset, (record) => {
           deletion = deletion.then(() => {
             return docpagevEntity.destroy({
               where: {id: record.id}
-            }, {transaction: t})
+            }, options)
           })
         });
         return deletion;
@@ -195,7 +205,7 @@ module.exports = function(config) {
   cadAtivo
     .hasMany('ClassificaçãoCad', {
       properties: _.pick(ClassificacaoCad.properties, [
-        'NUMCAD', //todo -> not show / but request
+        'NUMCAD',
         'Classe',
         'quitado'
       ])
@@ -322,11 +332,11 @@ module.exports = function(config) {
   cadAtivo.beforeCreate('bcWithGenerator', function*() {
     assert(this.entity, 'this should be a instance in beforeCreate');
   });
-  cadAtivo.afterCreate('ac', function(t, result) {
+  cadAtivo.afterCreate('ac', function(options, result) {
     assert(this.entity, 'this should be a instance in afterCreate');
     assert(result && !result.entity, 'second parameter should be the server return afterCreate');
   });
-  cadAtivo.afterCreate('acWithGenerator', function*(t, result) {
+  cadAtivo.afterCreate('acWithGenerator', function*(options, result) {
     assert(this.entity, 'this should be a instance in afterCreate');
     assert(result && !result.entity, 'second parameter should be the server return afterCreate');
   });
@@ -336,11 +346,11 @@ module.exports = function(config) {
   cadAtivo.beforeUpdate('buWithGenerator', function*() {
     assert(this.entity, 'this should be a instance in beforeUpdate');
   });
-  cadAtivo.afterUpdate('au', function(t, result) {
+  cadAtivo.afterUpdate('au', function(options, result) {
     assert(this.entity, 'this should be a instance in afterUpdate');
     assert(result && !result.entity, 'second parameter should be the server return afterUpdate');
   });
-  cadAtivo.afterUpdate('auWithGenerator', function*(t, result) {
+  cadAtivo.afterUpdate('auWithGenerator', function*(options, result) {
     assert(this.entity, 'this should be a instance in afterUpdate');
     assert(result && !result.entity, 'second parameter should be the server return afterUpdate');
   });
@@ -350,35 +360,34 @@ module.exports = function(config) {
   cadAtivo.beforeDelete('bdWithGenerator', function*() {
     assert(this.entity, 'this should be a instance in beforeDelete');
   });
-  cadAtivo.afterDelete('ad', function(t, result) {
+  cadAtivo.afterDelete('ad', function(options, result) {
     assert(this.entity, 'this should be a instance in afterDelete');
     assert(result && !result.entity, 'second parameter should be the server return afterDelete');
   });
-  cadAtivo.afterDelete('adWithGenerator', function*(t, result) {
+  cadAtivo.afterDelete('adWithGenerator', function*(options, result) {
     assert(this.entity, 'this should be a instance in afterDelete');
     assert(result && !result.entity, 'second parameter should be the server return afterDelete');
   });
-  cadAtivo.beforeSave(createClasses); //=> beforeCreate and beforeUpdate
+  cadAtivo.beforeSave(createClasses); // => beforeCreate and beforeUpdate
   cadAtivo.afterCreate(createEvs);
   cadAtivo.afterUpdate(updateEvs);
   cadAtivo.beforeDestroy(destroyEvs);
-  cadAtivo.beforeSave('bairro', function() {
-    //noinspection JSPotentiallyInvalidUsageOfThis
+  cadAtivo.beforeSave('bairro', function(options) {
+    if (this.NOMECAD === 'Marianne') {
+      assert(options.schema === 'public', 'Missing schema in cadAtivo.beforeSave');
+    }
     if (this.BAIRRO === 'X') throw new Error('bairro cant be X')
   });
   cadAtivo.beforeSave('pais', function() {
-    //noinspection JSPotentiallyInvalidUsageOfThis
     var self = this;
     return Promise.resolve().then(function() {
       if (self.PAIS === 'X') throw new Error('pais cant be X')
     })
   });
-  cadAtivo.afterCreate(function(t, result) {
-    //noinspection JSPotentiallyInvalidUsageOfThis
+  cadAtivo.afterCreate(function(options, result) {
     result.afterCreate = 'true';
   });
-  cadAtivo.afterUpdate(function(t, result) {
-    //noinspection JSPotentiallyInvalidUsageOfThis
+  cadAtivo.afterUpdate(function(options, result) {
     result.afterUpdate = 'true';
     return Promise.resolve().then(function() {
       result.afterPromise = 'true';
@@ -389,7 +398,6 @@ module.exports = function(config) {
     if (!this.id) {
       throw new Error('Id not found');
     }
-    //noinspection JSPotentiallyInvalidUsageOfThis
     this.quitado = 'S';
   });
 
@@ -397,28 +405,39 @@ module.exports = function(config) {
     if (!this.Classe) {
       throw new Error('Classe not found');
     }
-    //noinspection JSPotentiallyInvalidUsageOfThis
     this.quitado = 'S';
   });
 
-  cadAtivo.ClassificaçãoCad.beforeCreate('bc', function() {
+  cadAtivo.ClassificaçãoCad.beforeCreate('bc', function(options) {
+    if (this.quitado === 'Z') {
+      assert(options.schema === 'public', 'Missing schema in cadAtivo.ClassificaçãoCad.beforeCreate');
+    }
     assert(this.entity, 'this should be a instance in beforeCreate');
   });
-  cadAtivo.ClassificaçãoCad.afterCreate('ac', function(t, result) {
+  cadAtivo.ClassificaçãoCad.afterCreate('ac', function(options, result) {
+    if (this.quitado === 'Z') {
+      assert(options.schema === 'public', 'Missing schema in cadAtivo.ClassificaçãoCad.afterCreate');
+    }
     assert(this.entity, 'this should be a instance in afterCreate');
     assert(result && !result.entity, 'second parameter should be the server return afterCreate');
   });
   cadAtivo.ClassificaçãoCad.beforeUpdate('bu', function() {
     assert(this.entity, 'this should be a instance in beforeUpdate');
   });
-  cadAtivo.ClassificaçãoCad.afterUpdate('au', function(t, result) {
+  cadAtivo.ClassificaçãoCad.afterUpdate('au', function(options, result) {
     assert(this.entity, 'this should be a instance in afterUpdate');
     assert(result && !result.entity, 'second parameter should be the server return afterUpdate');
   });
-  cadAtivo.ClassificaçãoCad.beforeDelete('bd', function() {
+  cadAtivo.ClassificaçãoCad.beforeDelete('bd', function(options) {
+    if (this.quitado === 'Z') {
+      assert(options.schema === 'public', 'Missing schema in cadAtivo.ClassificaçãoCad.beforeDelete');
+    }
     assert(this.entity, 'this should be a instance in beforeDelete');
   });
-  cadAtivo.ClassificaçãoCad.afterDelete('ad', function(t, result) {
+  cadAtivo.ClassificaçãoCad.afterDelete('ad', function(options, result) {
+    if (this.quitado === 'Z') {
+      assert(options.schema === 'public', 'Missing schema in cadAtivo.ClassificaçãoCad.afterDelete');
+    }
     assert(this.entity, 'this should be a instance in afterDelete');
     assert(result && !result.entity, 'second parameter should be the server return afterDelete');
   });

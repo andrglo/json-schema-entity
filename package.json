@@ -1,6 +1,6 @@
 {
   "name": "json-schema-entity",
-  "version": "5.0.1",
+  "version": "6.0.0",
   "description": "Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL database",
   "homepage": "",
   "repository": "https://github.com/andrglo/json-schema-entity.git",
@@ -38,7 +38,7 @@
     "gulp-nsp": "^2.4.2",
     "gulp-util": "^3.0.8",
     "mssql-cr-layer": "^2.0.0",
-    "pg-cr-layer": "^2.0.0",
+    "pg-cr-layer": "^2.0.2",
     "pretty-hrtime": "^1.0.2",
     "unorm": "^1.4.1",
     "validator": "^7.0.0"
