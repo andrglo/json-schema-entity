@@ -96,7 +96,9 @@ module.exports = function() {
         query +
         ' WHERE ' + this.wrap(foreignKey) + '=' +
         this.wrap(data.key) + '.' + this.wrap(data.primaryKeyFields[0]) +
-        ') t) AS ' +
+        ' ORDER BY '
+        + association.data.primaryKeyFields.map(this.wrap.bind(this)).join()
+        + ') t) AS ' +
         this.wrap(association.data.key)
       );
     }.bind(this));
