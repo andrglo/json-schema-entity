@@ -25,15 +25,15 @@
     "One"
   ],
   "devDependencies": {
-    "br-validations": "0.2.4",
-    "chai": "^4.0.0",
-    "eslint": "^3.19.0",
-    "eslint-config-google": "^0.7.1",
+    "br-validations": "^0.3.1",
+    "chai": "^4.1.0",
+    "eslint": "^4.3.0",
+    "eslint-config-google": "^0.9.1",
     "glob": "^7.1.2",
     "gulp": "^3.9.1",
     "gulp-coveralls": "^0.1.4",
-    "gulp-eslint": "^3.0.1",
-    "gulp-istanbul": "^1.1.1",
+    "gulp-eslint": "^4.0.0",
+    "gulp-istanbul": "^1.1.2",
     "gulp-mocha": "3.0.1",
     "gulp-nsp": "^2.4.2",
     "gulp-util": "^3.0.8",
@@ -41,7 +41,7 @@
     "pg-cr-layer": "^2.0.2",
     "pretty-hrtime": "^1.0.2",
     "unorm": "^1.4.1",
-    "validator": "^7.0.0"
+    "validator": "^8.0.0"
   },
   "scripts": {
     "prepublish": "gulp prepublish",
@@ -51,7 +51,7 @@
   "license": "MIT",
   "dependencies": {
     "@ayk/co": "^4.6.4",
-    "json-schema-table": "^1.0.5",
+    "json-schema-table": "^1.0.6",
     "lodash": "^4.17.4",
     "sql-view": "^0.0.3"
   }
