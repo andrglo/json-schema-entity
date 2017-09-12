@@ -1557,23 +1557,24 @@ function buildTable(data) {
     });
   });
   if (data.timestamps) {
-    if (data.propertiesList.indexOf('updatedAt') !== -1 ||
-        data.propertiesList.indexOf('createdAt') !== -1) {
+    if (data.propertiesList.indexOf('updatedAt') !== -1) {
       throw new EntityError({
-        message: 'Properties cannot have timestamps names createAt or updatedAt, use an alias',
+        message: 'Properties cannot have timestamp name updatedAt, use an alias',
         type: 'InvalidIdentifier'
       });
     }
     data.propertiesList.push('updatedAt');
-    data.propertiesList.push('createdAt');
-    data.coerce.push({
-      property: 'createdAt',
-      fn: data.adapter.getCoercionFunction('datetime')
-    });
     data.coerce.push({
       property: 'updatedAt',
       fn: data.adapter.getCoercionFunction('datetime')
     });
+    if (data.propertiesList.indexOf('createdAt') === -1) {
+      data.propertiesList.push('createdAt');
+      data.coerce.push({
+        property: 'createdAt',
+        fn: data.adapter.getCoercionFunction('datetime')
+      });
+    }
   }
 
   data.propertiesList.forEach(function(name) {

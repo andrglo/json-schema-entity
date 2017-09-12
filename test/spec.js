@@ -70,6 +70,7 @@ module.exports = function(options) {
 
   var db
   var db2
+  const now = new Date()
   describe('single table', function() {
 
     var start
@@ -147,7 +148,6 @@ module.exports = function(options) {
         .catch(logError(done))
     })
     it('record should be created', function(done) {
-      var now = Date.now()
       start = process.hrtime()
       tableCadastro
         .create({
@@ -164,7 +164,7 @@ module.exports = function(options) {
           expect(end[1] > minNanoSecsToSave).to.equal(true) // mssql Macbook 33.700 iMac retina 22.786
           record.createdAt.toISOString().should.equal(record.updatedAt.toISOString())
           expect(record.createdAt).to.be.a('date')
-          expect(record.createdAt >= now).to.equal(true)
+          expect(record.createdAt >= new Date(now)).to.equal(true)
           done()
         })
         .catch(function(err) {
@@ -172,7 +172,6 @@ module.exports = function(options) {
         })
     })
     it('record should be created in db2', function(done) {
-      var now = Date.now()
       start = process.hrtime()
       tableCadastro2
         .create({
@@ -196,7 +195,6 @@ module.exports = function(options) {
         })
     })
     it('then can have only one field updated', function(done) {
-      var now = new Date(Date.now())
       tableCadastro
         .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
         .then(function(recordset) {
@@ -595,7 +593,7 @@ module.exports = function(options) {
             throw new Error('Invalid property modification')
           } catch (error) {
             error.should.have.property('message')
-            expect(error.message).to.contains('Properties cannot have timestamps names createAt or updatedAt, use an alias')
+            expect(error.message).to.contains('Properties cannot have timestamp name updatedAt, use an alias')
             entityCadAtivo.setProperties(function(properties) {
               delete properties.updatedAt
             })
@@ -645,7 +643,6 @@ module.exports = function(options) {
           })
       })
       it('should create a new cadastro', function(done) {
-        var now = new Date(Date.now())
         cadAtivo
           .create({
             NOMECAD: 'João',
@@ -1273,7 +1270,6 @@ module.exports = function(options) {
     describe('update cadastro', function() {
 
       it('should update João to be a client', function(done) {
-        var now = new Date(Date.now())
         cadAtivo
           .fetch({where: {id: joao.id}})
           .then(function(recordset) {

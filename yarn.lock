@@ -1413,9 +1413,9 @@ jschardet@^1.4.2:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/jschardet/-/jschardet-1.5.0.tgz#a61f310306a5a71188e1b1acd08add3cfbb08b1e"
 
-json-schema-table@^1.0.6:
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/json-schema-table/-/json-schema-table-1.0.6.tgz#f0421325cd75f13424df9f2d85af9d51bbd83ceb"
+json-schema-table@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/json-schema-table/-/json-schema-table-1.0.8.tgz#7a2dc682281b4f19acd21bf27c83f2515110e8ea"
   dependencies:
     lodash "^4.13.1"
 
