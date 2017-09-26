@@ -53,6 +53,6 @@
     "@ayk/co": "^4.6.4",
     "json-schema-table": "^1.0.8",
     "lodash": "^4.17.4",
-    "sql-view": "^0.0.3"
+    "sql-view": "^0.0.4"
   }
 }
