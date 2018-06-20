@@ -26,33 +26,27 @@
   ],
   "devDependencies": {
     "br-validations": "^0.3.1",
-    "chai": "^4.1.0",
-    "eslint": "^4.3.0",
+    "chai": "^4.1.2",
+    "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
     "glob": "^7.1.2",
-    "gulp": "^3.9.1",
-    "gulp-coveralls": "^0.1.4",
-    "gulp-eslint": "^4.0.0",
-    "gulp-istanbul": "^1.1.2",
-    "gulp-mocha": "3.0.1",
-    "gulp-nsp": "^2.4.2",
     "gulp-util": "^3.0.8",
+    "mocha": "^5.2.0",
     "mssql-cr-layer": "^2.0.0",
-    "pg-cr-layer": "^2.0.2",
+    "pg-cr-layer": "^2.0.4",
     "pretty-hrtime": "^1.0.2",
     "unorm": "^1.4.1",
-    "validator": "^8.0.0"
+    "validator": "^10.4.0"
   },
   "scripts": {
-    "prepublish": "gulp prepublish",
-    "test": "gulp",
-    "ssh": "docker exec -it jsonschemaentity_dms_1 fish"
+    "test": "mocha --bail --exit --timeout 15000 test/index.js",
+    "ssh": "docker exec -it json-schema-entity_dms_1 fish"
   },
   "license": "MIT",
   "dependencies": {
     "@ayk/co": "^4.6.4",
-    "json-schema-table": "^1.0.8",
-    "lodash": "^4.17.4",
+    "json-schema-table": "^1.0.10",
+    "lodash": "^4.17.10",
     "sql-view": "^1.0.0"
   }
 }

@@ -3,7 +3,7 @@ version: '2'
 services:
 
   dms:
-    image: andrglo/everest
+    image: andrglo/everest:10.2.1
     hostname: json-schema-entity
     command: tail -f /dev/null
     working_dir: /andrglo/json-schema-entity
@@ -12,11 +12,20 @@ services:
       - .:/andrglo/json-schema-entity
     environment:
       - NODE_ENV=development
-      - MSSQL_HOST=$MSSQL_HOST
-      - MSSQL_PASSWORD=$MSSQL_PASSWORD
-      - MSSQL_USER=$MSSQL_USER
-      - MSSQL_PORT=$MSSQL_PORT
+      - MSSQL_PASSWORD=Juriti01
+      - MSSQL_USER=sa
       - NPM_TOKEN=$NPM_TOKEN
+    restart: always
+
+  mssql:
+    image: microsoft/mssql-server-linux:2017-GDR
+    ports:
+      - "1450:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Juriti01
+      - MSSQL_PID=Express
+      - MSSQL_COLLATION=Latin1_General_CI_AI
     restart: always
 
   postgres:

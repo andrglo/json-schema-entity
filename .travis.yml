@@ -1,14 +1,11 @@
-language: node_js
-node_js:
-  - '4'
-  - '6'
-addons:
-  postgresql: '9.6'
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
+sudo: required
+
+services:
+  - docker
 
 before_install:
-  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
+  - docker-compose pull
+  - docker-compose up -d
+
+script:
+  - docker exec -i json-schema-entity_dms_1 yarn test

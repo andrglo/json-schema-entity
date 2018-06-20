@@ -23,7 +23,7 @@ var mssqlConfig = {
   user: process.env.MSSQL_USER,
   password: process.env.MSSQL_PASSWORD,
   database: 'master',
-  host: process.env.MSSQL_HOST || 'localhost',
+  host: process.env.MSSQL_HOST || 'mssql',
   port: process.env.MSSQL_PORT || 1433,
   pool: {
     max: 10,

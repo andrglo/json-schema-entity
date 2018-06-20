@@ -1,4 +1,4 @@
-- cmd: yarn upgrade-interactive
+- cmd: yarn upgrade-interactive --latest
    when: 1470615608
 - cmd: yarn self-update
    when: 1470615608
