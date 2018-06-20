@@ -23,8 +23,12 @@ var CLASSE = require('./schemas/Classificação.json')
 var ESTADOS = require('./schemas/ESTADOS.json')
 
 var log = function() {
-  console.log.apply(null, Array.prototype.slice.call(arguments)
-    .map(arg => JSON.stringify(arg, null, '  ')))
+  console.log.apply(
+    null,
+    Array.prototype.slice
+      .call(arguments)
+      .map(arg => JSON.stringify(arg, null, '  '))
+  )
 }
 
 var logError = function(done) {
@@ -67,12 +71,10 @@ function addValidations(validator) {
 }
 
 module.exports = function(options) {
-
   var db
   var db2
   const now = new Date()
   describe('single table', function() {
-
     var start
     var end
 
@@ -86,7 +88,9 @@ module.exports = function(options) {
     before(function(done) {
       db = options.db
       db2 = options.db2
-      entityCadastro = entity('CADASTRO', CADASTRO, {dialect: db.dialect}).useTimestamps()
+      entityCadastro = entity('CADASTRO', CADASTRO, {
+        dialect: db.dialect
+      }).useTimestamps()
       entityCadastro.validate('TEST', function() {
         if (!this.NUMERO) {
           throw new Error('NUMERO must be informed')
@@ -94,12 +98,12 @@ module.exports = function(options) {
       })
       tableCadastro = entityCadastro.new(db)
       tableCadastro2 = entityCadastro.new(db2)
-      tableCadastro.createTables()
+      tableCadastro
+        .createTables()
         .then(function() {
-          return tableCadastro2.createTables()
-            .then(function() {
-              done()
-            })
+          return tableCadastro2.createTables().then(function() {
+            done()
+          })
         })
         .catch(logError(done))
     })
@@ -162,7 +166,9 @@ module.exports = function(options) {
           expect(record.createdAt).to.not.equal(undefined)
           expect(record.updatedAt).to.not.equal(undefined)
           expect(end[1] > minNanoSecsToSave).to.equal(true) // mssql Macbook 33.700 iMac retina 22.786
-          record.createdAt.toISOString().should.equal(record.updatedAt.toISOString())
+          record.createdAt
+            .toISOString()
+            .should.equal(record.updatedAt.toISOString())
           expect(record.createdAt).to.be.a('date')
           expect(record.createdAt >= new Date(now)).to.equal(true)
           done()
@@ -185,7 +191,9 @@ module.exports = function(options) {
           expect(record.createdAt).to.not.equal(undefined)
           expect(record.updatedAt).to.not.equal(undefined)
           expect(end[1] > minNanoSecsToSave).to.equal(true) // mssql Macbook 33.700 iMac retina 22.786
-          record.createdAt.toISOString().should.equal(record.updatedAt.toISOString())
+          record.createdAt
+            .toISOString()
+            .should.equal(record.updatedAt.toISOString())
           expect(record.createdAt).to.be.a('date')
           expect(record.createdAt >= now).to.equal(true)
           done()
@@ -200,10 +208,13 @@ module.exports = function(options) {
         .then(function(recordset) {
           var record = recordset[0]
           start = process.hrtime()
-          return tableCadastro.update({
-            IDENT: 'J',
-            TipoSimplesNacional: '2 - Optante ME/EPP'
-          }, {where: {id: record.id, updatedAt: record.updatedAt}})
+          return tableCadastro.update(
+            {
+              IDENT: 'J',
+              TipoSimplesNacional: '2 - Optante ME/EPP'
+            },
+            {where: {id: record.id, updatedAt: record.updatedAt}}
+          )
         })
         .then(function(record) {
           end = process.hrtime(start)
@@ -234,11 +245,9 @@ module.exports = function(options) {
           done(err)
         })
     })
-
   })
 
   describe('complex entity', function() {
-
     var entityCadAtivo
     var cadAtivo
     var tableCadastro
@@ -281,7 +290,9 @@ module.exports = function(options) {
           return tableEvento.createTables()
         })
         .then(function() {
-          tableCadastro = entity('CADASTRO', CADASTRO, {dialect: db.dialect}).new(db)
+          tableCadastro = entity('CADASTRO', CADASTRO, {
+            dialect: db.dialect
+          }).new(db)
           return tableCadastro.syncTables()
         })
         .then(function() {
@@ -289,15 +300,21 @@ module.exports = function(options) {
           return tableFornec.syncTables()
         })
         .then(function() {
-          tableDocpagvc = entity('DOCPAGVC', DOCPAGVC, {dialect: db.dialect}).new(db)
+          tableDocpagvc = entity('DOCPAGVC', DOCPAGVC, {
+            dialect: db.dialect
+          }).new(db)
           return tableDocpagvc.syncTables()
         })
         .then(function() {
-          tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {dialect: db.dialect}).new(db)
+          tableDocpagev = entity('DOCPAGEV', DOCPAGEV, {
+            dialect: db.dialect
+          }).new(db)
           return tableDocpagev.createTables()
         })
         .then(function() {
-          tableEstados = entity('ESTADOS', ESTADOS, {dialect: db.dialect}).new(db)
+          tableEstados = entity('ESTADOS', ESTADOS, {dialect: db.dialect}).new(
+            db
+          )
           return tableEstados.createTables()
         })
         .then(function() {
@@ -313,15 +330,16 @@ module.exports = function(options) {
     })
 
     describe('check structure', function() {
-
       it('should not accept a invalid db layer', function() {
         try {
           entity('CADASTRO', CADASTRO, {dialect: 'mysql'}).useTimestamps()
-          //noinspection ExceptionCaughtLocallyJS
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid entity created')
         } catch (error) {
           error.should.have.property('message')
-          expect(error.message).to.equal('Adapter for this conector is not implemented')
+          expect(error.message).to.equal(
+            'Adapter for this conector is not implemented'
+          )
         }
       })
       it('should have a primary key', function() {
@@ -334,21 +352,31 @@ module.exports = function(options) {
         expect(tables).to.be.a('object')
         var keys = Object.keys(tables)
         expect(keys).to.be.a('array')
-        expect(keys).to.eql(['CADASTRO', 'FORNEC', 'DOCPAGVC', 'CLIENTE', 'ClassificaçãoCad'])
+        expect(keys).to.eql([
+          'CADASTRO',
+          'FORNEC',
+          'DOCPAGVC',
+          'CLIENTE',
+          'ClassificaçãoCad'
+        ])
       })
       it('should have property destino', function() {
         var schema = entityCadAtivo.schema.get()
         schema.properties.should.have.property('destino')
         schema.properties.destino.should.have.property('items')
         schema.properties.destino.items.should.have.property('properties')
-        expect(Object.keys(schema.properties.destino.items.properties).length).to.equal(5)
+        expect(
+          Object.keys(schema.properties.destino.items.properties).length
+        ).to.equal(5)
       })
       it('should have property outroDestino', function() {
         var schema = entityCadAtivo.schema.get()
         schema.properties.should.have.property('outroDestino')
         schema.properties.outroDestino.should.have.property('items')
         schema.properties.outroDestino.items.should.have.property('properties')
-        expect(Object.keys(schema.properties.outroDestino.items.properties).length).to.equal(3)
+        expect(
+          Object.keys(schema.properties.outroDestino.items.properties).length
+        ).to.equal(3)
       })
       it('should have a customized title for property TipoSimplesNacional', function() {
         var schema = entityCadAtivo.schema.get()
@@ -365,7 +393,9 @@ module.exports = function(options) {
         schema.properties.fornecedor.should.have.property('type')
         schema.properties.fornecedor.type.should.equal('object')
         schema.properties.fornecedor.should.have.property('properties')
-        expect(Object.keys(schema.properties.fornecedor.properties).length).to.equal(61)
+        expect(
+          Object.keys(schema.properties.fornecedor.properties).length
+        ).to.equal(61)
       })
       it('should have property cliente', function() {
         var schema = entityCadAtivo.schema.get()
@@ -374,33 +404,56 @@ module.exports = function(options) {
         schema.properties.cliente.type.should.equal('object')
         schema.properties.cliente.should.have.property('properties')
         schema.properties.cliente.properties.should.not.have.property('ENDCOB')
-        schema.properties.cliente.properties.should.not.have.property('NUMCOMPP')
-        schema.properties.cliente.properties.should.have.property('Número de compras a prazo')
+        schema.properties.cliente.properties.should.not.have.property(
+          'NUMCOMPP'
+        )
+        schema.properties.cliente.properties.should.have.property(
+          'Número de compras a prazo'
+        )
         schema.properties.cliente.properties.should.have.property('RAMO')
-        schema.properties.cliente.properties.RAMO.title.should.equal('Ramo de atuação')
-        expect(Object.keys(schema.properties.cliente.properties).length).to.equal(66)
+        schema.properties.cliente.properties.RAMO.title.should.equal(
+          'Ramo de atuação'
+        )
+        expect(
+          Object.keys(schema.properties.cliente.properties).length
+        ).to.equal(66)
       })
       it('should have property classificacaocad', function() {
         var schema = entityCadAtivo.schema.get()
         schema.properties.should.have.property('ClassificaçãoCad')
         schema.properties.ClassificaçãoCad.should.have.property('items')
-        schema.properties.ClassificaçãoCad.items.should.have.property('properties')
-        expect(Object.keys(schema.properties.ClassificaçãoCad.items.properties).length).to.equal(2)
+        schema.properties.ClassificaçãoCad.items.should.have.property(
+          'properties'
+        )
+        expect(
+          Object.keys(schema.properties.ClassificaçãoCad.items.properties)
+            .length
+        ).to.equal(2)
       })
       it('should have property docpagvc', function() {
         var schema = entityCadAtivo.schema.get()
         schema.properties.should.have.property('docpagvc')
         schema.properties.docpagvc.should.have.property('items')
         schema.properties.docpagvc.items.should.have.property('properties')
-        expect(Object.keys(schema.properties.docpagvc.items.properties).length).to.equal(7)
+        expect(
+          Object.keys(schema.properties.docpagvc.items.properties).length
+        ).to.equal(7)
       })
       it('should have property docpagvc in fornecedor', function() {
         var schema = entityCadAtivo.schema.get()
         schema.properties.should.have.property('fornecedor')
         schema.properties.fornecedor.properties.should.have.property('docpagvc')
-        schema.properties.fornecedor.properties.docpagvc.should.have.property('items')
-        schema.properties.fornecedor.properties.docpagvc.items.should.have.property('properties')
-        expect(Object.keys(schema.properties.fornecedor.properties.docpagvc.items.properties).length).to.equal(5)
+        schema.properties.fornecedor.properties.docpagvc.should.have.property(
+          'items'
+        )
+        schema.properties.fornecedor.properties.docpagvc.items.should.have.property(
+          'properties'
+        )
+        expect(
+          Object.keys(
+            schema.properties.fornecedor.properties.docpagvc.items.properties
+          ).length
+        ).to.equal(5)
       })
       it('should not have entity methods in association', function() {
         entityCadAtivo.fornecedor.should.not.have.property('fetch')
@@ -453,8 +506,12 @@ module.exports = function(options) {
         entityCadAtivo.fornecedor.docpagvc.should.not.have.property('create')
         entityCadAtivo.fornecedor.docpagvc.should.not.have.property('update')
         entityCadAtivo.fornecedor.docpagvc.should.not.have.property('destroy')
-        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('createInstance')
-        entityCadAtivo.fornecedor.docpagvc.should.not.have.property('createTables')
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property(
+          'createInstance'
+        )
+        entityCadAtivo.fornecedor.docpagvc.should.not.have.property(
+          'createTables'
+        )
         entityCadAtivo.fornecedor.docpagvc.should.not.have.property('syncTable')
       })
     })
@@ -522,7 +579,9 @@ module.exports = function(options) {
         enumerableKeys = Object.keys(emptyInstance)
         allKeys = Object.getOwnPropertyNames(emptyInstance)
         symbols = Object.getOwnPropertySymbols(emptyInstance)
-        instanceMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(emptyInstance))
+        instanceMethods = Object.getOwnPropertyNames(
+          Object.getPrototypeOf(emptyInstance)
+        )
         expect(expectedEnumerableKeys).to.eql(enumerableKeys)
       })
       it('should not accept an invalid CEP value in that instance', function(done) {
@@ -571,11 +630,13 @@ module.exports = function(options) {
                 maxLength: 1
               }
             })
-            //noinspection ExceptionCaughtLocallyJS
+            // noinspection ExceptionCaughtLocallyJS
             throw new Error('Invalid property modification')
           } catch (error) {
             error.should.have.property('message')
-            expect(error.message).to.contains('Property save cannot have this name, it is a reserved word, use an alias')
+            expect(error.message).to.contains(
+              'Property save cannot have this name, it is a reserved word, use an alias'
+            )
             entityCadAtivo.setProperties(function(properties) {
               delete properties.save
             })
@@ -589,11 +650,13 @@ module.exports = function(options) {
                 maxLength: 1
               }
             })
-            //noinspection ExceptionCaughtLocallyJS
+            // noinspection ExceptionCaughtLocallyJS
             throw new Error('Invalid property modification')
           } catch (error) {
             error.should.have.property('message')
-            expect(error.message).to.contains('Properties cannot have timestamp name updatedAt, use an alias')
+            expect(error.message).to.contains(
+              'Properties cannot have timestamp name updatedAt, use an alias'
+            )
             entityCadAtivo.setProperties(function(properties) {
               delete properties.updatedAt
             })
@@ -654,7 +717,9 @@ module.exports = function(options) {
             expect(record.id).to.not.equal(undefined)
             expect(record.createdAt).to.not.equal(undefined)
             expect(record.updatedAt).to.not.equal(undefined)
-            record.createdAt.toISOString().should.equal(record.updatedAt.toISOString())
+            record.createdAt
+              .toISOString()
+              .should.equal(record.updatedAt.toISOString())
             expect(record.createdAt).to.be.a('date')
             expect(record.createdAt >= now).to.equal(true)
             record.should.have.property('Inativo')
@@ -751,31 +816,33 @@ module.exports = function(options) {
             done(err)
           })
       })
-      it('should throw only a CEP not a NUMERO validation error because model '
-         +
-         'validations are executed only when no errors occurs in field validation', function(done) {
-        cadAtivo
-          .create({
-            NOMECAD: 'CEP incompleto',
-            CEP: '30000',
-            NUMERO: '9000',
-            fornecedor: {}
-          })
-          .then(function() {
-            done(new Error('Saved with incorrect CEP'))
-          })
-          .catch(function(error) {
-            expect(error.name).to.equal('EntityError')
-            expect(error.type).to.equal('ValidationError')
-            expect(error.errors).to.be.a('array')
-            expect(error.errors.length).to.equal(1)
-            expect(error.errors[0].path).to.equal('CEP')
-            done()
-          })
-          .catch(function(error) {
-            done(error)
-          })
-      })
+      it(
+        'should throw only a CEP not a NUMERO validation error because model ' +
+          'validations are executed only when no errors occurs in field validation',
+        function(done) {
+          cadAtivo
+            .create({
+              NOMECAD: 'CEP incompleto',
+              CEP: '30000',
+              NUMERO: '9000',
+              fornecedor: {}
+            })
+            .then(function() {
+              done(new Error('Saved with incorrect CEP'))
+            })
+            .catch(function(error) {
+              expect(error.name).to.equal('EntityError')
+              expect(error.type).to.equal('ValidationError')
+              expect(error.errors).to.be.a('array')
+              expect(error.errors.length).to.equal(1)
+              expect(error.errors[0].path).to.equal('CEP')
+              done()
+            })
+            .catch(function(error) {
+              done(error)
+            })
+        }
+      )
       it('should throw a INSCEST validation error', function(done) {
         cadAtivo
           .create({
@@ -816,8 +883,8 @@ module.exports = function(options) {
             expect(error.errors.length).to.equal(2)
             expect(error.errors[0].path).to.equal('VALORLCTO')
             expect(error.errors[1].path).to.equal('VALORLCTO')
-            var message = error.errors[0].message + ' - ' +
-                          error.errors[1].message
+            var message =
+              error.errors[0].message + ' - ' + error.errors[1].message
             expect(message).to.contains('decimals')
             expect(message).to.contains('exceeds maximum length')
             done()
@@ -841,8 +908,8 @@ module.exports = function(options) {
             expect(error.errors.length).to.equal(2)
             expect(error.errors[0].path).to.equal('ENDERECO')
             expect(error.errors[1].path).to.equal('ENDERECO')
-            var message = error.errors[0].message + ' - ' +
-                          error.errors[1].message
+            var message =
+              error.errors[0].message + ' - ' + error.errors[1].message
             expect(message).to.contains('STREET or AVENUE')
             expect(message).to.contains('uppercase')
             done()
@@ -870,9 +937,15 @@ module.exports = function(options) {
             record.should.have.property('ClassificaçãoCad')
             expect(record.ClassificaçãoCad).to.be.a('array')
             expect(record.ClassificaçãoCad.length).to.equal(3)
-            expect(_.find(record.ClassificaçãoCad, 'Classe', 'Cliente')).to.be.a('object')
-            expect(_.find(record.ClassificaçãoCad, 'Classe', 'Corredor')).to.be.a('object')
-            expect(_.find(record.ClassificaçãoCad, 'Classe', 'Nadador')).to.be.a('object')
+            expect(
+              _.find(record.ClassificaçãoCad, 'Classe', 'Cliente')
+            ).to.be.a('object')
+            expect(
+              _.find(record.ClassificaçãoCad, 'Classe', 'Corredor')
+            ).to.be.a('object')
+            expect(
+              _.find(record.ClassificaçãoCad, 'Classe', 'Nadador')
+            ).to.be.a('object')
             done()
           })
           .catch(logError(done))
@@ -888,7 +961,7 @@ module.exports = function(options) {
             },
             ClassificaçãoCad: [
               {
-                'Classe': 'Fornecedor'
+                Classe: 'Fornecedor'
               }
             ],
             cliente: {
@@ -929,69 +1002,75 @@ module.exports = function(options) {
           })
           .catch(logError(done))
       })
-      it('should not accept a new cliente without classe cliente and with Suframa '
-         +
-         'and fornecedor with no NUMERO=99', function(done) {
-        cadAtivo
-          .create({
-            NOMECAD: 'Falta classe cliente and have suframa',
-            NUMERO: '5',
-            Suframa: 'not allow',
-            fornecedor: {
-              SIGLAFOR: 'Sigla'
-            },
-            ClassificaçãoCad: [
-              {
-                Classe: 'Fornecedor'
-              }
-            ],
-            cliente: {
-              SIGLACLI: 'Sigla'
-            }
-          })
-          .then(function() {
-            done(new Error('Saved with missing classe'))
-          })
-          .catch(function(error) {
-            expect(error.name).to.equal('EntityError')
-            expect(error.errors).to.be.a('array')
-            expect(error.errors.length).to.equal(4)
-            var classes
-            var suframa = 0
-            var fornecedor
-            error.errors.forEach(function(detail) {
-              if (detail.path === 'Classes') {
-                classes = true
-              } else if (detail.path === 'Teste de promise' ||
-                         detail.path === 'Teste de generator') {
-                suframa++
-              } else if (detail.path === 'Only in fornecedor') {
-                fornecedor = true
+      it(
+        'should not accept a new cliente without classe cliente and with Suframa ' +
+          'and fornecedor with no NUMERO=99',
+        function(done) {
+          cadAtivo
+            .create({
+              NOMECAD: 'Falta classe cliente and have suframa',
+              NUMERO: '5',
+              Suframa: 'not allow',
+              fornecedor: {
+                SIGLAFOR: 'Sigla'
+              },
+              ClassificaçãoCad: [
+                {
+                  Classe: 'Fornecedor'
+                }
+              ],
+              cliente: {
+                SIGLACLI: 'Sigla'
               }
             })
-            expect(classes).to.equal(true)
-            expect(suframa).to.equal(2)
-            expect(fornecedor).to.equal(true)
-            done()
-          })
-          .catch(function(error) {
-            done(error)
-          })
-      })
+            .then(function() {
+              done(new Error('Saved with missing classe'))
+            })
+            .catch(function(error) {
+              expect(error.name).to.equal('EntityError')
+              expect(error.errors).to.be.a('array')
+              expect(error.errors.length).to.equal(4)
+              var classes
+              var suframa = 0
+              var fornecedor
+              error.errors.forEach(function(detail) {
+                if (detail.path === 'Classes') {
+                  classes = true
+                } else if (
+                  detail.path === 'Teste de promise' ||
+                  detail.path === 'Teste de generator'
+                ) {
+                  suframa++
+                } else if (detail.path === 'Only in fornecedor') {
+                  fornecedor = true
+                }
+              })
+              expect(classes).to.equal(true)
+              expect(suframa).to.equal(2)
+              expect(fornecedor).to.equal(true)
+              done()
+            })
+            .catch(function(error) {
+              done(error)
+            })
+        }
+      )
       it('should reject a new cadastro with two auto relations without NUMERO', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'Joana',
             NUMERO: '10',
             fornecedor: {},
-            destino: [{
-              nome: 'Maria',
-              IDENT: 'Fatima'
-            },
+            destino: [
+              {
+                nome: 'Maria',
+                IDENT: 'Fatima'
+              },
               {
                 nome: 'Maria 2',
                 IDENT: 'Fatima 2'
-              }],
+              }
+            ],
             outroDestino: {
               NOMECAD: 'Gilda',
               IDENT: 'Jessica'
@@ -1046,45 +1125,50 @@ module.exports = function(options) {
             done(error)
           })
       })
-      it('hook test should not accept a new cadastro with field BAIRRO=X, PAIS=X but '
-         +
-         'only one error can be reported and should be the first hook added', function(done) {
-        cadAtivo
-          .create({
-            NOMECAD: 'Bairro and pais are invalid',
-            NUMERO: '5',
-            BAIRRO: 'X',
-            PAIS: 'X'
-          })
-          .then(function() {
-            done(new Error('Saved with BAIRRO=X, PAIS=X'))
-          })
-          .catch(function(error) {
-            expect(error.name).to.equal('EntityError')
-            expect(error.errors).to.be.a('array')
-            expect(error.errors.length).to.equal(1)
-            expect(error.errors[0].path).to.equal('bairro')
-            done()
-          })
-          .catch(function(error) {
-            done(error)
-          })
-      })
+      it(
+        'hook test should not accept a new cadastro with field BAIRRO=X, PAIS=X but ' +
+          'only one error can be reported and should be the first hook added',
+        function(done) {
+          cadAtivo
+            .create({
+              NOMECAD: 'Bairro and pais are invalid',
+              NUMERO: '5',
+              BAIRRO: 'X',
+              PAIS: 'X'
+            })
+            .then(function() {
+              done(new Error('Saved with BAIRRO=X, PAIS=X'))
+            })
+            .catch(function(error) {
+              expect(error.name).to.equal('EntityError')
+              expect(error.errors).to.be.a('array')
+              expect(error.errors.length).to.equal(1)
+              expect(error.errors[0].path).to.equal('bairro')
+              done()
+            })
+            .catch(function(error) {
+              done(error)
+            })
+        }
+      )
       it('should create a new cadastro with two hasMany self relation', function(done) {
         cadAtivo
           .create({
             NOMECAD: 'Joana',
             NUMERO: '10',
             BAIRRO: 'belvedere',
-            destino: [{
-              nome: 'Maria',
-              IDENT: 'Fatima',
-              NUMERO: '11'
-            }, {
-              nome: 'Maria 2',
-              IDENT: 'Fatima 2',
-              NUMERO: '12'
-            }],
+            destino: [
+              {
+                nome: 'Maria',
+                IDENT: 'Fatima',
+                NUMERO: '11'
+              },
+              {
+                nome: 'Maria 2',
+                IDENT: 'Fatima 2',
+                NUMERO: '12'
+              }
+            ],
             outroDestino: {
               NOMECAD: 'Gilda',
               IDENT: 'Jessica',
@@ -1222,21 +1306,29 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = any = recordset[0]
+            var record = (any = recordset[0])
             record.should.have.property('ClassificaçãoCad')
             expect(record.ClassificaçãoCad).to.be.a('array')
             record.should.have.property('DATNASC')
             expect(record.DATNASC).to.equal('1999-12-31')
             expect(record.was.DATNASC).to.equal('1999-12-31')
             record.should.have.property('DATNASCZ')
-            expect(record.DATNASCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z')
+            expect(record.DATNASCZ.toISOString()).to.equal(
+              '1999-12-31T00:00:00.000Z'
+            )
             record.should.have.property('DATNASCNOZ')
-            expect(record.DATNASCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString())
+            expect(record.DATNASCNOZ.toISOString()).to.equal(
+              new Date('1999-12-31T19:00:00').toISOString()
+            )
             expect(record.cliente).to.be.a('object')
             expect(record.fornecedor).to.be.a('object')
             expect(record.ClassificaçãoCad.length).to.equal(2)
-            expect(_.find(record.ClassificaçãoCad, 'Classe', 'Cliente')).to.be.a('object')
-            expect(_.find(record.ClassificaçãoCad, 'Classe', 'Fornecedor')).to.be.a('object')
+            expect(
+              _.find(record.ClassificaçãoCad, 'Classe', 'Cliente')
+            ).to.be.a('object')
+            expect(
+              _.find(record.ClassificaçãoCad, 'Classe', 'Fornecedor')
+            ).to.be.a('object')
             done()
           })
           .catch(logError(done))
@@ -1244,7 +1336,8 @@ module.exports = function(options) {
 
       it('lets clear the date', function(done) {
         any.DATNASC = null
-        any.save()
+        any
+          .save()
           .then(function() {
             expect(any.DATNASC).to.equal(undefined)
             done()
@@ -1257,18 +1350,17 @@ module.exports = function(options) {
           NOMECAD: 'Any new'
         })
         any.DATNASC = null
-        any.save()
+        any
+          .save()
           .then(function() {
             expect(any.DATNASC).to.equal(undefined)
             done()
           })
           .catch(logError(done))
       })
-
     })
 
     describe('update cadastro', function() {
-
       it('should update João to be a client', function(done) {
         cadAtivo
           .fetch({where: {id: joao.id}})
@@ -1285,44 +1377,42 @@ module.exports = function(options) {
               SIGLACLI: 'Sigla',
               DATMAIA: '2015-02-02'
             }
-            return cadAtivo
-              .update(entity)
-              .then(function(record) {
-                record.should.have.property('cliente')
-                expect(record.cliente.SIGLACLI).to.equal('Sigla')
-                record.should.have.property('ClassificaçãoCad')
-                expect(record.ClassificaçãoCad.length).to.equal(1)
-                expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente')
-                expect(record.cliente.DATMAIA).to.be.a('string')
-                expect(record.cliente.DATMAIA).to.equal('2015-02-02')
-                expect(record.updatedAt).to.not.be.undefined
-                expect(record.updatedAt).to.be.a('date')
-                expect(record.updatedAt >= now).to.equal(true)
-                expect(record.updatedAt > joao.updatedAt).to.equal(true)
-                expect(record.afterCreate).to.be.undefined
-                expect(record.afterUpdate).to.equal('true')
-                expect(record.afterPromise).to.equal('true')
-                return cadAtivo
-                  .fetch({where: {id: joao.id}})
-                  .then(function(recordset) {
-                    expect(recordset).to.be.a('array')
-                    expect(recordset.length).to.equal(1)
-                    var record = recordset[0]
-                    record.should.have.property('cliente')
-                    expect(record.cliente.SIGLACLI).to.equal('Sigla')
-                    record.should.have.property('ClassificaçãoCad')
-                    expect(record.ClassificaçãoCad.length).to.equal(1)
-                    expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente')
-                    expect(record.cliente.DATMAIA).to.be.a('string')
-                    expect(record.cliente.DATMAIA).to.equal('2015-02-02')
-                    expect(record.updatedAt).to.not.be.undefined
-                    expect(record.updatedAt).to.be.a('date')
-                    expect(record.updatedAt >= now).to.equal(true)
-                    expect(record.updatedAt > joao.updatedAt).to.equal(true)
-                    joao = record
-                    done()
-                  })
-              })
+            return cadAtivo.update(entity).then(function(record) {
+              record.should.have.property('cliente')
+              expect(record.cliente.SIGLACLI).to.equal('Sigla')
+              record.should.have.property('ClassificaçãoCad')
+              expect(record.ClassificaçãoCad.length).to.equal(1)
+              expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente')
+              expect(record.cliente.DATMAIA).to.be.a('string')
+              expect(record.cliente.DATMAIA).to.equal('2015-02-02')
+              expect(record.updatedAt).to.not.be.undefined
+              expect(record.updatedAt).to.be.a('date')
+              expect(record.updatedAt >= now).to.equal(true)
+              expect(record.updatedAt > joao.updatedAt).to.equal(true)
+              expect(record.afterCreate).to.be.undefined
+              expect(record.afterUpdate).to.equal('true')
+              expect(record.afterPromise).to.equal('true')
+              return cadAtivo
+                .fetch({where: {id: joao.id}})
+                .then(function(recordset) {
+                  expect(recordset).to.be.a('array')
+                  expect(recordset.length).to.equal(1)
+                  var record = recordset[0]
+                  record.should.have.property('cliente')
+                  expect(record.cliente.SIGLACLI).to.equal('Sigla')
+                  record.should.have.property('ClassificaçãoCad')
+                  expect(record.ClassificaçãoCad.length).to.equal(1)
+                  expect(record.ClassificaçãoCad[0].Classe).to.equal('Cliente')
+                  expect(record.cliente.DATMAIA).to.be.a('string')
+                  expect(record.cliente.DATMAIA).to.equal('2015-02-02')
+                  expect(record.updatedAt).to.not.be.undefined
+                  expect(record.updatedAt).to.be.a('date')
+                  expect(record.updatedAt >= now).to.equal(true)
+                  expect(record.updatedAt > joao.updatedAt).to.equal(true)
+                  joao = record
+                  done()
+                })
+            })
           })
           .catch(function(err) {
             done(err)
@@ -1330,17 +1420,20 @@ module.exports = function(options) {
       })
       it('replace hasMany array', function(done) {
         cadAtivo
-          .update({
-            ClassificaçãoCad: [
-              {
-                Classe: 'Cliente'
-              },
-              {
-                Classe: 'Fornecedor'
-              }
-            ],
-            updatedAt: joao.updatedAt
-          }, {where: {id: joao.id}})
+          .update(
+            {
+              ClassificaçãoCad: [
+                {
+                  Classe: 'Cliente'
+                },
+                {
+                  Classe: 'Fornecedor'
+                }
+              ],
+              updatedAt: joao.updatedAt
+            },
+            {where: {id: joao.id}}
+          )
           .then(function(record) {
             joao = record
             record.should.have.property('cliente')
@@ -1355,14 +1448,17 @@ module.exports = function(options) {
       })
       it('should not remove a item from the array that cannot be removed', function(done) {
         cadAtivo
-          .update({
-            ClassificaçãoCad: [
-              {
-                Classe: 'Fornecedor'
-              }
-            ],
-            updatedAt: joao.updatedAt
-          }, joao.id)
+          .update(
+            {
+              ClassificaçãoCad: [
+                {
+                  Classe: 'Fornecedor'
+                }
+              ],
+              updatedAt: joao.updatedAt
+            },
+            joao.id
+          )
           .then(function() {
             done(new Error('Saved invalid record'))
           })
@@ -1379,22 +1475,25 @@ module.exports = function(options) {
       })
       it('add vctos array', function(done) {
         cadAtivo
-          .update({
-            ClassificaçãoCad: [
-              {
-                Classe: 'Cliente'
-              }
-            ],
-            docpagvc: {
-              VALOR: 700,
-              DATAVENC: '2015-08-23',
-              DATAVENCZ: '1999-12-31T00:00:00Z',
-              DATAVENCNOZ: new Date('1999-12-31T19:00:00'),
-              'Hora do próximo aviso': '1999-12-31T00:00:00Z'
+          .update(
+            {
+              ClassificaçãoCad: [
+                {
+                  Classe: 'Cliente'
+                }
+              ],
+              docpagvc: {
+                VALOR: 700,
+                DATAVENC: '2015-08-23',
+                DATAVENCZ: '1999-12-31T00:00:00Z',
+                DATAVENCNOZ: new Date('1999-12-31T19:00:00'),
+                'Hora do próximo aviso': '1999-12-31T00:00:00Z'
+              },
+              VALORLCTO: 700,
+              updatedAt: joao.updatedAt
             },
-            VALORLCTO: 700,
-            updatedAt: joao.updatedAt
-          }, joao.id)
+            joao.id
+          )
           .then(function(record) {
             joao = record
             record.should.have.property('cliente')
@@ -1437,27 +1536,38 @@ module.exports = function(options) {
             record.docpagvc[0].should.have.property('DATAVENC')
             expect(record.docpagvc[0].DATAVENC).to.equal('2015-08-23')
             record.docpagvc[0].should.have.property('DATAVENCZ')
-            expect(record.docpagvc[0].DATAVENCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z')
+            expect(record.docpagvc[0].DATAVENCZ.toISOString()).to.equal(
+              '1999-12-31T00:00:00.000Z'
+            )
             record.docpagvc[0].should.have.property('DATAVENCNOZ')
-            expect(record.docpagvc[0].DATAVENCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString())
-            expect(record.docpagvc[0]['Hora do próximo aviso'].toISOString()).to.equal('1999-12-31T00:00:00.000Z')
+            expect(record.docpagvc[0].DATAVENCNOZ.toISOString()).to.equal(
+              new Date('1999-12-31T19:00:00').toISOString()
+            )
+            expect(
+              record.docpagvc[0]['Hora do próximo aviso'].toISOString()
+            ).to.equal('1999-12-31T00:00:00.000Z')
             done()
           })
           .catch(logError(done))
       })
       it('replace vctos array', function(done) {
         cadAtivo
-          .update({
-            docpagvc: [{
-              VALOR: 350.01,
-              DATAVENC: '2015-08-23'
+          .update(
+            {
+              docpagvc: [
+                {
+                  VALOR: 350.01,
+                  DATAVENC: '2015-08-23'
+                },
+                {
+                  VALOR: 250.02,
+                  DATAVENC: '2015-09-23'
+                }
+              ],
+              updatedAt: joao.updatedAt
             },
-              {
-                VALOR: 250.02,
-                DATAVENC: '2015-09-23'
-              }],
-            updatedAt: joao.updatedAt
-          }, joao.id)
+            joao.id
+          )
           .then(function(record) {
             joao = record
             record.should.have.property('docpagvc')
@@ -1469,10 +1579,12 @@ module.exports = function(options) {
           .catch(logError(done))
       })
       it('add more one vcto', function(done) {
-        joao.docpagvc = joao.docpagvc.concat([{
-          VALOR: 0,
-          DATAVENC: '2019-09-24'
-        }])
+        joao.docpagvc = joao.docpagvc.concat([
+          {
+            VALOR: 0,
+            DATAVENC: '2019-09-24'
+          }
+        ])
         cadAtivo
           .update(joao, joao.id)
           .then(function(record) {
@@ -1488,21 +1600,24 @@ module.exports = function(options) {
       })
       it('should not accept a update joão without classe cliente and with Suframa', function(done) {
         cadAtivo
-          .update({
-            Suframa: 'not allow',
-            fornecedor: {
-              SIGLAFOR: 'Sigla',
-              NUMERO: '99'
-            },
-            ClassificaçãoCad: [
-              {
-                Classe: 'Fornecedor'
+          .update(
+            {
+              Suframa: 'not allow',
+              fornecedor: {
+                SIGLAFOR: 'Sigla',
+                NUMERO: '99'
+              },
+              ClassificaçãoCad: [
+                {
+                  Classe: 'Fornecedor'
+                }
+              ],
+              cliente: {
+                SIGLACLI: 'Sigla'
               }
-            ],
-            cliente: {
-              SIGLACLI: 'Sigla'
-            }
-          }, {where: {id: joao.id, updatedAt: joao.updatedAt}})
+            },
+            {where: {id: joao.id, updatedAt: joao.updatedAt}}
+          )
           .then(function() {
             done(new Error('Saved invalid record'))
           })
@@ -1515,8 +1630,10 @@ module.exports = function(options) {
             error.errors.forEach(function(detail) {
               if (detail.path === 'Classes') {
                 classes = true
-              } else if (detail.path === 'Teste de promise' ||
-                         detail.path === 'Teste de generator') {
+              } else if (
+                detail.path === 'Teste de promise' ||
+                detail.path === 'Teste de generator'
+              ) {
                 suframa++
               }
             })
@@ -1644,7 +1761,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = joao = recordset[0]
+            var record = (joao = recordset[0])
             expect(record.docpagvc).to.equal(undefined)
             done()
           })
@@ -1659,8 +1776,9 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError')
             expect(error.type).to.equal('InvalidArgument')
-            expect(error.message.indexOf('need a primary key') !==
-                   -1).to.equal(true)
+            expect(error.message.indexOf('need a primary key') !== -1).to.equal(
+              true
+            )
             done()
           })
           .catch(logError(done))
@@ -1674,8 +1792,9 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError')
             expect(error.type).to.equal('InvalidArgument')
-            expect(error.message.indexOf('Where clause not defined') !==
-                   -1).to.equal(true)
+            expect(
+              error.message.indexOf('Where clause not defined') !== -1
+            ).to.equal(true)
             done()
           })
           .catch(logError(done))
@@ -1689,8 +1808,9 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError')
             expect(error.type).to.equal('InvalidArgument')
-            expect(error.message.indexOf('need a primary key') !==
-                   -1).to.equal(true)
+            expect(error.message.indexOf('need a primary key') !== -1).to.equal(
+              true
+            )
             done()
           })
           .catch(logError(done))
@@ -1704,15 +1824,19 @@ module.exports = function(options) {
           .catch(function(error) {
             expect(error.name).to.equal('EntityError')
             expect(error.type).to.equal('InvalidArgument')
-            expect(error.message.indexOf('Where clause not defined') !==
-                   -1).to.equal(true)
+            expect(
+              error.message.indexOf('Where clause not defined') !== -1
+            ).to.equal(true)
             done()
           })
           .catch(logError(done))
       })
       it('then lets delete Joao', function(done) {
         cadAtivo
-          .destroy({where: {id: joao.id, updatedAt: joao.updatedAt}}, {schema: 'public'})
+          .destroy(
+            {where: {id: joao.id, updatedAt: joao.updatedAt}},
+            {schema: 'public'}
+          )
           .then(function(record) {
             expect(record).to.equal(undefined)
             done()
@@ -1739,7 +1863,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = joana = recordset[0]
+            var record = (joana = recordset[0])
             record.should.have.property('destino')
             expect(record.destino.length).to.equal(2)
             record.should.have.property('outroDestino')
@@ -1797,7 +1921,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = joana = recordset[0]
+            var record = (joana = recordset[0])
             record.should.have.property('destino')
             expect(record.destino.length).to.equal(2)
             record.should.have.property('outroDestino')
@@ -2092,15 +2216,17 @@ module.exports = function(options) {
             fornecedor: {
               SIGLAFOR: 'Two vcts',
               NUMERO: '99',
-              docpagvc: [{
-                VALOR: 350.01,
-                DATAVENC: '2015-08-23',
-                'Hora do próximo aviso': '1999-12-31T00:00:00Z'
-              },
+              docpagvc: [
+                {
+                  VALOR: 350.01,
+                  DATAVENC: '2015-08-23',
+                  'Hora do próximo aviso': '1999-12-31T00:00:00Z'
+                },
                 {
                   VALOR: 250.02,
                   DATAVENC: '2015-09-23'
-                }]
+                }
+              ]
             },
             ClassificaçãoCad: [
               {
@@ -2126,13 +2252,17 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = mario = recordset[0]
+            var record = (mario = recordset[0])
             expect(record.fornecedor).to.be.a('object')
             expect(record.docpagvc).to.equal(undefined)
             expect(record.fornecedor.docpagvc).to.be.a('array')
             expect(record.fornecedor.docpagvc.length).to.equal(2)
             expect(record.fornecedor.docpagvc[0].VALOR).to.equal(350.01)
-            expect(record.fornecedor.docpagvc[0]['Hora do próximo aviso'].toISOString()).to.equal('1999-12-31T00:00:00.000Z')
+            expect(
+              record.fornecedor.docpagvc[0][
+                'Hora do próximo aviso'
+              ].toISOString()
+            ).to.equal('1999-12-31T00:00:00.000Z')
             expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02)
             done()
           })
@@ -2141,10 +2271,12 @@ module.exports = function(options) {
           })
       })
       it('add more one vcto to mario', function(done) {
-        mario.fornecedor.docpagvc = mario.fornecedor.docpagvc.concat([{
-          VALOR: 10.99,
-          DATAVENC: '2015-09-24'
-        }])
+        mario.fornecedor.docpagvc = mario.fornecedor.docpagvc.concat([
+          {
+            VALOR: 10.99,
+            DATAVENC: '2015-09-24'
+          }
+        ])
         mario.fornecedor.NUMERO = '99' // NUMERO is only for tests purposes
         cadAtivo
           .update(mario, mario.id)
@@ -2167,7 +2299,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = mario = recordset[0]
+            var record = (mario = recordset[0])
             expect(record.fornecedor).to.be.a('object')
             expect(record.docpagvc).to.equal(undefined)
             expect(record.fornecedor.docpagvc).to.be.a('array')
@@ -2206,7 +2338,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = mario = recordset[0]
+            var record = (mario = recordset[0])
             expect(record.fornecedor).to.be.a('object')
             expect(record.docpagvc).to.equal(undefined)
             expect(record.fornecedor.docpagvc).to.be.a('array')
@@ -2275,24 +2407,26 @@ module.exports = function(options) {
       })
       it('should reject a new method already existent', function() {
         try {
-          entityCadAtivo.instanceMethod('quitar', function() {
-          })
-          //noinspection ExceptionCaughtLocallyJS
+          entityCadAtivo.instanceMethod('quitar', function() {})
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid method created')
         } catch (error) {
           error.should.have.property('message')
-          expect(error.message).to.equal('Instance method quitar is already defined')
+          expect(error.message).to.equal(
+            'Instance method quitar is already defined'
+          )
         }
       })
       it('should reject a new method with a column with the same name', function() {
         try {
-          entityCadAtivo.instanceMethod('NOMECAD', function() {
-          })
-          //noinspection ExceptionCaughtLocallyJS
+          entityCadAtivo.instanceMethod('NOMECAD', function() {})
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid method created')
         } catch (error) {
           error.should.have.property('message')
-          expect(error.message).to.contains('there is already a column with this name')
+          expect(error.message).to.contains(
+            'there is already a column with this name'
+          )
         }
       })
       it('should accept a new fornecedor with two vctos with on event each', function(done) {
@@ -2303,14 +2437,15 @@ module.exports = function(options) {
             fornecedor: {
               SIGLAFOR: 'Two vcts-event',
               NUMERO: '99',
-              docpagvc: [{
-                VALOR: 350.01,
-                DATAVENC: '2015-08-23',
-                categoria: {
-                  id: '111',
-                  DESCEVENTO: 'Category 111'
-                }
-              },
+              docpagvc: [
+                {
+                  VALOR: 350.01,
+                  DATAVENC: '2015-08-23',
+                  categoria: {
+                    id: '111',
+                    DESCEVENTO: 'Category 111'
+                  }
+                },
                 {
                   VALOR: 250.02,
                   DATAVENC: '2015-09-23',
@@ -2318,7 +2453,8 @@ module.exports = function(options) {
                     id: '222',
                     DESCEVENTO: 'Category 222'
                   }
-                }]
+                }
+              ]
             },
             ClassificaçãoCad: [
               {
@@ -2441,22 +2577,26 @@ module.exports = function(options) {
             fornecedor: {
               SIGLAFOR: 'Two vcts-event',
               NUMERO: '99',
-              docpagvc: [{
-                VALOR: 350.01,
-                DATAVENC: '2015-08-23',
-                categoria: [{
-                  id: '111',
-                  DESCEVENTO: 'Category 111'
-                },
-                  {
-                    id: '2222',
-                    DESCEVENTO: 'Category 222'
-                  }]
-              }]
+              docpagvc: [
+                {
+                  VALOR: 350.01,
+                  DATAVENC: '2015-08-23',
+                  categoria: [
+                    {
+                      id: '111',
+                      DESCEVENTO: 'Category 111'
+                    },
+                    {
+                      id: '2222',
+                      DESCEVENTO: 'Category 222'
+                    }
+                  ]
+                }
+              ]
             },
             ClassificaçãoCad: [
               {
-                'Classe': 'Fornecedor'
+                Classe: 'Fornecedor'
               }
             ]
           })
@@ -2476,22 +2616,24 @@ module.exports = function(options) {
       it('should report a server error', function(done) {
         var command
         if (cadAtivo.db.dialect === 'mssql') {
-          command = 'CREATE TRIGGER reminder ON CADASTRO ' +
-                    'AFTER INSERT ' +
-                    'AS ' +
-                    'IF (SELECT NUMERO FROM INSERTED)=\'INVLD\' RAISERROR (\'INVLD\', 11, 1)'
+          command =
+            'CREATE TRIGGER reminder ON CADASTRO ' +
+            'AFTER INSERT ' +
+            'AS ' +
+            'IF (SELECT NUMERO FROM INSERTED)=\'INVLD\' RAISERROR (\'INVLD\', 11, 1)'
         } else {
-          command = 'CREATE FUNCTION rec_insert() RETURNS trigger ' +
-                    'AS $rec_insert$ BEGIN ' +
-                    'IF new."NUMERO" =\'INVLD\' THEN RAISE EXCEPTION \'INVLD\'; END IF; '
-                    +
-                    'RETURN new; END; ' +
-                    '$rec_insert$ LANGUAGE plpgsql; ' +
-                    'CREATE TRIGGER reminder AFTER INSERT ON "CADASTRO" ' +
-                    'FOR EACH ROW ' +
-                    'EXECUTE PROCEDURE rec_insert();'
+          command =
+            'CREATE FUNCTION rec_insert() RETURNS trigger ' +
+            'AS $rec_insert$ BEGIN ' +
+            'IF new."NUMERO" =\'INVLD\' THEN RAISE EXCEPTION \'INVLD\'; END IF; ' +
+            'RETURN new; END; ' +
+            '$rec_insert$ LANGUAGE plpgsql; ' +
+            'CREATE TRIGGER reminder AFTER INSERT ON "CADASTRO" ' +
+            'FOR EACH ROW ' +
+            'EXECUTE PROCEDURE rec_insert();'
         }
-        cadAtivo.db.execute(command)
+        cadAtivo.db
+          .execute(command)
           .then(function() {
             return cadAtivo
               .create({
@@ -2502,8 +2644,9 @@ module.exports = function(options) {
                 done(new Error('Invalid record saved'))
               })
               .catch(function(error) {
-                expect(error.name === 'RequestError' ||
-                       error.name === 'error').to.equal(true)
+                expect(
+                  error.name === 'RequestError' || error.name === 'error'
+                ).to.equal(true)
                 expect(error.message).to.equal('INVLD')
                 done()
               })
@@ -2518,21 +2661,24 @@ module.exports = function(options) {
             fornecedor: {
               SIGLAFOR: 'Two vcts-event',
               NUMERO: '99',
-              docpagvc: [{
-                VALOR: 350.01,
-                DATAVENC: '2015-08-23',
-                categoria: {
-                  id: '111',
-                  DESCEVENTO: 'Category 111'
+              docpagvc: [
+                {
+                  VALOR: 350.01,
+                  DATAVENC: '2015-08-23',
+                  categoria: {
+                    id: '111',
+                    DESCEVENTO: 'Category 111'
+                  }
+                },
+                {
+                  VALOR: 250.02,
+                  DATAVENC: '2015-09-23',
+                  categoria: {
+                    id: '222',
+                    DESCEVENTO: 'Category 222'
+                  }
                 }
-              }, {
-                VALOR: 250.02,
-                DATAVENC: '2015-09-23',
-                categoria: {
-                  id: '222',
-                  DESCEVENTO: 'Category 222'
-                }
-              }]
+              ]
             },
             ClassificaçãoCad: [
               {
@@ -2557,13 +2703,16 @@ module.exports = function(options) {
       })
       it('should not accept to update lidia with one vcto with and two event each', function(done) {
         lidia.fornecedor.NUMERO = '99'
-        lidia.fornecedor.docpagvc[0].categoria = [{
-          id: '333',
-          DESCEVENTO: 'Category 333'
-        }, {
-          id: '444',
-          DESCEVENTO: 'Category 444'
-        }]
+        lidia.fornecedor.docpagvc[0].categoria = [
+          {
+            id: '333',
+            DESCEVENTO: 'Category 333'
+          },
+          {
+            id: '444',
+            DESCEVENTO: 'Category 444'
+          }
+        ]
         cadAtivo
           .update(lidia, {where: {id: lidia.id, updatedAt: lidia.updatedAt}})
           .then(function() {
@@ -2579,10 +2728,12 @@ module.exports = function(options) {
       })
       it('should now accept to update lidia with one vcto with one event', function(done) {
         lidia.fornecedor.NUMERO = '99'
-        lidia.fornecedor.docpagvc[0].categoria = [{
-          id: '333',
-          DESCEVENTO: 'Category 333'
-        }]
+        lidia.fornecedor.docpagvc[0].categoria = [
+          {
+            id: '333',
+            DESCEVENTO: 'Category 333'
+          }
+        ]
         cadAtivo
           .update(lidia, {where: {id: lidia.id, updatedAt: lidia.updatedAt}})
           .then(function(record) {
@@ -2596,7 +2747,9 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[1].VALOR).to.equal(250.02)
             expect(record.fornecedor.docpagvc[0].categoria.id).to.equal('333')
             expect(record.fornecedor.docpagvc[1].categoria.id).to.equal('222')
-            expect(record.fornecedor.docpagvc[0].categoria.validate).to.be.a('function')
+            expect(record.fornecedor.docpagvc[0].categoria.validate).to.be.a(
+              'function'
+            )
             done()
           })
           .catch(logError(done))
@@ -2616,29 +2769,37 @@ module.exports = function(options) {
     describe('using the instance', function() {
       before(function(done) {
         entityCadAtivo.fornecedor.docpagvc.categoria.validate(
-          'do not alter id', function() {
+          'do not alter id',
+          function() {
             if (this.was && this.id !== this.was.id) {
               throw new Error('id cannot be modified')
             }
           }
         )
         entityCadAtivo.validate(
-          'do not alter TSN', function() {
+          'do not alter TSN',
+          function() {
             if (this.was.TSN !== this.TSN) {
               throw new Error('TSN cannot be modified')
             }
-          }, {onCreate: false})
+          },
+          {onCreate: false}
+        )
         entityCadAtivo.fornecedor.docpagvc.categoria.validate(
-          'do not alter doCaixa', function() {
+          'do not alter doCaixa',
+          function() {
             if (this.was.doCaixa !== this.doCaixa) {
               throw new Error('doCaixa cannot be modified')
             }
-          }, {onCreate: false})
+          },
+          {onCreate: false}
+        )
         done()
       })
       it('should not be valid due to missing FORNECEDOR=99', function(done) {
         lidia.fornecedor.NUMERO = null
-        lidia.validate()
+        lidia
+          .validate()
           .then(function() {
             done(new Error('Validated invalid instance'))
           })
@@ -2653,7 +2814,8 @@ module.exports = function(options) {
       })
       it('should be valid due to property FORNECEDOR=99', function(done) {
         lidia.fornecedor.NUMERO = '99'
-        lidia.validate()
+        lidia
+          .validate()
           .then(function() {
             done()
           })
@@ -2663,7 +2825,8 @@ module.exports = function(options) {
       })
       it('should not be valid due to categoria cant have id changed', function(done) {
         lidia.fornecedor.docpagvc[0].categoria.id = 'X'
-        lidia.fornecedor.docpagvc[0].categoria.validate()
+        lidia.fornecedor.docpagvc[0].categoria
+          .validate()
           .then(function() {
             done(new Error('Validated invalid instance'))
           })
@@ -2677,7 +2840,8 @@ module.exports = function(options) {
           .catch(logError(done))
       })
       it('should not be valid too when validating the entity', function(done) {
-        lidia.validate()
+        lidia
+          .validate()
           .then(function() {
             done(new Error('Validated invalid instance'))
           })
@@ -2693,11 +2857,10 @@ module.exports = function(options) {
           })
       })
       it('should create a new instance', function() {
-        jessica = cadAtivo
-          .createInstance({
-            NOMECAD: 'Jessica',
-            NUMERO: '1'
-          })
+        jessica = cadAtivo.createInstance({
+          NOMECAD: 'Jessica',
+          NUMERO: '1'
+        })
         jessica.should.have.property('save')
         jessica.should.have.property('destroy')
       })
@@ -2775,27 +2938,33 @@ module.exports = function(options) {
             lucia = cadAtivo.createInstance({
               NOMECAD: 'Lucia',
               NUMERO: '7',
-              docpagvc: [{
-                VALOR: 100.01,
-                DATAVENC: '2015-08-23'
-              }, {
-                VALOR: 200.02,
-                DATAVENC: '2015-09-23'
-              }],
+              docpagvc: [
+                {
+                  VALOR: 100.01,
+                  DATAVENC: '2015-08-23'
+                },
+                {
+                  VALOR: 200.02,
+                  DATAVENC: '2015-09-23'
+                }
+              ],
               fornecedor: {
                 SIGLAFOR: 'Lucia as fornecedor',
                 NUMERO: '99',
-                docpagvc: [{
-                  VALOR: 300.01,
-                  DATAVENC: '2015-08-23',
-                  categoria: {
-                    id: '111',
-                    DESCEVENTO: 'Category 111'
+                docpagvc: [
+                  {
+                    VALOR: 300.01,
+                    DATAVENC: '2015-08-23',
+                    categoria: {
+                      id: '111',
+                      DESCEVENTO: 'Category 111'
+                    }
+                  },
+                  {
+                    VALOR: 400.02,
+                    DATAVENC: '2015-09-23'
                   }
-                }, {
-                  VALOR: 400.02,
-                  DATAVENC: '2015-09-23'
-                }]
+                ]
               },
               ClassificaçãoCad: [
                 {
@@ -2805,16 +2974,20 @@ module.exports = function(options) {
             })
             vcto[0] = lucia.docpagvc[0]
             vcto[1] = lucia.docpagvc[1]
-            lucia.fornecedor.docpagvc = lucia.fornecedor.docpagvc.concat([{
-              VALOR: 600.02,
-              DATAVENC: '2015-09-24'
-            }])
+            lucia.fornecedor.docpagvc = lucia.fornecedor.docpagvc.concat([
+              {
+                VALOR: 600.02,
+                DATAVENC: '2015-09-24'
+              }
+            ])
             vcto[2] = lucia.fornecedor.docpagvc[0]
             vcto[3] = lucia.fornecedor.docpagvc[1]
             vcto[4] = lucia.fornecedor.docpagvc[2]
             assert(vcto[3].entity, 'Added array element should be an entity')
-            assert(vcto[4].entity ===
-                   lucia.entity, 'Added array element should be lucia')
+            assert(
+              vcto[4].entity === lucia.entity,
+              'Added array element should be lucia'
+            )
             expect(vcto[4].entity.id).to.equal('CADASTRO')
             expect(vcto[4].entity.alias).to.equal('cadAtivo')
           } catch (e) {
@@ -2852,7 +3025,7 @@ module.exports = function(options) {
         it('was cannot have new properties', function() {
           try {
             vcto[3].was.newColumn = 1
-            //noinspection ExceptionCaughtLocallyJS
+            // noinspection ExceptionCaughtLocallyJS
             throw new Error('Invalid property modification')
           } catch (error) {
             error.should.have.property('message')
@@ -2862,16 +3035,17 @@ module.exports = function(options) {
         it('was cannot be modified', function() {
           try {
             vcto[3].was.id = 1
-            //noinspection ExceptionCaughtLocallyJS
+            // noinspection ExceptionCaughtLocallyJS
             throw new Error('Invalid property modification')
           } catch (error) {
             error.should.have.property('message')
-            expect(error.message).to.contains('Cannot assign to read only property')
+            expect(error.message).to.contains(
+              'Cannot assign to read only property'
+            )
           }
         })
         it('could be saved to disk using any component via entity create', function(done) {
-          vcto[3]
-            .entity
+          vcto[3].entity
             .create({NOMECAD: 'John Doe'})
             .then(function(record) {
               record.should.have.property('id')
@@ -2884,8 +3058,7 @@ module.exports = function(options) {
             .catch(logError(done))
         })
         it('could be saved to disk using entiy via entity create', function(done) {
-          lucia
-            .entity
+          lucia.entity
             .create({NOMECAD: 'Mary Lou'})
             .then(function(record) {
               record.should.have.property('id')
@@ -2906,7 +3079,9 @@ module.exports = function(options) {
               DESCEVENTO: 'Category 777'
             }
           }
-          lucia.fornecedor.docpagvc = lucia.fornecedor.docpagvc.concat([newVcto])
+          lucia.fornecedor.docpagvc = lucia.fornecedor.docpagvc.concat([
+            newVcto
+          ])
           lucia
             .save()
             .then(function() {
@@ -2943,14 +3118,16 @@ module.exports = function(options) {
           fornecedor: {
             SIGLAFOR: 'Marianne catering',
             NUMERO: '99',
-            docpagvc: [{
-              VALOR: 350.99,
-              DATAVENC: '2015-08-23',
-              categoria: {
-                id: '888',
-                DESCEVENTO: 'Category 888'
+            docpagvc: [
+              {
+                VALOR: 350.99,
+                DATAVENC: '2015-08-23',
+                categoria: {
+                  id: '888',
+                  DESCEVENTO: 'Category 888'
+                }
               }
-            }]
+            ]
           },
           ClassificaçãoCad: [
             {
@@ -2966,9 +3143,7 @@ module.exports = function(options) {
             expect(record).to.not.have.property('save')
             expect(record.IDENT).to.be.null
             expect(record.DATNASC).to.be.a(
-              cadAtivo.db.dialect === 'mssql'
-                ? 'date'
-                : 'string'
+              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
             )
 
             expect(record.fornecedor.id).to.exist
@@ -2980,15 +3155,17 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0]).to.not.have.property('save')
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null
             expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a(
-              cadAtivo.db.dialect === 'mssql'
-                ? 'date'
-                : 'string'
+              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
             )
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P')
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist
-            expect(record.fornecedor.docpagvc[0].categoria).to.not.have.property('save')
-            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('D')
+            expect(
+              record.fornecedor.docpagvc[0].categoria
+            ).to.not.have.property('save')
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal(
+              'D'
+            )
 
             expect(record.ClassificaçãoCad[0].NUMCAD).to.exist
             expect(record.ClassificaçãoCad[0]).to.not.have.property('save')
@@ -3009,9 +3186,7 @@ module.exports = function(options) {
             expect(record).to.not.have.property('save')
             expect(record.IDENT).to.be.null
             expect(record.DATNASC).to.be.a(
-              cadAtivo.db.dialect === 'mssql'
-                ? 'date'
-                : 'string'
+              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
             )
 
             expect(record.fornecedor.id).to.exist
@@ -3024,15 +3199,17 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0]).to.not.have.property('save')
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null
             expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a(
-              cadAtivo.db.dialect === 'mssql'
-                ? 'date'
-                : 'string'
+              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
             )
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('P')
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist
-            expect(record.fornecedor.docpagvc[0].categoria).to.not.have.property('save')
-            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('D')
+            expect(
+              record.fornecedor.docpagvc[0].categoria
+            ).to.not.have.property('save')
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal(
+              'D'
+            )
 
             expect(record.ClassificaçãoCad[0].NUMCAD).to.exist
             expect(record.ClassificaçãoCad[0]).to.not.have.property('save')
@@ -3044,7 +3221,10 @@ module.exports = function(options) {
       })
       it('Will return a plain object after fetch', function(done) {
         cadAtivo
-          .fetch({where: {id: marianne.id}}, {toPlainObject: true, schema: 'public'})
+          .fetch(
+            {where: {id: marianne.id}},
+            {toPlainObject: true, schema: 'public'}
+          )
           .then(function(recordset) {
             var record = recordset[0]
             expect(record.id).to.exist
@@ -3065,18 +3245,25 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('Pendente')
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist
-            expect(record.fornecedor.docpagvc[0].categoria).to.not.have.property('save')
-            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('Devedora')
+            expect(
+              record.fornecedor.docpagvc[0].categoria
+            ).to.not.have.property('save')
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal(
+              'Devedora'
+            )
 
             expect(record.ClassificaçãoCad[0].NUMCAD).to.exist
             expect(record.ClassificaçãoCad[0]).to.not.have.property('save')
             expect(record.ClassificaçãoCad[0].quitado).to.equal('Z')
-            return cadAtivo.destroy({
-              where: {
-                id: record.id,
-                updatedAt: record.updatedAt
-              }
-            }, {schema: 'public'});
+            return cadAtivo.destroy(
+              {
+                where: {
+                  id: record.id,
+                  updatedAt: record.updatedAt
+                }
+              },
+              {schema: 'public'}
+            )
           })
           .then(() => done())
           .catch(logError(done))
@@ -3089,14 +3276,16 @@ module.exports = function(options) {
           fornecedor: {
             SIGLAFOR: 'Loarraine catering',
             NUMERO: '99',
-            docpagvc: [{
-              VALOR: 350.99,
-              DATAVENC: '2015-08-23',
-              categoria: {
-                id: '999',
-                DESCEVENTO: 'Category 999'
+            docpagvc: [
+              {
+                VALOR: 350.99,
+                DATAVENC: '2015-08-23',
+                categoria: {
+                  id: '999',
+                  DESCEVENTO: 'Category 999'
+                }
               }
-            }]
+            ]
           },
           ClassificaçãoCad: [
             {
@@ -3124,8 +3313,12 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('Pendente')
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist
-            expect(record.fornecedor.docpagvc[0].categoria).to.have.property('save')
-            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('Devedora')
+            expect(record.fornecedor.docpagvc[0].categoria).to.have.property(
+              'save'
+            )
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal(
+              'Devedora'
+            )
 
             expect(record.ClassificaçãoCad[0].NUMCAD).to.exist
             expect(record.ClassificaçãoCad[0]).to.have.property('save')
@@ -3160,8 +3353,12 @@ module.exports = function(options) {
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal('Pendente')
 
             expect(record.fornecedor.docpagvc[0].categoria.id).to.exist
-            expect(record.fornecedor.docpagvc[0].categoria).to.have.property('save')
-            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal('Devedora')
+            expect(record.fornecedor.docpagvc[0].categoria).to.have.property(
+              'save'
+            )
+            expect(record.fornecedor.docpagvc[0].categoria.NATUREZA).to.equal(
+              'Devedora'
+            )
 
             expect(record.ClassificaçãoCad[0].NUMCAD).to.exist
             expect(record.ClassificaçãoCad[0]).to.have.property('save')
@@ -3178,62 +3375,71 @@ module.exports = function(options) {
     describe('querying', function() {
       var numberOfRecordsToGenerate = 10
       var minMiliSecsToGenerate = 1000
-      it('should create ' + numberOfRecordsToGenerate +
-         ' records in an minimum time', function(done) {
-        gutil.log('Is generating ' + numberOfRecordsToGenerate +
-                  ' entities...')
-        var duration = process.hrtime()
-        var promise = Promise.resolve()
-        var i = 1
-        _.times(numberOfRecordsToGenerate, function() {
-          var order = i++
-          promise = promise.then(function() {
-            return cadAtivo
-              .create({
-                NOMECAD: _.padStart(String(order), 3, '00'),
-                NUMERO: 'QRYTST',
-                ESTADO: 'MG',
-                DATNASC: '1999-12-31',
-                DATNASCZ: '1999-12-31T00:00:00Z',
-                DATNASCNOZ: new Date('1999-12-31T19:00:00'),
-                fornecedor: {
-                  SIGLAFOR: 'query test',
-                  NUMERO: '99',
-                  docpagvc: [{
-                    VALOR: 1,
-                    DATAVENC: '2015-01-01',
-                    categoria: {
-                      id: 'CAT1_' + order,
-                      DESCEVENTO: 'query test 1'
-                    }
-                  },
-                    {
-                      VALOR: 2,
-                      DATAVENC: '2015-01-02',
-                      categoria: {
-                        id: 'CAT2_' + order,
-                        DESCEVENTO: 'query test 2'
+      it(
+        'should create ' +
+          numberOfRecordsToGenerate +
+          ' records in an minimum time',
+        function(done) {
+          gutil.log(
+            'Is generating ' + numberOfRecordsToGenerate + ' entities...'
+          )
+          var duration = process.hrtime()
+          var promise = Promise.resolve()
+          var i = 1
+          _.times(numberOfRecordsToGenerate, function() {
+            var order = i++
+            promise = promise.then(function() {
+              return cadAtivo.create(
+                {
+                  NOMECAD: _.padStart(String(order), 3, '00'),
+                  NUMERO: 'QRYTST',
+                  ESTADO: 'MG',
+                  DATNASC: '1999-12-31',
+                  DATNASCZ: '1999-12-31T00:00:00Z',
+                  DATNASCNOZ: new Date('1999-12-31T19:00:00'),
+                  fornecedor: {
+                    SIGLAFOR: 'query test',
+                    NUMERO: '99',
+                    docpagvc: [
+                      {
+                        VALOR: 1,
+                        DATAVENC: '2015-01-01',
+                        categoria: {
+                          id: 'CAT1_' + order,
+                          DESCEVENTO: 'query test 1'
+                        }
+                      },
+                      {
+                        VALOR: 2,
+                        DATAVENC: '2015-01-02',
+                        categoria: {
+                          id: 'CAT2_' + order,
+                          DESCEVENTO: 'query test 2'
+                        }
                       }
-                    }]
+                    ]
+                  },
+                  ClassificaçãoCad: [
+                    {
+                      Classe: 'Fornecedor'
+                    }
+                  ]
                 },
-                ClassificaçãoCad: [
-                  {
-                    Classe: 'Fornecedor'
-                  }
-                ]
-              }, {toPlainObject: true})
+                {toPlainObject: true}
+              )
+            })
           })
-        })
 
-        promise
-          .then(function() {
-            duration = process.hrtime(duration)
-            duration = (duration[0] * 1000) + (duration[1] / 1000000)
-            expect(duration).to.below(minMiliSecsToGenerate)
-            done()
-          })
-          .catch(done)
-      })
+          promise
+            .then(function() {
+              duration = process.hrtime(duration)
+              duration = duration[0] * 1000 + duration[1] / 1000000
+              expect(duration).to.below(minMiliSecsToGenerate)
+              done()
+            })
+            .catch(done)
+        }
+      )
 
       it('should read the records', function(done) {
         cadAtivo
@@ -3267,10 +3473,7 @@ module.exports = function(options) {
         cadAtivo
           .fetch({
             where: {
-              or: [
-                {NUMERO: 'QRYTST'},
-                {NOMECAD: 'QUALQUER'}
-              ]
+              or: [{NUMERO: 'QRYTST'}, {NOMECAD: 'QUALQUER'}]
             }
           })
           .then(function(recordset) {
@@ -3297,16 +3500,19 @@ module.exports = function(options) {
 
       it('should read the 3 records in the expected page showing external description', function(done) {
         cadAtivo
-          .fetch({
-            where: {
-              NUMERO: 'QRYTST'
+          .fetch(
+            {
+              where: {
+                NUMERO: 'QRYTST'
+              },
+              limit: 3,
+              skip: 3,
+              order: ['NOMECAD']
             },
-            limit: 3,
-            skip: 3,
-            order: ['NOMECAD']
-          }, {
-            fetchExternalDescription: true
-          })
+            {
+              fetchExternalDescription: true
+            }
+          )
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(3)
@@ -3314,8 +3520,12 @@ module.exports = function(options) {
             expect(recordset[0].Inativo).to.equal('Não')
             expect(recordset[0].fornecedor.RetemCSLL).to.equal('Sim')
             expect(recordset[0].DATNASC).to.equal('1999-12-31')
-            expect(recordset[0].DATNASCZ.toISOString()).to.equal('1999-12-31T00:00:00.000Z')
-            expect(recordset[0].DATNASCNOZ.toISOString()).to.equal(new Date('1999-12-31T19:00:00').toISOString())
+            expect(recordset[0].DATNASCZ.toISOString()).to.equal(
+              '1999-12-31T00:00:00.000Z'
+            )
+            expect(recordset[0].DATNASCNOZ.toISOString()).to.equal(
+              new Date('1999-12-31T19:00:00').toISOString()
+            )
             var i = 4
             recordset.map(function(record) {
               expect(i++).to.equal(Number(record.NOMECAD))
@@ -3337,7 +3547,6 @@ module.exports = function(options) {
           })
           .catch(logError(done))
       })
-
     })
 
     describe('using the entity', function() {
@@ -3351,7 +3560,8 @@ module.exports = function(options) {
         done()
       })
       it('should return one record with a column', function(done) {
-        cadAtivo.getExternalData()
+        cadAtivo
+          .getExternalData()
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
@@ -3378,14 +3588,9 @@ module.exports = function(options) {
           })
           .then(function(record) {
             beth = record
-            entityCadAtivo
-              .setProperties(function(properties) {
-                properties.futureEnum.enum = [
-                  'Abc',
-                  'Bcd',
-                  'Cde'
-                ]
-              })
+            entityCadAtivo.setProperties(function(properties) {
+              properties.futureEnum.enum = ['Abc', 'Bcd', 'Cde']
+            })
             done()
           })
           .catch(logError(done))
@@ -3396,7 +3601,7 @@ module.exports = function(options) {
           .then(function(recordset) {
             expect(recordset).to.be.a('array')
             expect(recordset.length).to.equal(1)
-            var record = beth = recordset[0]
+            var record = (beth = recordset[0])
             expect(record.futureEnum).to.equal(undefined)
             expect(record.destino).to.be.a('array')
             expect(record.destino.length).to.equal(1)
@@ -3413,26 +3618,25 @@ module.exports = function(options) {
             expect(recordset.length).to.equal(1)
             var record = recordset[0]
             record.NUMERO = '14'
-            return record
-              .save()
-              .then(function() {
-                expect(record.updatedAt).to.be.a('date')
-                return cadAtivo
-                  .fetch({where: {id: record.id}})
-                  .then(function(recordset) {
-                    expect(recordset).to.be.a('array')
-                    expect(recordset.length).to.equal(1)
-                    expect(recordset[0].NUMERO).to.equal('14')
-                    done()
-                  })
-              })
+            return record.save().then(function() {
+              expect(record.updatedAt).to.be.a('date')
+              return cadAtivo
+                .fetch({where: {id: record.id}})
+                .then(function(recordset) {
+                  expect(recordset).to.be.a('array')
+                  expect(recordset.length).to.equal(1)
+                  expect(recordset[0].NUMERO).to.equal('14')
+                  done()
+                })
+            })
           })
           .catch(logError(done))
       })
       it('should be saved as a new record if you hide the foreign key', function(done) {
         var destinoId = beth.destino[0].id
         beth.destino[0].NUMLANORI = undefined
-        beth.save()
+        beth
+          .save()
           .then(function() {
             expect(beth.destino[0].id).to.above(destinoId)
             done()
@@ -3441,7 +3645,8 @@ module.exports = function(options) {
       })
       it('should not be saved if you change the the foreign key', function(done) {
         beth.destino[0].NUMLANORI = 0
-        beth.save()
+        beth
+          .save()
           .then(function() {
             done(new Error('Invalid record saved'))
           })
@@ -3456,9 +3661,14 @@ module.exports = function(options) {
       it('should not be saved if you hide the id', function(done) {
         beth.destino[0].NUMLANORI = beth.id
         beth.destino[0].id = undefined
-        beth.save()
+        beth
+          .save()
           .then(function() {
-            done(new Error('Invalid record saved, you cannot use the primary key presence to verify if a record exists'))
+            done(
+              new Error(
+                'Invalid record saved, you cannot use the primary key presence to verify if a record exists'
+              )
+            )
           })
           .catch(function(error) {
             expect(error.name).to.equal('EntityError')
@@ -3471,7 +3681,7 @@ module.exports = function(options) {
       it('cannot alter the timestamps, createdAt', function() {
         try {
           beth.createdAt = new Date()
-          //noinspection ExceptionCaughtLocallyJS
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid column modified')
         } catch (error) {
           error.should.have.property('message')
@@ -3481,7 +3691,7 @@ module.exports = function(options) {
       it('cannot alter the timestamps, updatedAt', function() {
         try {
           beth.updatedAt = new Date()
-          //noinspection ExceptionCaughtLocallyJS
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid column modified')
         } catch (error) {
           error.should.have.property('message')
@@ -3492,7 +3702,7 @@ module.exports = function(options) {
         try {
           beth.futureEnum = 'A'
           beth.validate()
-          //noinspection ExceptionCaughtLocallyJS
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid column modified')
         } catch (error) {
           error.should.have.property('message')
@@ -3502,7 +3712,7 @@ module.exports = function(options) {
       it('should not accept an greater value', function() {
         try {
           beth.futureEnum = 'Abcd'
-          //noinspection ExceptionCaughtLocallyJS
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid column modified')
         } catch (error) {
           error.should.have.property('message')
@@ -3512,7 +3722,7 @@ module.exports = function(options) {
       it('should not accept a value not contained in the enum array', function() {
         try {
           beth.futureEnum = 'Abd'
-          //noinspection ExceptionCaughtLocallyJS
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error('Invalid column modified')
         } catch (error) {
           error.should.have.property('message')
@@ -3529,7 +3739,8 @@ module.exports = function(options) {
       })
       it('should delete destino all alone', function(done) {
         beth.destino[0].NUMLANORI = undefined
-        beth.save()
+        beth
+          .save()
           .then(function() {
             return cadAtivo
               .fetch({where: {id: beth.destino[0].id}})
@@ -3537,20 +3748,19 @@ module.exports = function(options) {
                 expect(recordset).to.be.a('array')
                 expect(recordset.length).to.equal(1)
                 var record = recordset[0]
-                return record
-                  .destroy()
-                  .then(function() {
-                    record.should.have.property('id')
-                    expect(record.updatedAt).to.equal(undefined)
-                    expect(record.createdAt).to.equal(undefined)
-                    done()
-                  })
+                return record.destroy().then(function() {
+                  record.should.have.property('id')
+                  expect(record.updatedAt).to.equal(undefined)
+                  expect(record.createdAt).to.equal(undefined)
+                  done()
+                })
               })
           })
           .catch(logError(done))
       })
       it('should throw an error when updating beth with destino already deleted', function(done) {
-        beth.save()
+        beth
+          .save()
           .then(function() {
             done(new Error('Invalid record updated'))
           })
@@ -3564,7 +3774,8 @@ module.exports = function(options) {
       })
 
       it('should throw an error when deleting beth with destino already deleted', function(done) {
-        beth.destroy()
+        beth
+          .destroy()
           .then(function() {
             done(new Error('Invalid record deletion'))
           })
@@ -3577,24 +3788,27 @@ module.exports = function(options) {
           .catch(logError(done))
       })
     })
-
   })
 
   describe('Usage example', function() {
     it('Should log the full database columns', function(done) {
       var jse = entity
-      var invoiceClass = jse('invoice', {
-        properties: {
-          id: {
-            type: 'integer',
-            autoIncrement: true,
-            primaryKey: true
-          },
-          client: {
-            type: 'string'
+      var invoiceClass = jse(
+        'invoice',
+        {
+          properties: {
+            id: {
+              type: 'integer',
+              autoIncrement: true,
+              primaryKey: true
+            },
+            client: {
+              type: 'string'
+            }
           }
-        }
-      }, {dialect: db.dialect})
+        },
+        {dialect: db.dialect}
+      )
       invoiceClass.hasMany('items', {
         properties: {
           id: {
@@ -3621,7 +3835,8 @@ module.exports = function(options) {
       })
       var invoiceInstance
       var invoice = invoiceClass.new(db)
-      invoice.createTables() // Will create tables invoice and items
+      invoice
+        .createTables() // Will create tables invoice and items
         .then(function() {
           return invoice.syncTables() // Then the reference in items
         })
@@ -3639,7 +3854,7 @@ module.exports = function(options) {
           return invoiceInstance.save()
         })
         .then(function() {
-          //console.log(JSON.stringify(invoiceInstance, null, ' '));
+          // console.log(JSON.stringify(invoiceInstance, null, ' '));
           /* will log
            {
            "id": 1,
@@ -3669,20 +3884,20 @@ module.exports = function(options) {
 
     before(function() {
       db = options.db
-      plano = entity(
-        'LCBA1', require('./schemas/LCBA1.json'), {dialect: db.dialect}
-      ).useTimestamps()
+      plano = entity('LCBA1', require('./schemas/LCBA1.json'), {
+        dialect: db.dialect
+      }).useTimestamps()
       planoEntity = plano.new(db)
     })
 
     it('plano should be created', function(done) {
-      planoEntity
-        .createTables()
-        .then(() => planoEntity.create({
+      planoEntity.createTables().then(() =>
+        planoEntity
+          .create({
             A01_CODCTA: '1',
             NUMPLC: 0,
             A01_DESCTA: 'test',
-            A01_TIPCTA: 'Analítica',
+            A01_TIPCTA: 'Analítica'
           })
           .then(function(record) {
             conta = record
@@ -3693,7 +3908,8 @@ module.exports = function(options) {
           })
           .catch(function(err) {
             done(err)
-          }))
+          })
+      )
     })
     it('it can be fetched', function(done) {
       plano
@@ -3715,15 +3931,18 @@ module.exports = function(options) {
     it('then can have only one field updated', function(done) {
       plano
         .new(db)
-        .update({
-          A01_DESCTA: 'test2'
-        }, {
-          where: {
-            A01_CODCTA: '1',
-            NUMPLC: 0,
-            updatedAt: conta.updatedAt
+        .update(
+          {
+            A01_DESCTA: 'test2'
+          },
+          {
+            where: {
+              A01_CODCTA: '1',
+              NUMPLC: 0,
+              updatedAt: conta.updatedAt
+            }
           }
-        })
+        )
         .then(function(record) {
           expect(record.A01_DESCTA).equal('test2')
           updatedAt = record.updatedAt
