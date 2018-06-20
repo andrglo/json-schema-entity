@@ -96,18 +96,38 @@ module.exports = function() {
     }
   }
 
+  function buildReturningPrimaryKeyFields(fields, fieldsWithType, data) {
+    _.forEach(data.properties, function(property, name) {
+      if (data.primaryKeyFields.includes(property.field || name)) {
+        fieldsWithType.push(
+          '[' + (property.field || name) + ']' + ' ' + toSqlType(property)
+        )
+        fields.push(property.field || name)
+      }
+    })
+  }
+
   adapter.buildInsertCommand = function(data) {
+    var primaryKeysFieldsWithType = []
+    var primaryKeysFields = []
     var fieldsWithType = []
     var fields = []
     buildReturningFields(fields, fieldsWithType, data)
-    var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')']
+    buildReturningPrimaryKeyFields(
+      primaryKeysFields,
+      primaryKeysFieldsWithType,
+      data
+    )
+    var commands = [
+      'DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')'
+    ]
     commands.push(
       'INSERT INTO [' +
         data.identity.name +
         '] (<fields>' +
         (data.timestamps ? ',updated_at' : '') +
         ') OUTPUT ' +
-        fields
+        primaryKeysFields
           .map(function(field) {
             return 'INSERTED.[' + field + ']'
           })
@@ -116,28 +136,49 @@ module.exports = function() {
         (data.timestamps ? ',getUtcDate()' : '') +
         ')'
     )
-    commands.push('SELECT * FROM @tmp')
+    commands.push(
+      'SELECT ' +
+        fields.map(name => `c.[${name}]`).join(',') +
+        ' FROM [' +
+        data.identity.name +
+        '] c INNER JOIN @tmp t ON ' +
+        primaryKeysFields.map(name => `c.[${name}]=t.[${name}]`).join(' AND ')
+    )
     data.insertCommand = commands.join(';')
   }
   adapter.buildUpdateCommand = function(data) {
+    var primaryKeysFieldsWithType = []
+    var primaryKeysFields = []
     var fieldsWithType = []
     var fields = []
     buildReturningFields(fields, fieldsWithType, data)
-    var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')']
+    buildReturningPrimaryKeyFields(
+      primaryKeysFields,
+      primaryKeysFieldsWithType,
+      data
+    )
+    var commands = ['DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')']
     commands.push(
       'UPDATE [' +
         data.identity.name +
         '] SET <fields-values>' +
         (data.timestamps ? ',updated_at=getUtcDate()' : '') +
         ' OUTPUT ' +
-        fields
+        primaryKeysFields
           .map(function(field) {
             return 'INSERTED.[' + field + ']'
           })
           .join(',') +
         ' INTO @tmp WHERE <primary-keys>'
     )
-    commands.push('SELECT * FROM @tmp')
+    commands.push(
+      'SELECT ' +
+        fields.map(name => `c.[${name}]`).join(',') +
+        ' FROM [' +
+        data.identity.name +
+        '] c INNER JOIN @tmp t ON ' +
+        primaryKeysFields.map(name => `c.[${name}]=t.[${name}]`).join(' AND ')
+    )
     data.updateCommand = commands.join(';')
   }
   adapter.buildDeleteCommand = function(data) {
