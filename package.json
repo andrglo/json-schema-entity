@@ -26,16 +26,16 @@
   "devDependencies": {
     "br-validations": "^0.3.1",
     "chai": "^4.1.2",
-    "eslint": "^4.19.1",
+    "eslint": "^5.4.0",
     "eslint-config-google": "^0.9.1",
     "glob": "^7.1.2",
     "gulp-util": "^3.0.8",
     "mocha": "^5.2.0",
-    "mssql-cr-layer": "^2.0.0",
+    "mssql-cr-layer": "^2.0.1",
     "pg-cr-layer": "^2.0.4",
     "pretty-hrtime": "^1.0.2",
     "unorm": "^1.4.1",
-    "validator": "^10.4.0"
+    "validator": "^10.6.0"
   },
   "scripts": {
     "test": "mocha --bail --exit --timeout 15000 test/index.js",
