@@ -756,14 +756,16 @@ function runHooks(hooks, model, options, data, validatedInstance) {
           throw new EntityError({
             type: hook.name + 'HookError',
             message: err.message,
-            errors: [{path: hook.id, message: err.message}]
+            errors: [{path: hook.id, message: err.message}],
+            err
           })
         }
         if (res && res.then) {
           return res.catch(function(err) {
             throw new EntityError({
               message: hook.name + ' hook error',
-              errors: [{path: hook.id, message: err.message}]
+              errors: [{path: hook.id, message: err.message}],
+              err
             })
           })
         }
