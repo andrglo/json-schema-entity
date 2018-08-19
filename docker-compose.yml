@@ -18,9 +18,7 @@ services:
     restart: always
 
   mssql:
-    image: microsoft/mssql-server-linux:2017-GDR
-    ports:
-      - "1450:1433"
+    image: microsoft/mssql-server-linux:2017-CU9
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Juriti01
@@ -30,8 +28,6 @@ services:
 
   postgres:
     image: andrglo/postgres:9.6-2
-    ports:
-      - 5438:5432
     restart: always
 
 
