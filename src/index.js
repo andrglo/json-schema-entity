@@ -1780,6 +1780,20 @@ function buildTable(data) {
     data.primaryKeyAttributes.length > 0,
     'Primary key not defined for table ' + data.key
   )
+  if (data.primaryOrder) {
+    data.primaryOrderFields = []
+    _.forEach(data.primaryOrder, function(key) {
+      var property = findProperty(key, data.properties)
+      var name
+      _.forEach(data.properties, function(prop, key) {
+        if (property === prop) {
+          name = key
+          return false
+        }
+      })
+      data.primaryOrderFields.push(property.field || name)
+    })
+  }
 
   data.adapter.buildInsertCommand(data)
   data.adapter.buildUpdateCommand(data)
