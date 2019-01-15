@@ -3,7 +3,7 @@ version: '2'
 services:
 
   dms:
-    image: andrglo/everest:10.2.1
+    image: andrglo/everest:10.15.0
     hostname: json-schema-entity
     command: tail -f /dev/null
     working_dir: /andrglo/json-schema-entity
@@ -18,7 +18,7 @@ services:
     restart: always
 
   mssql:
-    image: microsoft/mssql-server-linux:2017-CU9
+    image: mcr.microsoft.com/mssql/server:2017-CU12
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Juriti01
@@ -27,7 +27,7 @@ services:
     restart: always
 
   postgres:
-    image: andrglo/postgres:9.6-2
+    image: andrglo/postgres:10
     restart: always
 
 
