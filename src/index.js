@@ -1483,7 +1483,7 @@ module.exports = function(schemaName, schema, config) {
           rebuild()
           return data.public
         },
-        hasMany: function(schemaName, schema) {
+        hasMany: function(schemaName, schema, options) {
           var association = entityFactory(schemaName, schema, rebuild)
           association.entity = entity
           association.isAssociation = true
@@ -1492,6 +1492,13 @@ module.exports = function(schemaName, schema, config) {
           publicAssociationMethods.map(function(name) {
             data.public[association.key][name] = association.methods[name]
           })
+          if (options && options.orderBy) {
+            const orderBy = Array.isArray(options.orderBy)
+                            ? options.orderBy
+                            : options.orderBy.split(',')
+            association.primaryOrderFields = orderBy
+              .map(field => schema.properties[field].field || field)
+          }
           data.associations.push({type: 'hasMany', data: association})
           rebuild()
           return data.public[association.key]
@@ -1780,20 +1787,6 @@ function buildTable(data) {
     data.primaryKeyAttributes.length > 0,
     'Primary key not defined for table ' + data.key
   )
-  if (data.primaryOrder) {
-    data.primaryOrderFields = []
-    _.forEach(data.primaryOrder, function(key) {
-      var property = findProperty(key, data.properties)
-      var name
-      _.forEach(data.properties, function(prop, key) {
-        if (property === prop) {
-          name = key
-          return false
-        }
-      })
-      data.primaryOrderFields.push(property.field || name)
-    })
-  }
 
   data.adapter.buildInsertCommand(data)
   data.adapter.buildUpdateCommand(data)
