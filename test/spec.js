@@ -347,7 +347,7 @@ module.exports = function(options) {
         expect(primaryKey).to.be.a('array')
         expect(primaryKey).to.eql(['id'])
       })
-      it('should have 5 tables', function() {
+      it('should have 6 tables', function() {
         var tables = entityCadAtivo.schema.tables()
         expect(tables).to.be.a('object')
         var keys = Object.keys(tables)
@@ -357,6 +357,7 @@ module.exports = function(options) {
           'FORNEC',
           'DOCPAGVC',
           'CLIENTE',
+          'empty',
           'ClassificaçãoCad'
         ])
       })
@@ -381,7 +382,7 @@ module.exports = function(options) {
       it('should have a customized title for property TipoSimplesNacional', function() {
         var schema = entityCadAtivo.schema.get()
         var properties = Object.keys(schema.properties)
-        expect(properties.length).to.equal(38)
+        expect(properties.length).to.equal(39)
         expect(properties.indexOf('FAX')).to.equal(-1)
         expect(properties.indexOf('IM')).to.above(-1)
         expect(properties.indexOf('TSN')).to.above(-1)
@@ -555,6 +556,7 @@ module.exports = function(options) {
         'maisOutroDestino',
         'fornecedor',
         'cliente',
+        'empty',
         'ClassificaçãoCad',
         'docpagvc',
         'createdAt',
@@ -1373,11 +1375,21 @@ module.exports = function(options) {
                 Classe: 'Cliente'
               }
             ]
-            entity.cliente = {
-              SIGLACLI: 'Sigla',
-              DATMAIA: '2015-02-02'
+            entity.empty = {
+              SIGLACLI: null
             }
             return cadAtivo.update(entity).then(function(record) {
+              entity = record
+              entity.empty = {
+              }
+            return cadAtivo.update(entity).then(function(record) {
+              entity = record
+              entity.cliente = {
+                SIGLACLI: 'Sigla',
+                DATMAIA: '2015-02-02'
+              }
+            return cadAtivo.update(entity).then(function(record) {
+              record.should.have.property('empty')
               record.should.have.property('cliente')
               expect(record.cliente.SIGLACLI).to.equal('Sigla')
               record.should.have.property('ClassificaçãoCad')
@@ -1413,7 +1425,7 @@ module.exports = function(options) {
                   done()
                 })
             })
-          })
+          })})})
           .catch(function(err) {
             done(err)
           })

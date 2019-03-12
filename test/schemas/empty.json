@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "title": "Cliente",
+  "description": "Clientes",
+  "properties": {
+    "id": {
+      "title": "Nº Cadastral",
+      "description": "Número de cadastro do cliente",
+      "type": "integer",
+      "format": "list",
+      "required": true,
+      "$ref": "#/definitions/CADASTRO",
+      "field": "CLIENTE",
+      "primaryKey": true
+    },
+    "SIGLACLI": {
+      "title": "Identificação",
+      "description": "Sigla do cliente",
+      "type": "string",
+      "maxLength": 20
+    }
+  }
+}

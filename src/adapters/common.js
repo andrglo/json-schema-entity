@@ -85,6 +85,9 @@ exports.update = function(record, data, options) {
       }
     }
   })
+  if (fields.length === 0) {
+    return Promise.resolve(record)
+  }
 
   var findKeys = data.primaryKeyFields.map(function(name, index) {
     const attribute = data.primaryKeyAttributes[index]

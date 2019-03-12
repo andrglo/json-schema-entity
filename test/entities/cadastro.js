@@ -9,6 +9,7 @@ module.exports = function(config) {
   var CADASTRO = _.cloneDeep(require('../schemas/CADASTRO.json'))
   var FORNEC = require('../schemas/FORNEC.json')
   var CLIENTE = _.cloneDeep(require('../schemas/CLIENTE.json'))
+  var empty = _.cloneDeep(require('../schemas/empty.json'))
   var ClassificacaoCad = require('../schemas/ClassificaçãoCad.json')
   var DOCPAGVC = require('../schemas/DOCPAGVC.json')
 
@@ -213,6 +214,11 @@ module.exports = function(config) {
       properties['Número de compras a prazo'] = properties.NUMCOMPP
       properties['Número de compras a prazo'].field = 'NUMCOMPP'
       delete properties.NUMCOMPP
+    })
+
+    cadAtivo
+    .hasMany('empty', {
+      properties: empty.properties
     })
 
   cadAtivo
