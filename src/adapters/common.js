@@ -30,36 +30,36 @@ exports.create = function(record, data, options) {
   })
   var index = 1
   var insertCommand = data.insertCommand
-    .replace(
-      '<fields>',
-      fields.reduce((fields, field) => {
-        return fields + (fields ? ',' : '') + this.wrap(field)
-      }, '')
-    )
-    .replace(
-      '<values>',
-      fields.reduce(function(fields) {
-        return fields + (fields ? ',' : '') + '$' + index++
-      }, '')
-    )
+      .replace(
+          '<fields>',
+          fields.reduce((fields, field) => {
+            return fields + (fields ? ',' : '') + this.wrap(field)
+          }, '')
+      )
+      .replace(
+          '<values>',
+          fields.reduce(function(fields) {
+            return fields + (fields ? ',' : '') + '$' + index++
+          }, '')
+      )
   if (options.schema && this.db.dialect === 'postgres') {
     insertCommand = `INSERT INTO ${options.schema}.${insertCommand.substr(12)}`
   }
   return this.db
-    .execute(insertCommand, params, options)
-    .then(function(recordset) {
-      checkRecordsetLength(data, null, recordset.length, 'create')
-      var inserted = recordset[0]
-      _.forEach(data.properties, function(property, name) {
-        var fieldName = property.field || name
-        record[name] = inserted[fieldName]
+      .execute(insertCommand, params, options)
+      .then(function(recordset) {
+        checkRecordsetLength(data, null, recordset.length, 'create')
+        var inserted = recordset[0]
+        _.forEach(data.properties, function(property, name) {
+          var fieldName = property.field || name
+          record[name] = inserted[fieldName]
+        })
+        if (data.timestamps) {
+          record.createdAt = inserted.created_at
+          record.updatedAt = inserted.updated_at
+        }
+        return record
       })
-      if (data.timestamps) {
-        record.createdAt = inserted.created_at
-        record.updatedAt = inserted.updated_at
-      }
-      return record
-    })
 }
 
 exports.update = function(record, data, options) {
@@ -101,43 +101,43 @@ exports.update = function(record, data, options) {
 
   var index = 0
   var updateCommand = data.updateCommand
-    .replace(
-      '<fields-values>',
-      fields.reduce((fields, field) => {
-        return fields + (fields ? ',' : '') + this.wrap(field) + '=$' + ++index
-      }, '')
-    )
-    .replace(
-      '<primary-keys>',
-      findKeys.reduce((fields, field) => {
-        return (
-          fields +
+      .replace(
+          '<fields-values>',
+          fields.reduce((fields, field) => {
+            return fields + (fields ? ',' : '') + this.wrap(field) + '=$' + ++index
+          }, '')
+      )
+      .replace(
+          '<primary-keys>',
+          findKeys.reduce((fields, field) => {
+            return (
+              fields +
           (fields ? ' AND ' : '') +
           this.wrap(field) +
           (params[index] === null
             ? params.splice(index, 1) && ' IS NULL'
             : '=$' + ++index)
-        )
-      }, '')
-    )
+            )
+          }, '')
+      )
   if (options.schema && this.db.dialect === 'postgres') {
     updateCommand = `UPDATE ${options.schema}.${updateCommand.substr(7)}`
   }
   return this.db
-    .execute(updateCommand, params, options)
-    .then(function(recordset) {
-      checkRecordsetLength(data, options.where, recordset.length, 'update')
-      var updated = recordset[0]
-      _.forEach(data.properties, function(property, name) {
-        var fieldName = property.field || name
-        record[name] = updated[fieldName]
+      .execute(updateCommand, params, options)
+      .then(function(recordset) {
+        checkRecordsetLength(data, options.where, recordset.length, 'update')
+        var updated = recordset[0]
+        _.forEach(data.properties, function(property, name) {
+          var fieldName = property.field || name
+          record[name] = updated[fieldName]
+        })
+        if (data.timestamps) {
+          record.createdAt = updated.created_at
+          record.updatedAt = updated.updated_at
+        }
+        return record
       })
-      if (data.timestamps) {
-        record.createdAt = updated.created_at
-        record.updatedAt = updated.updated_at
-      }
-      return record
-    })
 }
 
 exports.destroy = function(data, options) {
@@ -155,27 +155,27 @@ exports.destroy = function(data, options) {
 
   var index = 0
   var deleteCommand = data.deleteCommand.replace(
-    '<find-keys>',
-    findKeys.reduce((fields, field) => {
-      return (
-        fields +
+      '<find-keys>',
+      findKeys.reduce((fields, field) => {
+        return (
+          fields +
         (fields ? ' AND ' : '') +
         this.wrap(field) +
         (params[index] === null
           ? params.splice(index, 1) && ' IS NULL'
           : '=$' + ++index)
-      )
-    }, '')
+        )
+      }, '')
   )
   if (options.schema && this.db.dialect === 'postgres') {
     deleteCommand = `DELETE FROM ${options.schema}.${deleteCommand.substr(12)}`
   }
   return this.db
-    .execute(deleteCommand, params, options)
-    .then(function(recordset) {
-      checkRecordsetLength(data, options.where, recordset.length, 'delete')
-      return recordset.length
-    })
+      .execute(deleteCommand, params, options)
+      .then(function(recordset) {
+        checkRecordsetLength(data, options.where, recordset.length, 'delete')
+        return recordset.length
+      })
 }
 
 function checkRecordsetLength(data, key, n, type) {
@@ -183,7 +183,7 @@ function checkRecordsetLength(data, key, n, type) {
     throw new EntityError({
       type: 'RecordModifiedOrDeleted',
       message: `Entity '${data.key}' key ${JSON.stringify(
-        key
+          key
       )} not found for ${type}`
     })
   }
