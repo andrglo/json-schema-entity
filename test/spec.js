@@ -3390,7 +3390,7 @@ module.exports = function(options) {
 
     describe('querying', function() {
       var numberOfRecordsToGenerate = 10
-      var minMiliSecsToGenerate = 1000
+      var minMiliSecsToGenerate = 2000
       it(
           'should create ' +
           numberOfRecordsToGenerate +
