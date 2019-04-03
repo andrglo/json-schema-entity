@@ -2455,19 +2455,19 @@ module.exports = function(options) {
                 NUMERO: '99',
                 docpagvc: [
                   {
-                    VALOR: 350.01,
-                    DATAVENC: '2015-08-23',
-                    categoria: {
-                      id: '111',
-                      DESCEVENTO: 'Category 111'
-                    }
-                  },
-                  {
                     VALOR: 250.02,
                     DATAVENC: '2015-09-23',
                     categoria: {
                       id: '222',
                       DESCEVENTO: 'Category 222'
+                    }
+                  },
+                  {
+                    VALOR: 350.01,
+                    DATAVENC: '2015-08-23',
+                    categoria: {
+                      id: '111',
+                      DESCEVENTO: 'Category 111'
                     }
                   }
                 ]

@@ -257,7 +257,7 @@ module.exports = function(config) {
           'DATAPGTO',
           'Hora do próximo aviso'
         ])
-      })
+      }, {orderBy: 'DATAVENC,id'})
       .foreignKey('FORNEC')
 
   // Validation (before transaction, called in create(default), update(default)

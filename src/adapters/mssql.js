@@ -271,7 +271,12 @@ module.exports = function() {
           data.key +
           '].[' +
           data.primaryKeyFields[0] +
-          '] FOR JSON PATH) AS [' +
+          '] ORDER BY ' +
+          (
+            association.data.primaryOrderFields ||
+            association.data.primaryKeyFields
+          ) +
+          ' FOR JSON PATH) AS [' +
           association.data.key +
           ']'
       )

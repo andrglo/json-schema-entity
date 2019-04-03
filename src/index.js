@@ -14,6 +14,25 @@ function toArray(obj) {
   return Array.isArray(obj) ? obj : (obj && [obj]) || []
 }
 
+const orderAssociations = (record, data) => {
+  _.forEach(data.associations, function(association) {
+    const key = association.data.key
+    const isArray = Array.isArray(record[key])
+    if (isArray) {
+      if (association.data.primaryOrderFields) {
+        record[key] = _.sortBy(record[key], association.data.primaryOrderFields)
+      }
+    }
+    if (association.data.associations.length && record[key]) {
+      const recordset = isArray ? record[key] : [record[key]]
+      for (let i = 0; i < recordset.length; i++) {
+        recordset[i] = orderAssociations(recordset[i], association.data)
+      }
+    }
+  })
+  return record
+}
+
 const hasEqualPrimaryKey = function(a, b, data) {
   let same = false
   _.forEach(data.primaryKeyAttributes, function(name) {
@@ -828,6 +847,7 @@ function create(entity, options, data, adapter) {
               },
               Promise.resolve()
           ).then(function() {
+            orderAssociations(newEntity, data)
             return newEntity
           })
         })
@@ -1026,6 +1046,7 @@ function update(entity, was, options, data, adapter) {
               },
               Promise.resolve()
           ).then(function() {
+            orderAssociations(modifiedEntity, data)
             return modifiedEntity
           })
         })
