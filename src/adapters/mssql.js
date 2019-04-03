@@ -211,10 +211,12 @@ module.exports = function() {
     assert(_.isArray(jsonset), 'jsonset is not an array')
     _.forEach(jsonset, function(record) {
       coerce.map(function(coercion) {
-        record[coercion.property] =
-          (record[coercion.property] &&
-            coercion.fn(record[coercion.property])) ||
-          null
+        const value = record[coercion.property]
+        if (value === void 0) {
+          record[coercion.property] = null
+        } else if (value !== null) {
+          record[coercion.property] = coercion.fn(record[coercion.property])
+        }
       })
     })
     return jsonset

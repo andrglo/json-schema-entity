@@ -580,14 +580,14 @@ function clearNulls(obj) {
   })
 }
 
-const isEmpty = v => v === null || v === undefined
+const isEmpty = v => v === void 0 || v === null
 
 function buildPlainObject(record, data) {
   clearNulls(record)
   const props = data.schema.properties
   Object.keys(record).forEach(key => {
     const prop = props[key]
-    if (isEmpty(prop)) {
+    if (!prop) {
       return
     }
     const value = record[key]
@@ -608,7 +608,7 @@ function buildPlainObject(record, data) {
   })
   _.forEach(data.associations, function(association) {
     var key = association.data.key
-    if (record[key]) {
+    if (!isEmpty(record[key])) {
       var recordset = data.adapter.extractRecordset(
           record[key],
           association.data.coerce
