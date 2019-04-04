@@ -19,8 +19,8 @@ const orderAssociations = (record, data) => {
     const key = association.data.key
     const isArray = Array.isArray(record[key])
     if (isArray) {
-      if (association.data.primaryOrderFields) {
-        record[key] = _.sortBy(record[key], association.data.primaryOrderFields)
+      if (association.data.primarySortFields) {
+        record[key] = _.sortBy(record[key], association.data.primarySortFields)
       }
     }
     if (association.data.associations.length && record[key]) {
@@ -847,7 +847,6 @@ function create(entity, options, data, adapter) {
               },
               Promise.resolve()
           ).then(function() {
-            orderAssociations(newEntity, data)
             return newEntity
           })
         })
@@ -1046,7 +1045,6 @@ function update(entity, was, options, data, adapter) {
               },
               Promise.resolve()
           ).then(function() {
-            orderAssociations(modifiedEntity, data)
             return modifiedEntity
           })
         })
@@ -1251,6 +1249,7 @@ module.exports = function(schemaName, schema, config) {
                         }, options)
                         })
                         .then(function(record) {
+                          orderAssociations(record, data)
                           return options.toPlainObject === true && !isInstance
                         ? record
                         : buildEntity(record, data, false, false, entity, self)
@@ -1345,6 +1344,7 @@ module.exports = function(schemaName, schema, config) {
                       }, options)
                     })
                     .then(function(record) {
+                      orderAssociations(record, data)
                       return options.toPlainObject === true && !isInstance
                       ? record
                       : buildEntity(record, data, false, false, entity, self)
@@ -1505,6 +1505,7 @@ module.exports = function(schemaName, schema, config) {
             const orderBy = Array.isArray(options.orderBy)
               ? options.orderBy
               : options.orderBy.split(',')
+            association.primarySortFields = orderBy
             association.primaryOrderFields = orderBy.map(
                 field => schema.properties[field].field || field
             )
