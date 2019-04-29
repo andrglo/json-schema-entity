@@ -9,7 +9,6 @@ chai.should()
 var _ = require('lodash')
 var validator = require('validator')
 var brV = require('br-validations')
-var gutil = require('gulp-util')
 var sqlView = require('sql-view')
 
 var entity = require('../src')
@@ -35,7 +34,7 @@ var log = function() {
 var logError = function(done) {
   return function(err) {
     if (err) {
-      gutil.log('Error', gutil.colors.red(JSON.stringify(err, null, '  ')))
+      console.error(err)
     }
     done(err)
   }
@@ -3396,7 +3395,7 @@ module.exports = function(options) {
           numberOfRecordsToGenerate +
           ' records in an minimum time',
           function(done) {
-            gutil.log(
+            console.log(
                 'Is generating ' + numberOfRecordsToGenerate + ' entities...'
             )
             var duration = process.hrtime()

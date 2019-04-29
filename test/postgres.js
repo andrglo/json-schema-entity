@@ -1,10 +1,8 @@
-var gutil = require('gulp-util')
-var pretty = require('pretty-hrtime')
-var PgCrLayer = require('pg-cr-layer')
+const PgCrLayer = require('pg-cr-layer')
 
-var spec = require('./spec')
+const spec = require('./spec')
 
-var pgConfig = {
+const pgConfig = {
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD,
   database: 'postgres',
@@ -15,55 +13,59 @@ var pgConfig = {
     idleTimeout: 30000
   }
 }
-var pg = new PgCrLayer(pgConfig)
+const pg = new PgCrLayer(pgConfig)
 
-var databaseName = 'test-json-schema-entity'
+const databaseName = 'test-json-schema-entity'
 
 function createPostgresDb() {
-  var dbName = process.env.POSTGRES_DATABASE || databaseName
+  const dbName = process.env.POSTGRES_DATABASE || databaseName
   return pg
-    .execute('DROP DATABASE IF EXISTS "' + dbName + '";')
-    .then(function() {
-      return pg.execute('CREATE DATABASE "' + dbName + '"')
-    })
+      .execute('DROP DATABASE IF EXISTS "' + dbName + '";')
+      .then(function() {
+        return pg.execute('CREATE DATABASE "' + dbName + '"')
+      })
 }
 
-var pgOptions = {}
+const pgOptions = {}
 
 before(function(done) {
   return pg
-    .connect()
-    .then(function() {
-      return createPostgresDb()
-        .then(function() {
-          gutil.log('Postgres db created')
-          return pg.close()
-        })
-        .then(function() {
-          gutil.log('Postgres db creation connection closed')
-          pgConfig.database = process.env.POSTGRES_DATABASE || databaseName
-          gutil.log('Postgres will connect to', pgConfig.database)
-          pgOptions.db = new PgCrLayer(pgConfig)
-          return pgOptions.db.connect()
-        })
-    })
-    .then(function() {
-      done()
-    })
-    .catch(function(error) {
-      done(error)
-    })
+      .connect()
+      .then(function() {
+        return createPostgresDb()
+            .then(function() {
+              console.log('Postgres db created')
+              return pg.close()
+            })
+            .then(function() {
+              console.log('Postgres db creation connection closed')
+              pgConfig.database = process.env.POSTGRES_DATABASE || databaseName
+              console.log('Postgres will connect to', pgConfig.database)
+              pgOptions.db = new PgCrLayer(pgConfig)
+              return pgOptions.db.connect()
+            })
+      })
+      .then(function() {
+        done()
+      })
+      .catch(function(error) {
+        done(error)
+      })
 })
 
 describe('postgres', function() {
-  var duration
+  let duration
   before(function() {
     duration = process.hrtime()
   })
   spec(pgOptions)
   after(function() {
     duration = process.hrtime(duration)
-    gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)))
+    console.info(
+        'postgres finished after: %ds %dms',
+        duration[0],
+        duration[1] / 1000000
+    )
   })
 })
 
