@@ -2,7 +2,7 @@ version: 2.1
 
 jobs:
   test:
-    working_directory: ~/json-schema-entity
+    working_directory: ~/repo
     docker:
       - image: mhart/alpine-node:12.0.0
         environment:
@@ -63,8 +63,9 @@ jobs:
       - persist_to_workspace:
           root: ~/repo
           paths: .
+
   publish:
-    working_directory: ~/json-schema-entity
+    working_directory: ~/repo
     docker:
       - image: mhart/alpine-node:12.0.0
     steps:
