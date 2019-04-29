@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  build:
+  test:
     working_directory: ~/json-schema-entity
     docker:
       - image: andrglo/everest:12.0.0
@@ -23,10 +23,19 @@ jobs:
           POSTGRES_PASSWORD: postgres
     steps:
       - checkout
+      - restore_cache:
+          name: Restore Yarn Package Cache
+          keys:
+            - yarn-packages-{{ checksum "yarn.lock" }}
       - run:
-          name: Instal dependencies
+          name: Install dependencies
           command: |
-            yarn
+            yarn install --frozen-lockfile
+      - save_cache:
+          name: Save Yarn Package Cache
+          key: yarn-packages-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
       - run:
           name: Waiting for postgres to be ready
           command: |
@@ -50,5 +59,47 @@ jobs:
       - run:
           name: Tests
           command: |
-            mocha --bail --exit --timeout 15000 test/index.js
+            yarn test
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+  publish:
+    working_directory: ~/json-schema-entity
+    docker:
+      - image: andrglo/everest:12.0.0
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: Publish package
+          command: |
+            PACK=$(npm view . name)
+            PUBLISHED_VERSION=$(npm view "$PACK" version)
+            PACKAGE_VERSION=$(cat package.json \
+              | grep version \
+              | head -1 \
+              | awk -F: '{ print $2 }' \
+              | sed 's/[", ]//g')
+            echo Package=$PACK, Published version=$PUBLISHED_VERSION, Package version=$PACKAGE_VERSION
+            if [ "$PUBLISHED_VERSION" == "$PACKAGE_VERSION" ]; then
+              echo " => Not publishing"
+            else
+              echo " => Will publish"
+              npm publish
+            fi
+
+workflows:
+  version: 2
+  test-n-publish:
+    jobs:
+      - test:
+      - publish:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
 
