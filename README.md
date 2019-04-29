@@ -1,4 +1,4 @@
-# json-schema-entity [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Coverage percentage][coveralls-image]][coveralls-url]
+# json-schema-entity [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url]
 > Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL dtaabase
 
 ## Install
@@ -12,7 +12,7 @@ $ npm install --save json-schema-entity
 ```js
 var jse = require('json-schema-entity');
 var pgCrLayer = require('pg-cr-layer');
- 
+
 var config = {
   user: 'me',
   password: 'my password',
@@ -23,9 +23,9 @@ var config = {
     idleTimeout: 30000
   }
 };
- 
+
 var db = new PgCrLayer(config)
- 
+
 var invoiceClass = jse('invoice', {
     properties: {
       id: {
@@ -38,7 +38,7 @@ var invoiceClass = jse('invoice', {
       }
     }
   });
-  
+
 invoiceClass.hasMany('items', {
   properties: {
     id: {
