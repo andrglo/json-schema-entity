@@ -1,0 +1,54 @@
+version: 2.1
+
+jobs:
+  build:
+    working_directory: ~/json-schema-entity
+    docker:
+      - image: andrglo/everest:12.0.0
+        environment:
+          NODE_ENV: test
+          POSTGRES_HOST: 127.0.0.1
+          MSSQL_HOST: 127.0.0.1
+          MSSQL_PASSWORD: Juriti01
+          MSSQL_USER: sa
+      - image: mcr.microsoft.com/mssql/server:2017-CU12
+        environment:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: Juriti01
+          MSSQL_PID: Express
+          MSSQL_COLLATION: Latin1_General_CI_AI
+      - image: postgres:11.2-alpine
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+    steps:
+      - checkout
+      - run:
+          name: Instal dependencies
+          command: |
+            yarn
+      - run:
+          name: Waiting for postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for postgres && exit 1
+      - run:
+          name: Waiting for mssql to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 1433 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for mssql && exit 1
+      - run:
+          name: Tests
+          command: |
+            mocha --bail --exit --timeout 15000 test/index.js
+
