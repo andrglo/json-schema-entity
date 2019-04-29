@@ -140,8 +140,12 @@ describe('mssql', function() {
 })
 
 after(function() {
-  mssqlOptions.db.close()
-  mssqlOptions.db2.close()
-  pgOptions.db.close()
-  pgOptions.db2.close()
+  if (mssqlOptions.db) {
+    mssqlOptions.db.close()
+    mssqlOptions.db2.close()
+  }
+  if (pgOptions.db) {
+    pgOptions.db.close()
+    pgOptions.db2.close()
+  }
 })

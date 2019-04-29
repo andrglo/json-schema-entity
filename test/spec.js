@@ -83,7 +83,7 @@ module.exports = function(options) {
     var tableCadastro2
     var joao
 
-    var minNanoSecsToSave = 3 * 1000000 // 3 milliseconds (min min = 1)
+    var minNanoSecsToSave = 1000000 // 1 millisecond
 
     before(function(done) {
       db = options.db
@@ -165,7 +165,7 @@ module.exports = function(options) {
             expect(record.id).to.not.equal(undefined)
             expect(record.createdAt).to.not.equal(undefined)
             expect(record.updatedAt).to.not.equal(undefined)
-            expect(end[1] > minNanoSecsToSave).to.equal(true) // mssql Macbook 33.700 iMac retina 22.786
+            expect(end[1]).above(minNanoSecsToSave)
             record.createdAt
                 .toISOString()
                 .should.equal(record.updatedAt.toISOString())
@@ -190,7 +190,7 @@ module.exports = function(options) {
             expect(record.id).to.not.equal(undefined)
             expect(record.createdAt).to.not.equal(undefined)
             expect(record.updatedAt).to.not.equal(undefined)
-            expect(end[1] > minNanoSecsToSave).to.equal(true) // mssql Macbook 33.700 iMac retina 22.786
+            expect(end[1]).above(minNanoSecsToSave)
             record.createdAt
                 .toISOString()
                 .should.equal(record.updatedAt.toISOString())
@@ -221,7 +221,7 @@ module.exports = function(options) {
             record.should.have.property('NOMECAD')
             record.should.have.property('IDENT')
             record.should.have.property('NUMERO')
-            expect(end[1] > minNanoSecsToSave).to.equal(true) // mssql Macbook 20.320 iMac retina 13.110
+            expect(end[1]).above(minNanoSecsToSave)
             expect(record.createdAt).to.be.a('date')
             expect(record.updatedAt >= now).to.equal(true)
             expect(record.updatedAt >= joao.updatedAt).to.equal(true)
@@ -237,7 +237,7 @@ module.exports = function(options) {
           .destroy({where: {id: joao.id, updatedAt: joao.updatedAt}})
           .then(function(res) {
             end = process.hrtime(start)
-            expect(end[1] > minNanoSecsToSave).to.equal(true) // mssql Macbook 14.349 iMac retina 11.443
+            expect(end[1]).above(minNanoSecsToSave)
             expect(res).to.equal(undefined)
             done()
           })
