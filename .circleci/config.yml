@@ -95,7 +95,7 @@ workflows:
   version: 2
   test-n-publish:
     jobs:
-      - test:
+      - test
       - publish:
           requires:
             - test
