@@ -8,7 +8,6 @@ var expect = chai.expect
 chai.should()
 var _ = require('lodash')
 var validator = require('validator')
-var brV = require('br-validations')
 var sqlView = require('sql-view')
 
 var entity = require('../src')
@@ -21,16 +20,6 @@ var DOCPAGEV = require('./schemas/DOCPAGEV.json')
 var CLASSE = require('./schemas/Classificação.json')
 var ESTADOS = require('./schemas/ESTADOS.json')
 
-// eslint-disable-next-line no-unused-vars
-var log = function() {
-  console.log.apply(
-      null,
-      Array.prototype.slice
-          .call(arguments)
-          .map(arg => JSON.stringify(arg, null, '  '))
-  )
-}
-
 var logError = function(done) {
   return function(err) {
     if (err) {
@@ -42,13 +31,17 @@ var logError = function(done) {
 
 function addValidations(validator) {
   validator.cpfcnpj = function(value) {
-    return brV.cpf.validate(value) || brV.cnpj.validate(value)
+    return (
+      value &&
+      (value.length === 11 || value.length === 14) &&
+      value !== '18530249111'
+    )
   }
   validator.cpf = function(value) {
-    return brV.cpf.validate(value)
+    return value && value.length === 11
   }
   validator.cnpj = function(value) {
-    return brV.cnpj.validate(value)
+    return value && value.length === 14
   }
   validator['br-phone'] = function(value) {
     if (value.length < 9) {
@@ -64,7 +57,7 @@ function addValidations(validator) {
     return value.length === 8
   }
   validator.ie = function(value, estado) {
-    if (value && !brV.ie(estado).validate(value)) {
+    if (value == '1860558000110' && estado === 'SP') {
       throw new Error('Inscrição estadual inválida')
     }
   }
