@@ -60,6 +60,7 @@ jobs:
           name: Tests
           command: |
             yarn test
+            yarn test:report:coverage
       - persist_to_workspace:
           root: ~/repo
           paths: .
