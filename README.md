@@ -1,4 +1,4 @@
-# json-schema-entity [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-entity.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-entity)[daviddm-url]
+# json-schema-entity [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-entity.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-entity) [![Coverage Status](https://coveralls.io/repos/github/andrglo/json-schema-table/badge.svg)](https://coveralls.io/github/andrglo/json-schema-table)
 > Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL database
 
 ## Install
@@ -110,9 +110,5 @@ MIT © [Andre Gloria]()
 
 [npm-image]: https://badge.fury.io/js/json-schema-entity.svg
 [npm-url]: https://npmjs.org/package/json-schema-entity
-[travis-image]: https://travis-ci.org/andrglo/json-schema-entity.svg?branch=master
-[travis-url]: https://travis-ci.org/andrglo/json-schema-entity
 [daviddm-image]: https://david-dm.org/andrglo/json-schema-entity.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/andrglo/json-schema-entity
-[coveralls-image]: https://coveralls.io/repos/andrglo/json-schema-entity/badge.svg?branch=master&service=github
-[coveralls-url]: https://coveralls.io/github/andrglo/json-schema-entity?branch=master
