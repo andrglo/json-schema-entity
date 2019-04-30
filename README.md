@@ -1,5 +1,5 @@
-# json-schema-entity [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url]
-> Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL dtaabase
+# json-schema-entity [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-entity.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-entity)[daviddm-url]
+> Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL database
 
 ## Install
 
