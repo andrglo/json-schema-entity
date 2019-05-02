@@ -7,16 +7,12 @@ jobs:
       - image: circleci/node:12.0.0
         environment:
           NODE_ENV: test
-          POSTGRES_HOST: 127.0.0.1
-          MSSQL_HOST: 127.0.0.1
-          MSSQL_PASSWORD: Juriti01
-          MSSQL_USER: sa
+          POSTGRES_PASSWORD: postgres
+          MSSQL_PASSWORD: Passw0rd
       - image: mcr.microsoft.com/mssql/server:2017-CU12
         environment:
           ACCEPT_EULA: Y
-          SA_PASSWORD: Juriti01
-          MSSQL_PID: Express
-          MSSQL_COLLATION: Latin1_General_CI_AI
+          SA_PASSWORD: Passw0rd
       - image: postgres:11.2-alpine
         environment:
           POSTGRES_USER: postgres

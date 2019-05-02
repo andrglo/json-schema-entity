@@ -12,18 +12,17 @@ services:
       - .:/root/json-schema-entity
     environment:
       - NODE_ENV=test
-      - MSSQL_PASSWORD=Juriti01
-      - MSSQL_USER=sa
-      - NPM_TOKEN=$NPM_TOKEN
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PASSWORD=postgres
+      - MSSQL_HOST=mssql
+      - MSSQL_PASSWORD=Passw0rd
     restart: always
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2017-CU12
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Juriti01
-      - MSSQL_PID=Express
-      - MSSQL_COLLATION=Latin1_General_CI_AI
+      - SA_PASSWORD=Passw0rd
     restart: always
 
   postgres:

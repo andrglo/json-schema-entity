@@ -5,9 +5,9 @@ const spec = require('./spec')
 
 const pgConfig = {
   user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'postgres',
+  password: process.env.POSTGRES_PASSWORD,
   database: 'postgres',
-  host: process.env.POSTGRES_HOST || 'postgres',
+  host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT || 5432,
   pool: {
     max: 10,
@@ -17,10 +17,10 @@ const pgConfig = {
 const pg = new PgCrLayer(pgConfig)
 
 const mssqlConfig = {
-  user: process.env.MSSQL_USER,
+  user: process.env.MSSQL_USER || 'sa',
   password: process.env.MSSQL_PASSWORD,
   database: 'master',
-  host: process.env.MSSQL_HOST || 'mssql',
+  host: process.env.MSSQL_HOST || 'localhost',
   port: process.env.MSSQL_PORT || 1433,
   pool: {
     max: 10,
