@@ -871,10 +871,12 @@ function update(entity, was, options, data, adapter) {
         record = _.pick(entity, data.propertiesList)
         options = Object.assign({}, options, {where: {}})
         data.primaryKeyAttributes.map(function(field) {
-          options.where[field] =
-          entity[field] === undefined ? null : entity[field]
+          if (entity[field] !== undefined || options.where[field] === undefined) {
+            options.where[field] =
+            entity[field] === undefined ? null : entity[field]
+          }
         })
-        if (data.timestamps) {
+        if (data.timestamps && entity.updatedAt !== undefined) {
           options.where.updatedAt = entity.updatedAt || null
         }
         return adapter.update(record, data, options).then(function(res) {
