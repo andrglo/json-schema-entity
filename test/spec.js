@@ -3958,6 +3958,27 @@ module.exports = function(options) {
           })
           .catch(logError(done))
     })
+    it('even when updated at is not informed you can update', function(done) {
+      plano
+          .new(db)
+          .update(
+              {
+                A01_DESCTA: 'test222'
+              },
+              {
+                where: {
+                  A01_CODCTA: '1',
+                  NUMPLC: 0
+                }
+              }
+          )
+          .then(function(record) {
+            expect(record.A01_DESCTA).equal('test222')
+            updatedAt = record.updatedAt
+            done()
+          })
+          .catch(logError(done))
+    })
     it('and finally deleted', function(done) {
       plano
           .new(db)

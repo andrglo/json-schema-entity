@@ -1287,8 +1287,10 @@ module.exports = function(schemaName, schema, config) {
                 })
               }
               if (data.timestamps) {
-                key.where.updatedAt =
-                  entity.updatedAt || key.where.updatedAt || null
+                const updatedAt = entity.updatedAt || key.where.updatedAt
+                if (updatedAt !== undefined) {
+                  key.where.updatedAt = updatedAt || null
+                }
               }
               var isInstance =
                 entity instanceof TableRecord && entity.entity === this
