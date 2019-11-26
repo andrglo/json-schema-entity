@@ -310,7 +310,7 @@ function runModelValidations(is, was, data, errors) {
 
 const tableRecordInfo = new WeakMap()
 const tableRecordData = new WeakMap()
-const timeStampsColumns = ['createdAt', 'updatedAt']
+const timeStampsColumns = ['updatedAt']
 
 class TableRecord {
   constructor(trs, record, isNew, parent) {
@@ -376,7 +376,6 @@ class TableRecord {
         .then(function() {
           entityData.isNew = true
           var is = entityData.values
-          is.createdAt = void 0
           is.updatedAt = void 0
           entityData.was = Object.freeze({})
         })
@@ -522,9 +521,6 @@ class TableRecordSchema {
     })
 
     if (data.timestamps) {
-      columns.set('createdAt', function() {
-        throw new Error('Column createdAt cannot be modified')
-      })
       columns.set('updatedAt', function() {
         throw new Error('Column updatedAt cannot be modified')
       })
@@ -641,10 +637,6 @@ function buildPlainObject(record, data) {
           : recordset
     }
   })
-  if (record.created_at) {
-    record.createdAt = record.created_at
-    delete record.created_at
-  }
   if (record.updated_at) {
     record.updatedAt = record.updated_at
     delete record.updated_at
@@ -654,7 +646,7 @@ function buildPlainObject(record, data) {
 
 function updateEntity(entity, values, data) {
   data.propertiesList
-      .filter(key => key !== 'updatedAt' && key !== 'createdAt')
+      .filter(key => key !== 'updatedAt')
       .forEach(key => {
         if (values[key] !== undefined) {
           entity[key] = values[key]
@@ -737,9 +729,6 @@ function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
     return instance
   } else {
     const r = _.extend(_.pick(record, data.propertiesList), associations)
-    if (record.created_at) {
-      r.createdAt = record.created_at
-    }
     if (record.updated_at) {
       r.updatedAt = record.updated_at
     }
@@ -1199,10 +1188,6 @@ module.exports = function(schemaName, schema, config) {
                 if (where.updatedAt !== undefined) {
                   where.updated_at = where.updatedAt
                   delete where.updatedAt
-                }
-                if (where.createdAt !== undefined) {
-                  where.created_at = where.createdAt
-                  delete where.createdAt
                 }
                 criteria = _.extend({}, criteria)
                 criteria.where = where
@@ -1836,13 +1821,6 @@ function buildTable(data) {
       property: 'updatedAt',
       fn: data.adapter.getCoercionFunction('datetime')
     })
-    if (data.propertiesList.indexOf('createdAt') === -1) {
-      data.propertiesList.push('createdAt')
-      data.coerce.push({
-        property: 'createdAt',
-        fn: data.adapter.getCoercionFunction('datetime')
-      })
-    }
   }
 
   data.propertiesList.forEach(function(name) {

@@ -55,7 +55,6 @@ exports.create = function(record, data, options) {
           record[name] = inserted[fieldName]
         })
         if (data.timestamps) {
-          record.createdAt = inserted.created_at
           record.updatedAt = inserted.updated_at
         }
         return record
@@ -133,7 +132,6 @@ exports.update = function(record, data, options) {
           record[name] = updated[fieldName]
         })
         if (data.timestamps) {
-          record.createdAt = updated.created_at
           record.updatedAt = updated.updated_at
         }
         return record

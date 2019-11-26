@@ -12,56 +12,30 @@ module.exports = function() {
     var table = this.wrap(data.identity.name)
     var schema = options.schema || 'dbo'
     return this.db
-        .query(
-            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-          'TABLE_NAME=\'' +
+      .query(
+        'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
+          "TABLE_NAME='" +
           data.identity.name +
-          '\' AND COLUMN_NAME=\'created_at\' AND ' +
-          'TABLE_CATALOG=db_name() AND TABLE_SCHEMA=\'' +
+          "' AND COLUMN_NAME='updated_at' AND " +
+          "TABLE_CATALOG=db_name() AND TABLE_SCHEMA='" +
           schema +
-          '\'',
-            null,
-            options
-        )
-        .then(recordset => {
-          if (recordset.length === 0) {
-            return this.db.execute(
-                'ALTER TABLE ' +
-              table +
-              ' ADD ' +
-              this.wrap('created_at') +
-              ' datetime2(3) default getUtcDate()',
-                null,
-                options
-            )
-          }
-        })
-        .then(() => {
-          return this.db.query(
-              'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
-            'TABLE_NAME=\'' +
-            data.identity.name +
-            '\' AND COLUMN_NAME=\'updated_at\' AND ' +
-            'TABLE_CATALOG=db_name() AND TABLE_SCHEMA=\'' +
-            schema +
-            '\'',
-              null,
-              options
-          )
-        })
-        .then(recordset => {
-          if (recordset.length === 0) {
-            return this.db.execute(
-                'ALTER TABLE ' +
+          "'",
+        null,
+        options
+      )
+      .then(recordset => {
+        if (recordset.length === 0) {
+          return this.db.execute(
+            'ALTER TABLE ' +
               table +
               ' ADD ' +
               this.wrap('updated_at') +
               ' datetime2(3)',
-                null,
-                options
-            )
-          }
-        })
+            null,
+            options
+          )
+        }
+      })
   }
 
   function toSqlType(property) {
@@ -84,13 +58,11 @@ module.exports = function() {
   function buildReturningFields(fields, fieldsWithType, data) {
     _.forEach(data.properties, function(property, name) {
       fieldsWithType.push(
-          '[' + (property.field || name) + ']' + ' ' + toSqlType(property)
+        '[' + (property.field || name) + ']' + ' ' + toSqlType(property)
       )
       fields.push(property.field || name)
     })
     if (data.timestamps) {
-      fieldsWithType.push('created_at DATETIME2(3)')
-      fields.push('created_at')
       fieldsWithType.push('updated_at DATETIME2(3)')
       fields.push('updated_at')
     }
@@ -100,7 +72,7 @@ module.exports = function() {
     _.forEach(data.properties, function(property, name) {
       if (data.primaryKeyFields.includes(property.field || name)) {
         fieldsWithType.push(
-            '[' + (property.field || name) + ']' + ' ' + toSqlType(property)
+          '[' + (property.field || name) + ']' + ' ' + toSqlType(property)
         )
         fields.push(property.field || name)
       }
@@ -114,30 +86,30 @@ module.exports = function() {
     var fields = []
     buildReturningFields(fields, fieldsWithType, data)
     buildReturningPrimaryKeyFields(
-        primaryKeysFields,
-        primaryKeysFieldsWithType,
-        data
+      primaryKeysFields,
+      primaryKeysFieldsWithType,
+      data
     )
     var commands = [
       'DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')'
     ]
     commands.push(
-        'INSERT INTO [' +
+      'INSERT INTO [' +
         data.identity.name +
         '] (<fields>' +
         (data.timestamps ? ',updated_at' : '') +
         ') OUTPUT ' +
         primaryKeysFields
-            .map(function(field) {
-              return 'INSERTED.[' + field + ']'
-            })
-            .join(',') +
+          .map(function(field) {
+            return 'INSERTED.[' + field + ']'
+          })
+          .join(',') +
         ' INTO @tmp VALUES (<values>' +
         (data.timestamps ? ',getUtcDate()' : '') +
         ')'
     )
     commands.push(
-        'SELECT ' +
+      'SELECT ' +
         fields.map(name => `c.[${name}]`).join(',') +
         ' FROM [' +
         data.identity.name +
@@ -153,28 +125,28 @@ module.exports = function() {
     var fields = []
     buildReturningFields(fields, fieldsWithType, data)
     buildReturningPrimaryKeyFields(
-        primaryKeysFields,
-        primaryKeysFieldsWithType,
-        data
+      primaryKeysFields,
+      primaryKeysFieldsWithType,
+      data
     )
     var commands = [
       'DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')'
     ]
     commands.push(
-        'UPDATE [' +
+      'UPDATE [' +
         data.identity.name +
         '] SET <fields-values>' +
         (data.timestamps ? ',updated_at=getUtcDate()' : '') +
         ' OUTPUT ' +
         primaryKeysFields
-            .map(function(field) {
-              return 'INSERTED.[' + field + ']'
-            })
-            .join(',') +
+          .map(function(field) {
+            return 'INSERTED.[' + field + ']'
+          })
+          .join(',') +
         ' INTO @tmp WHERE <primary-keys>'
     )
     commands.push(
-        'SELECT ' +
+      'SELECT ' +
         fields.map(name => `c.[${name}]`).join(',') +
         ' FROM [' +
         data.identity.name +
@@ -189,14 +161,14 @@ module.exports = function() {
     buildReturningFields(fields, fieldsWithType, data)
     var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')']
     commands.push(
-        'DELETE FROM [' +
+      'DELETE FROM [' +
         data.identity.name +
         '] OUTPUT ' +
         fields
-            .map(function(field) {
-              return 'DELETED.[' + field + ']'
-            })
-            .join(',') +
+          .map(function(field) {
+            return 'DELETED.[' + field + ']'
+          })
+          .join(',') +
         ' INTO @tmp WHERE <find-keys>'
     )
     commands.push('SELECT * FROM @tmp')
@@ -227,7 +199,7 @@ module.exports = function() {
     _.forEach(data.properties, function(property, name) {
       var fieldName = property.field || name
       fields.push(
-          '[' + fieldName + ']' + (name !== fieldName ? ' AS [' + name + ']' : '')
+        '[' + fieldName + ']' + (name !== fieldName ? ' AS [' + name + ']' : '')
       )
       if (
         options.fetchExternalDescription &&
@@ -242,17 +214,16 @@ module.exports = function() {
           display = display.substr(point + 1)
         }
         fields.push(
-            `(select [${display}] from [${property.schema.$ref}] where [${
-              property.schema.key
-            }]=[${data.key}].[${fieldName}]) as [${_.camelCase(
-                `${data.identity.name} ${fieldName} ${display}`
-            )}]`
+          `(select [${display}] from [${property.schema.$ref}] where [${
+            property.schema.key
+          }]=[${data.key}].[${fieldName}]) as [${_.camelCase(
+            `${data.identity.name} ${fieldName} ${display}`
+          )}]`
         )
       }
     })
     if (data.timestamps) {
       fields.push('updated_at')
-      fields.push('created_at')
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {
@@ -263,7 +234,7 @@ module.exports = function() {
         association.data.properties[association.data.foreignKey].field ||
         association.data.foreignKey
       fields.push(
-          '(' +
+        '(' +
           query +
           ' WHERE [' +
           foreignKey +
@@ -272,10 +243,8 @@ module.exports = function() {
           '].[' +
           data.primaryKeyFields[0] +
           '] ORDER BY ' +
-          (
-            association.data.primaryOrderFields ||
-            association.data.primaryKeyFields
-          ) +
+          (association.data.primaryOrderFields ||
+            association.data.primaryKeyFields) +
           ' FOR JSON PATH) AS [' +
           association.data.key +
           ']'

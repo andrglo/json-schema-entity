@@ -156,14 +156,8 @@ module.exports = function(options) {
             end = process.hrtime(start)
             joao = record
             expect(record.id).to.not.equal(undefined)
-            expect(record.createdAt).to.not.equal(undefined)
             expect(record.updatedAt).to.not.equal(undefined)
             expect(end[1]).above(minNanoSecsToSave)
-            record.createdAt
-                .toISOString()
-                .should.equal(record.updatedAt.toISOString())
-            expect(record.createdAt).to.be.a('date')
-            expect(record.createdAt >= new Date(now)).to.equal(true)
             done()
           })
           .catch(function(err) {
@@ -181,14 +175,8 @@ module.exports = function(options) {
           .then(function(record) {
             end = process.hrtime(start)
             expect(record.id).to.not.equal(undefined)
-            expect(record.createdAt).to.not.equal(undefined)
             expect(record.updatedAt).to.not.equal(undefined)
             expect(end[1]).above(minNanoSecsToSave)
-            record.createdAt
-                .toISOString()
-                .should.equal(record.updatedAt.toISOString())
-            expect(record.createdAt).to.be.a('date')
-            expect(record.createdAt >= now).to.equal(true)
             done()
           })
           .catch(function(err) {
@@ -215,10 +203,8 @@ module.exports = function(options) {
             record.should.have.property('IDENT')
             record.should.have.property('NUMERO')
             expect(end[1]).above(minNanoSecsToSave)
-            expect(record.createdAt).to.be.a('date')
             expect(record.updatedAt >= now).to.equal(true)
             expect(record.updatedAt >= joao.updatedAt).to.equal(true)
-            expect(record.updatedAt >= record.createdAt).to.equal(true)
             joao = record
             done()
           })
@@ -552,7 +538,6 @@ module.exports = function(options) {
         'empty',
         'ClassificaçãoCad',
         'docpagvc',
-        'createdAt',
         'updatedAt'
       ]
       var expectedInstanceMethods = [
@@ -710,13 +695,7 @@ module.exports = function(options) {
             .then(function(record) {
               joao = record
               expect(record.id).to.not.equal(undefined)
-              expect(record.createdAt).to.not.equal(undefined)
               expect(record.updatedAt).to.not.equal(undefined)
-              record.createdAt
-                  .toISOString()
-                  .should.equal(record.updatedAt.toISOString())
-              expect(record.createdAt).to.be.a('date')
-              expect(record.createdAt >= now).to.equal(true)
               record.should.have.property('Inativo')
               expect(record.Inativo).to.equal('Não')
               expect(record.afterCreate).to.equal('true')
@@ -2891,7 +2870,6 @@ module.exports = function(options) {
             .then(function() {
               jessica.should.have.property('id')
               jessica.should.have.property('updatedAt')
-              jessica.should.have.property('createdAt')
               jessica.should.have.property('NOMECAD')
               jessica.NOMECAD.should.equal('Jessica')
               done()
@@ -2917,7 +2895,6 @@ module.exports = function(options) {
             .then(function() {
               expect(jessica.id).to.not.equal(undefined)
               expect(jessica.updatedAt).to.equal(undefined)
-              expect(jessica.createdAt).to.equal(undefined)
               done()
             })
             .catch(logError(done))
@@ -3009,7 +2986,6 @@ module.exports = function(options) {
               .then(function() {
                 expect(lucia.id).to.not.equal(undefined)
                 expect(lucia.updatedAt).to.not.equal(undefined)
-                expect(lucia.createdAt).to.not.equal(undefined)
                 expect(lucia.NOMECAD).to.not.equal(undefined)
                 lucia.NOMECAD.should.equal('Lucia')
                 expect(lucia.docpagvc).to.not.equal(undefined)
@@ -3019,7 +2995,6 @@ module.exports = function(options) {
                 var was = lucia.was
                 was.should.have.property('id')
                 was.should.have.property('updatedAt')
-                was.should.have.property('createdAt')
                 was.should.have.property('NOMECAD')
                 was.NOMECAD.should.equal('Lucia')
                 was.should.have.property('docpagvc')
@@ -3058,7 +3033,6 @@ module.exports = function(options) {
               .then(function(record) {
                 record.should.have.property('id')
                 record.should.have.property('updatedAt')
-                record.should.have.property('createdAt')
                 record.should.have.property('NOMECAD')
                 record.NOMECAD.should.equal('John Doe')
                 done()
@@ -3071,7 +3045,6 @@ module.exports = function(options) {
               .then(function(record) {
                 record.should.have.property('id')
                 record.should.have.property('updatedAt')
-                record.should.have.property('createdAt')
                 record.should.have.property('NOMECAD')
                 record.NOMECAD.should.equal('Mary Lou')
                 done()
@@ -3686,16 +3659,6 @@ module.exports = function(options) {
             })
             .catch(logError(done))
       })
-      it('cannot alter the timestamps, createdAt', function() {
-        try {
-          beth.createdAt = new Date()
-          // noinspection ExceptionCaughtLocallyJS
-          throw new Error('Invalid column modified')
-        } catch (error) {
-          error.should.have.property('message')
-          expect(error.message).to.equal('Column createdAt cannot be modified')
-        }
-      })
       it('cannot alter the timestamps, updatedAt', function() {
         try {
           beth.updatedAt = new Date()
@@ -3759,7 +3722,6 @@ module.exports = function(options) {
                     return record.destroy().then(function() {
                       record.should.have.property('id')
                       expect(record.updatedAt).to.equal(undefined)
-                      expect(record.createdAt).to.equal(undefined)
                       done()
                     })
                   })
@@ -3910,7 +3872,6 @@ module.exports = function(options) {
             .then(function(record) {
               conta = record
               expect(conta.id).to.equal(undefined)
-              expect(record.createdAt).to.not.equal(undefined)
               expect(record.updatedAt).to.not.equal(undefined)
               done()
             })
