@@ -150,6 +150,7 @@ module.exports = function(options) {
           .create({
             NOMECAD: 'João',
             NUMERO: '1',
+            DATNASC: '1981-12-01',
             Inativo: 'Não'
           })
           .then(function(record) {
@@ -157,6 +158,7 @@ module.exports = function(options) {
             joao = record
             expect(record.id).to.not.equal(undefined)
             expect(record.updatedAt).to.not.equal(undefined)
+            expect(record.DATNASC).to.equal('1981-12-01')
             expect(end[1]).above(minNanoSecsToSave)
             done()
           })
