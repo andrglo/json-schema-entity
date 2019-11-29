@@ -2081,10 +2081,10 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
 
-sql-view@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/sql-view/-/sql-view-1.0.3.tgz#b2a157ce007c7d5434df49940e28e11ba965c741"
-  integrity sha512-tsZzSalVgJq9XQEi+Iw6dWUKNosVxczEZhZCssBKCyjHPi5yH24J1++5mhY1WkguiOLTVLIsVyfOJtHOusLYgQ==
+sql-view@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/sql-view/-/sql-view-1.0.4.tgz#95d518e59e669c5bcb7c74f013f84f0293c376c2"
+  integrity sha512-fc/SKSrJy/gMEYPIq87G3lBC0Dg6QMNAccfKlKvk4lqCt7YTXt3GRuBhN87Ub6R30ZpvQ0ujtaMoaqTAzeuiQg==
   dependencies:
     lodash.foreach "^4.5.0"
     lodash.isdate "^4.0.1"
