@@ -217,7 +217,7 @@ module.exports = function() {
           `(select [${display}] from [${property.schema.$ref}] where [${
             property.schema.key
           }]=[${data.key}].[${fieldName}]) as [${_.camelCase(
-            `${data.identity.name} ${fieldName} ${display}`
+            `${data.identity.name} ${name} ${display}`
           )}]`
         )
       }
