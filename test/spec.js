@@ -1091,10 +1091,8 @@ module.exports = function(options) {
               done(new Error('Saved with PAIS=X'))
             })
             .catch(function(error) {
-              expect(error.name).to.equal('EntityError')
-              expect(error.errors).to.be.a('array')
-              expect(error.errors.length).to.equal(1)
-              expect(error.errors[0].path).to.equal('pais')
+              expect(error.name).to.not.equal('EntityError') // not sync
+              expect(error.message).to.equal('pais cant be X')
               done()
             })
             .catch(function(error) {
