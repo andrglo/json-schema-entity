@@ -768,13 +768,7 @@ function runHooks(hooks, model, options, data, validatedInstance) {
             })
           }
           if (res && res.then) {
-            return res.catch(function(err) {
-              throw new EntityError({
-                message: hook.name + ' hook error',
-                errors: [{path: hook.id, message: err.message}],
-                err
-              })
-            })
+            return res
           }
         })
       },
