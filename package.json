@@ -1,6 +1,6 @@
 {
   "name": "json-schema-entity",
-  "version": "7.0.12",
+  "version": "7.0.13",
   "description": "Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL database",
   "repository": "https://github.com/andrglo/json-schema-entity.git",
   "author": {
@@ -38,7 +38,7 @@
   "scripts": {
     "test": "nyc mocha --bail --exit --timeout 15000 test/index.js",
     "test:report:coverage": "nyc report --reporter=text-lcov | coveralls",
-    "ssh": "docker exec -it json-schema-entity_dms_1 fish"
+    "ssh": "docker exec -it json-schema-entity-dms-1 fish"
   },
   "license": "MIT",
   "dependencies": {
