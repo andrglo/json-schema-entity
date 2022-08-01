@@ -157,7 +157,7 @@ module.exports = function(config) {
         properties.INSCEST.uf = 'ESTADO'
       })
       .setScope({Inativo: 'N'})
-      .useTimestamps()
+      .useTimestamps(true)
 
   cadAtivo
       .hasMany('CADASTRO as destino', {

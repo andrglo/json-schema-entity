@@ -6,6 +6,7 @@ var assert = require('assert')
 var sqlView = require('sql-view')
 var jst = require('json-schema-table')
 var EntityError = require('./entity-error')
+const {convertToUpdatedAt, getUpdatedAtColumnName} = require('./adapters/common')
 
 const isGenerator = obj =>
   typeof obj.next === 'function' && typeof obj.throw === 'function'
@@ -637,10 +638,7 @@ function buildPlainObject(record, data) {
           : recordset
     }
   })
-  if (record.updated_at) {
-    record.updatedAt = record.updated_at
-    delete record.updated_at
-  }
+  convertToUpdatedAt(record, data)
   return record
 }
 
@@ -729,9 +727,7 @@ function buildEntity(record, data, isNew, fromFetch, instance, self, parent) {
     return instance
   } else {
     const r = _.extend(_.pick(record, data.propertiesList), associations)
-    if (record.updated_at) {
-      r.updatedAt = record.updated_at
-    }
+    convertToUpdatedAt(record, data, r)
     const tableRecord = new TableRecord(data.trs, r, isNew, parent)
     if (isParent) {
       parent.tableRecord = tableRecord
@@ -1180,8 +1176,11 @@ module.exports = function(schemaName, schema, config) {
                 options = options || {}
                 var where = _.extend({}, criteria.where, data.scope)
                 if (where.updatedAt !== undefined) {
-                  where.updated_at = where.updatedAt
-                  delete where.updatedAt
+                  const updatedAtColumnName = getUpdatedAtColumnName(data)
+                  if (updatedAtColumnName) {
+                    where[updatedAtColumnName] = where.updatedAt
+                    delete where.updatedAt
+                  }
                 }
                 criteria = _.extend({}, criteria)
                 criteria.where = where
@@ -1470,8 +1469,14 @@ module.exports = function(schemaName, schema, config) {
           rebuild()
           return data.public
         },
-        useTimestamps: function() {
-          data.timestamps = true
+        useTimestamps: function(suffix) {
+          if (suffix === true) {
+            data.timestamps = `_${data.key}`
+          } else if (typeof suffix === 'string') {
+            data.timestamps = suffix
+          } else {
+            data.timestamps = true
+          }
           rebuild()
           return data.public
         },

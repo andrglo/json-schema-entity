@@ -11,12 +11,13 @@ module.exports = function() {
     options = options || {}
     var table = this.wrap(data.identity.name)
     var schema = options.schema || 'public'
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     return this.db
       .query(
         'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
           "TABLE_NAME='" +
           data.identity.name +
-          "' AND COLUMN_NAME='updated_at' AND " +
+          `' AND COLUMN_NAME='${updatedAtColumnName}' AND ` +
           "TABLE_CATALOG=current_database() AND TABLE_SCHEMA='" +
           schema +
           "'",
@@ -27,7 +28,7 @@ module.exports = function() {
         if (recordset.length === 0) {
           return this.db.execute(
             `ALTER TABLE ${table} ADD ${this.wrap(
-              'updated_at'
+              updatedAtColumnName
             )} TIMESTAMP(3) WITHOUT TIME ZONE`,
             null,
             options
@@ -37,18 +38,20 @@ module.exports = function() {
   }
 
   adapter.buildInsertCommand = function(data) {
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     data.insertCommand = `INSERT INTO ${this.wrap(
       data.identity.name
-    )} (<fields>${data.timestamps ? `,"updated_at"` : ''}) VALUES (<values>${
-      data.timestamps ? `,(now() at time zone 'utc')` : ''
+    )} (<fields>${updatedAtColumnName ? `,"${updatedAtColumnName}"` : ''}) VALUES (<values>${
+      updatedAtColumnName ? `,(now() at time zone 'utc')` : ''
     }) RETURNING *`
   }
 
   adapter.buildUpdateCommand = function(data) {
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     data.updateCommand = `UPDATE ${this.wrap(
       data.identity.name
     )} SET <fields-values>${
-      data.timestamps ? `,"updated_at"=(now() at time zone 'utc')` : ''
+      updatedAtColumnName ? `,"${updatedAtColumnName}"=(now() at time zone 'utc')` : ''
     } WHERE <primary-keys> RETURNING *`
   }
 
@@ -109,8 +112,9 @@ module.exports = function() {
         }
       }.bind(this)
     )
-    if (data.timestamps) {
-      fields.push(this.wrap('updated_at'))
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
+    if (updatedAtColumnName) {
+      fields.push(this.wrap(updatedAtColumnName))
     }
     _.forEach(
       data.associations,

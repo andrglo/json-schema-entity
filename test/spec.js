@@ -83,7 +83,7 @@ module.exports = function(options) {
       db2 = options.db2
       entityCadastro = entity('CADASTRO', CADASTRO, {
         dialect: db.dialect
-      }).useTimestamps()
+      }).useTimestamps('test')
       entityCadastro.validate('TEST', function() {
         if (!this.NUMERO) {
           throw new Error('NUMERO must be informed')

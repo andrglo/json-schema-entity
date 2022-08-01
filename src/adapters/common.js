@@ -54,8 +54,9 @@ exports.create = function(record, data, options) {
           var fieldName = property.field || name
           record[name] = inserted[fieldName]
         })
-        if (data.timestamps) {
-          record.updatedAt = inserted.updated_at
+        const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
+        if (updatedAtColumnName) {
+          record.updatedAt = inserted[updatedAtColumnName]
         }
         return record
       })
@@ -93,9 +94,10 @@ exports.update = function(record, data, options) {
     params.push(options.where[attribute])
     return name
   })
-  if (data.timestamps) {
+  const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
+  if (updatedAtColumnName) {
     params.push(options.where.updatedAt || null)
-    findKeys.push('updated_at')
+    findKeys.push(updatedAtColumnName)
   }
 
   var index = 0
@@ -131,8 +133,9 @@ exports.update = function(record, data, options) {
           var fieldName = property.field || name
           record[name] = updated[fieldName]
         })
-        if (data.timestamps) {
-          record.updatedAt = updated.updated_at
+        const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
+        if (updatedAtColumnName) {
+          record.updatedAt = updated[updatedAtColumnName]
         }
         return record
       })
@@ -146,9 +149,10 @@ exports.destroy = function(data, options) {
     params.push(options.where[attribute])
     return name
   })
-  if (data.timestamps) {
+  const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
+  if (updatedAtColumnName) {
     params.push(options.where.updatedAt || null)
-    findKeys.push('updated_at')
+    findKeys.push(updatedAtColumnName)
   }
 
   var index = 0
@@ -186,4 +190,26 @@ function checkRecordsetLength(data, key, n, type) {
     })
   }
   assert(n === 1, `${n} records have been ${type}d, expected one`)
+}
+
+exports.getUpdatedAtColumnName = function(data) {
+  if (data.timestamps) {
+    let updatedAtColumnName = 'updated_at'
+    if (typeof data.timestamps === 'string') {
+      updatedAtColumnName += data.timestamps
+    }
+    return updatedAtColumnName
+  }
+}
+
+exports.convertToUpdatedAt = function(record, data, target) {
+  const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
+  if (record[updatedAtColumnName]) {
+    if (target) {
+      target.updatedAt = record[updatedAtColumnName]
+    } else {
+      record.updatedAt = record[updatedAtColumnName]
+      delete record[updatedAtColumnName]
+    }
+  }
 }

@@ -11,12 +11,13 @@ module.exports = function() {
     options = options || {}
     var table = this.wrap(data.identity.name)
     var schema = options.schema || 'dbo'
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     return this.db
       .query(
         'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE ' +
           "TABLE_NAME='" +
           data.identity.name +
-          "' AND COLUMN_NAME='updated_at' AND " +
+          `' AND COLUMN_NAME='${updatedAtColumnName}' AND ` +
           "TABLE_CATALOG=db_name() AND TABLE_SCHEMA='" +
           schema +
           "'",
@@ -29,7 +30,7 @@ module.exports = function() {
             'ALTER TABLE ' +
               table +
               ' ADD ' +
-              this.wrap('updated_at') +
+              this.wrap(updatedAtColumnName) +
               ' datetime2(3)',
             null,
             options
@@ -62,9 +63,10 @@ module.exports = function() {
       )
       fields.push(property.field || name)
     })
-    if (data.timestamps) {
-      fieldsWithType.push('updated_at DATETIME2(3)')
-      fields.push('updated_at')
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
+    if (updatedAtColumnName) {
+      fieldsWithType.push(updatedAtColumnName + ' DATETIME2(3)')
+      fields.push(updatedAtColumnName)
     }
   }
 
@@ -93,11 +95,12 @@ module.exports = function() {
     var commands = [
       'DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')'
     ]
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     commands.push(
       'INSERT INTO [' +
         data.identity.name +
         '] (<fields>' +
-        (data.timestamps ? ',updated_at' : '') +
+        (updatedAtColumnName ? `,${updatedAtColumnName}` : '') +
         ') OUTPUT ' +
         primaryKeysFields
           .map(function(field) {
@@ -132,11 +135,12 @@ module.exports = function() {
     var commands = [
       'DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')'
     ]
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     commands.push(
       'UPDATE [' +
         data.identity.name +
         '] SET <fields-values>' +
-        (data.timestamps ? ',updated_at=getUtcDate()' : '') +
+        (updatedAtColumnName ? `,${updatedAtColumnName}=getUtcDate()` : '') +
         ' OUTPUT ' +
         primaryKeysFields
           .map(function(field) {
@@ -222,8 +226,9 @@ module.exports = function() {
         )
       }
     })
-    if (data.timestamps) {
-      fields.push('updated_at')
+    const updatedAtColumnName = common.getUpdatedAtColumnName(data)
+    if (updatedAtColumnName) {
+      fields.push(updatedAtColumnName)
     }
     _.forEach(data.associations, function(association) {
       if (!association.data.foreignKey) {
