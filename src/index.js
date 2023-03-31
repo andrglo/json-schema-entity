@@ -1092,9 +1092,12 @@ function destroy(entity, options, data, adapter) {
 
 module.exports = function(schemaName, schema, config) {
   config = Object.assign({}, config)
-  config.dialect = config.dialect || 'postgres'
-  var adapter = getAdapter(config.dialect)
-  var sv = sqlView(config.dialect)
+  var adapter
+  var sv
+  if (config.dialect) {
+    adapter = getAdapter(config.dialect)
+    sv = sqlView(config.dialect)
+  }
   var entity = entityFactory(schemaName, schema, rebuild)
   entity.entity = entity
 
@@ -1146,7 +1149,14 @@ module.exports = function(schemaName, schema, config) {
       hooks: {},
       coerce: [],
       public: {
-        new(db) {
+        new(db, {dialect} = {}) {
+          if (dialect || !config.dialect) {
+            dialect = dialect || 'postgres'
+            config.dialect = dialect
+            data.adapter = getAdapter(config.dialect)
+            sv = sqlView(config.dialect)
+            rebuild()
+          }
           var newEntity = {}
           data.entityMethods.map(method =>
             Object.defineProperty(newEntity, method.id, {
@@ -1158,7 +1168,7 @@ module.exports = function(schemaName, schema, config) {
               return db // For db access
             },
             get adapter() {
-              return Object.assign({db}, adapter) // For db access
+              return Object.assign({db}, data.adapter) // For db access
             },
             get id() {
               return data.public.id
@@ -1185,7 +1195,7 @@ module.exports = function(schemaName, schema, config) {
                 criteria = _.extend({}, criteria)
                 criteria.where = where
                 var view = sv.build(
-                    adapter.buildQuery(entity, options),
+                    data.adapter.buildQuery(entity, options),
                     criteria
                 )
                 return db
@@ -1668,7 +1678,9 @@ module.exports = function(schemaName, schema, config) {
   return _.extend(entity.public, entity.methods)
 
   function rebuild() {
-    buildTable(entity)
+    if (config.dialect) {
+      buildTable(entity)
+    }
   }
 }
 

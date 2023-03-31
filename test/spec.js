@@ -81,16 +81,14 @@ module.exports = function(options) {
     before(function(done) {
       db = options.db
       db2 = options.db2
-      entityCadastro = entity('CADASTRO', CADASTRO, {
-        dialect: db.dialect
-      }).useTimestamps('test')
+      entityCadastro = entity('CADASTRO', CADASTRO).useTimestamps('test')
       entityCadastro.validate('TEST', function() {
         if (!this.NUMERO) {
           throw new Error('NUMERO must be informed')
         }
       })
-      tableCadastro = entityCadastro.new(db)
-      tableCadastro2 = entityCadastro.new(db2)
+      tableCadastro = entityCadastro.new(db, {dialect: db.dialect})
+      tableCadastro2 = entityCadastro.new(db2, {dialect: db.dialect})
       tableCadastro
           .createTables()
           .then(function() {
