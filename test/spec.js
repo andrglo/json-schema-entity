@@ -87,8 +87,9 @@ module.exports = function(options) {
           throw new Error('NUMERO must be informed')
         }
       })
-      tableCadastro = entityCadastro.new(db, {dialect: db.dialect})
-      tableCadastro2 = entityCadastro.new(db2, {dialect: db.dialect})
+      entityCadastro.setDialect(db.dialect)
+      tableCadastro = entityCadastro.new(db)
+      tableCadastro2 = entityCadastro.new(db2)
       tableCadastro
           .createTables()
           .then(function() {

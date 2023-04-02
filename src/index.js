@@ -1095,6 +1095,8 @@ module.exports = function(schemaName, schema, config) {
   var adapter
   var sv
   if (config.dialect) {
+    if (config.dialect === 'pg') config.dialect = 'postgres'
+    if (config.dialect === 'ms') config.dialect = 'mssql'
     adapter = getAdapter(config.dialect)
     sv = sqlView(config.dialect)
   }
@@ -1149,14 +1151,7 @@ module.exports = function(schemaName, schema, config) {
       hooks: {},
       coerce: [],
       public: {
-        new(db, {dialect} = {}) {
-          if (dialect || !config.dialect) {
-            dialect = dialect || 'postgres'
-            config.dialect = dialect
-            data.adapter = getAdapter(config.dialect)
-            sv = sqlView(config.dialect)
-            rebuild()
-          }
+        new(db) {
           var newEntity = {}
           data.entityMethods.map(method =>
             Object.defineProperty(newEntity, method.id, {
@@ -1474,6 +1469,16 @@ module.exports = function(schemaName, schema, config) {
           rebuild()
           return data.public
         },
+        setDialect: function(dialect) {
+          if (dialect === 'pg') dialect = 'postgres'
+          if (dialect === 'ms') dialect = 'mssql'
+          dialect = dialect || 'postgres'
+          config.dialect = dialect
+          data.adapter = getAdapter(config.dialect)
+          sv = sqlView(config.dialect)
+          rebuild()
+          return data.public
+        },
         setScope: function(scope) {
           data.scope = scope
           rebuild()
@@ -1537,6 +1542,9 @@ module.exports = function(schemaName, schema, config) {
         },
         get alias() {
           return identity.as
+        },
+        get dialect() {
+          return config.dialect
         },
         get schema() {
           function buildSchema(data) {
