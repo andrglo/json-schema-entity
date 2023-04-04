@@ -491,9 +491,6 @@ class TableRecordSchema {
                 break
             }
           }
-          if (property.mapper?.read) {
-            value = property.mapper.read(value)
-          }
 
           var validator = data.validator
           if (validator) {
@@ -680,7 +677,7 @@ function buildPlainObject(record, data) {
       })
     }
     if (prop.mapper?.read) {
-      value = prop.mapper.read(value)
+      record[key] = prop.mapper.read(value)
     }
   })
   _.forEach(data.associations, function (association) {
@@ -761,6 +758,12 @@ function buildEntity(
   parent
 ) {
   clearNulls(record)
+  if (fromFetch && data.readMappers) {
+    for (const {name, read} of data.readMappers) {
+      record[name] = read(record[name])
+    }
+  }
+
   const isParent = !parent
   parent = parent || (instance && instanceParent(instance)) || {self}
   const associations = isSameEntityInstance(instance, parent)
@@ -1977,6 +1980,13 @@ function buildTable(data) {
       )
     ) {
       data.schema.properties[name] = data.properties[name]
+    }
+    if (data.properties[name].mapper?.read) {
+      data.readMappers = data.readMappers || []
+      data.readMappers.push({
+        name,
+        read: data.properties[name].mapper.read
+      })
     }
   })
   if (data.foreignKey && !data.properties[data.foreignKey]) {

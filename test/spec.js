@@ -81,7 +81,17 @@ module.exports = function (options) {
     before(function (done) {
       db = options.db
       db2 = options.db2
-      entityCadastro = entity('CADASTRO', CADASTRO).useTimestamps(
+
+      const schema = _.cloneDeep(CADASTRO)
+      schema.properties.TICADO = {
+        title: 'Ticado',
+        type: 'string',
+        mapper: {
+          write: value => (value === true ? 'S' : 'N'),
+          read: value => value === 'S'
+        }
+      }
+      entityCadastro = entity('CADASTRO', schema).useTimestamps(
         'test'
       )
       entityCadastro.validate('TEST', function () {
@@ -154,7 +164,8 @@ module.exports = function (options) {
           NOMECAD: 'João',
           NUMERO: '1',
           DATNASC: '1981-12-01',
-          Inativo: 'Não'
+          Inativo: 'Não',
+          TICADO: true
         })
         .then(function (record) {
           end = process.hrtime(start)
@@ -163,6 +174,7 @@ module.exports = function (options) {
           expect(record.updatedAt).to.not.equal(undefined)
           expect(record.DATNASC).to.equal('1981-12-01')
           expect(end[1]).above(minNanoSecsToSave)
+          expect(record.TICADO).to.equal(true)
           done()
         })
         .catch(function (err) {
@@ -193,6 +205,7 @@ module.exports = function (options) {
         .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
         .then(function (recordset) {
           var record = recordset[0]
+          expect(record.TICADO).to.equal(true)
           start = process.hrtime()
           return tableCadastro.update(
             {
@@ -203,6 +216,7 @@ module.exports = function (options) {
           )
         })
         .then(function (record) {
+          expect(record.TICADO).to.equal(true)
           end = process.hrtime(start)
           record.should.have.property('NOMECAD')
           record.should.have.property('IDENT')
@@ -211,6 +225,39 @@ module.exports = function (options) {
           expect(record.updatedAt >= now).to.equal(true)
           expect(record.updatedAt >= joao.updatedAt).to.equal(true)
           joao = record
+          done()
+        })
+        .catch(logError(done))
+    })
+    it('lets update a mapped field', function (done) {
+      tableCadastro
+        .fetch({where: {id: joao.id, updatedAt: joao.updatedAt}})
+        .then(function (recordset) {
+          var record = recordset[0]
+          expect(record.TICADO).to.equal(true)
+          return tableCadastro.update(
+            {
+              TICADO: false
+            },
+            {where: {id: record.id, updatedAt: record.updatedAt}}
+          )
+        })
+        .then(function (record) {
+          expect(record.TICADO).to.equal(false)
+          joao = record
+          done()
+        })
+        .catch(logError(done))
+    })
+    it('lets fetch a mapped field returning a plain object', function (done) {
+      tableCadastro
+        .fetch(
+          {where: {id: joao.id, updatedAt: joao.updatedAt}},
+          {toPlainObject: true}
+        )
+        .then(function (recordset) {
+          var record = recordset[0]
+          expect(record.TICADO).to.equal(false)
           done()
         })
         .catch(logError(done))

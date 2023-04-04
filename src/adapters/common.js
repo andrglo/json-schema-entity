@@ -61,6 +61,9 @@ exports.create = function (record, data, options) {
       _.forEach(data.properties, function (property, name) {
         var fieldName = property.field || name
         record[name] = inserted[fieldName]
+        if (property.mapper?.read) {
+          record[name] = property.mapper.read(record[name])
+        }
       })
       const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
       if (updatedAtColumnName) {
@@ -156,6 +159,9 @@ exports.update = function (record, data, options) {
       _.forEach(data.properties, function (property, name) {
         var fieldName = property.field || name
         record[name] = updated[fieldName]
+        if (property.mapper?.read) {
+          record[name] = property.mapper.read(record[name])
+        }
       })
       const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
       if (updatedAtColumnName) {
