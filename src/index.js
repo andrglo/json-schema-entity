@@ -677,7 +677,7 @@ function buildPlainObject(record, data) {
       })
     }
     if (prop.mapper?.read) {
-      record[key] = prop.mapper.read(value)
+      record[key] = prop.mapper.read(value, record)
     }
   })
   _.forEach(data.associations, function (association) {
@@ -760,7 +760,7 @@ function buildEntity(
   clearNulls(record)
   if (fromFetch && data.readMappers) {
     for (const {name, read} of data.readMappers) {
-      record[name] = read(record[name])
+      record[name] = read(record[name], record)
     }
   }
 

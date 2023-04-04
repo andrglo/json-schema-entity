@@ -22,7 +22,7 @@ exports.create = function (record, data, options) {
           value = value.substr(0, property.maxLength)
         }
         if (property.mapper?.write) {
-          value = property.mapper.write(value)
+          value = property.mapper.write(value, record)
         }
         params.push({
           value: value,
@@ -62,7 +62,7 @@ exports.create = function (record, data, options) {
         var fieldName = property.field || name
         record[name] = inserted[fieldName]
         if (property.mapper?.read) {
-          record[name] = property.mapper.read(record[name])
+          record[name] = property.mapper.read(record[name], record)
         }
       })
       const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
@@ -87,7 +87,7 @@ exports.update = function (record, data, options) {
           value = value.substr(0, property.maxLength)
         }
         if (property.mapper?.write) {
-          value = property.mapper.write(value)
+          value = property.mapper.write(value, record)
         }
         params.push({
           value: value,
@@ -160,7 +160,7 @@ exports.update = function (record, data, options) {
         var fieldName = property.field || name
         record[name] = updated[fieldName]
         if (property.mapper?.read) {
-          record[name] = property.mapper.read(record[name])
+          record[name] = property.mapper.read(record[name], record)
         }
       })
       const updatedAtColumnName = exports.getUpdatedAtColumnName(data)
