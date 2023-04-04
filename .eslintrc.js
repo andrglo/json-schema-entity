@@ -1,10 +1,6 @@
 module.exports = {
-  extends: 'google',
   parserOptions: {
-    ecmaVersion: 2017,
-    ecmaFeatures: {
-      experimentalObjectRestSpread: true
-    }
+    ecmaVersion: 11
   },
   env: {
     node: true,
@@ -12,6 +8,14 @@ module.exports = {
     mocha: true
   },
   rules: {
+    indent: 0,
+    'space-before-function-paren': [
+      2,
+      {
+        anonymous: 'always', // due to prettier lack of support for 'never'
+        named: 'never'
+      }
+    ],
     'generator-star-spacing': [
       'error',
       {

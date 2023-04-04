@@ -2,12 +2,12 @@ var _ = require('lodash')
 var assert = require('assert')
 var common = require('./common')
 
-module.exports = function() {
+module.exports = function () {
   var adapter = {
     wrap: column => `[${column}]`
   }
 
-  adapter.createTimestamps = function(data, options) {
+  adapter.createTimestamps = function (data, options) {
     options = options || {}
     var table = this.wrap(data.identity.name)
     var schema = options.schema || 'dbo'
@@ -45,21 +45,31 @@ module.exports = function() {
         return 'INTEGER'
       case 'number':
         return property.decimals > 0
-          ? 'DECIMAL(' + property.maxLength + ',' + property.decimals + ')'
+          ? 'DECIMAL(' +
+              property.maxLength +
+              ',' +
+              property.decimals +
+              ')'
           : 'INTEGER'
       case 'date':
         return 'DATE'
       case 'datetime':
-        return property.timezone === 'ignore' ? 'DATETIME2' : 'DATETIMEOFFSET'
+        return property.timezone === 'ignore'
+          ? 'DATETIME2'
+          : 'DATETIMEOFFSET'
       default:
         return 'NVARCHAR(' + (property.maxLength || 'MAX') + ')'
     }
   }
 
   function buildReturningFields(fields, fieldsWithType, data) {
-    _.forEach(data.properties, function(property, name) {
+    _.forEach(data.properties, function (property, name) {
       fieldsWithType.push(
-        '[' + (property.field || name) + ']' + ' ' + toSqlType(property)
+        '[' +
+          (property.field || name) +
+          ']' +
+          ' ' +
+          toSqlType(property)
       )
       fields.push(property.field || name)
     })
@@ -70,18 +80,26 @@ module.exports = function() {
     }
   }
 
-  function buildReturningPrimaryKeyFields(fields, fieldsWithType, data) {
-    _.forEach(data.properties, function(property, name) {
+  function buildReturningPrimaryKeyFields(
+    fields,
+    fieldsWithType,
+    data
+  ) {
+    _.forEach(data.properties, function (property, name) {
       if (data.primaryKeyFields.includes(property.field || name)) {
         fieldsWithType.push(
-          '[' + (property.field || name) + ']' + ' ' + toSqlType(property)
+          '[' +
+            (property.field || name) +
+            ']' +
+            ' ' +
+            toSqlType(property)
         )
         fields.push(property.field || name)
       }
     })
   }
 
-  adapter.buildInsertCommand = function(data) {
+  adapter.buildInsertCommand = function (data) {
     var primaryKeysFieldsWithType = []
     var primaryKeysFields = []
     var fieldsWithType = []
@@ -93,7 +111,9 @@ module.exports = function() {
       data
     )
     var commands = [
-      'DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')'
+      'DECLARE @tmp TABLE (' +
+        primaryKeysFieldsWithType.join(',') +
+        ')'
     ]
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     commands.push(
@@ -103,7 +123,7 @@ module.exports = function() {
         (updatedAtColumnName ? `,${updatedAtColumnName}` : '') +
         ') OUTPUT ' +
         primaryKeysFields
-          .map(function(field) {
+          .map(function (field) {
             return 'INSERTED.[' + field + ']'
           })
           .join(',') +
@@ -117,11 +137,13 @@ module.exports = function() {
         ' FROM [' +
         data.identity.name +
         '] c INNER JOIN @tmp t ON ' +
-        primaryKeysFields.map(name => `c.[${name}]=t.[${name}]`).join(' AND ')
+        primaryKeysFields
+          .map(name => `c.[${name}]=t.[${name}]`)
+          .join(' AND ')
     )
     data.insertCommand = commands.join(';')
   }
-  adapter.buildUpdateCommand = function(data) {
+  adapter.buildUpdateCommand = function (data) {
     var primaryKeysFieldsWithType = []
     var primaryKeysFields = []
     var fieldsWithType = []
@@ -133,17 +155,21 @@ module.exports = function() {
       data
     )
     var commands = [
-      'DECLARE @tmp TABLE (' + primaryKeysFieldsWithType.join(',') + ')'
+      'DECLARE @tmp TABLE (' +
+        primaryKeysFieldsWithType.join(',') +
+        ')'
     ]
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     commands.push(
       'UPDATE [' +
         data.identity.name +
         '] SET <fields-values>' +
-        (updatedAtColumnName ? `,${updatedAtColumnName}=getUtcDate()` : '') +
+        (updatedAtColumnName
+          ? `,${updatedAtColumnName}=getUtcDate()`
+          : '') +
         ' OUTPUT ' +
         primaryKeysFields
-          .map(function(field) {
+          .map(function (field) {
             return 'INSERTED.[' + field + ']'
           })
           .join(',') +
@@ -155,21 +181,25 @@ module.exports = function() {
         ' FROM [' +
         data.identity.name +
         '] c INNER JOIN @tmp t ON ' +
-        primaryKeysFields.map(name => `c.[${name}]=t.[${name}]`).join(' AND ')
+        primaryKeysFields
+          .map(name => `c.[${name}]=t.[${name}]`)
+          .join(' AND ')
     )
     data.updateCommand = commands.join(';')
   }
-  adapter.buildDeleteCommand = function(data) {
+  adapter.buildDeleteCommand = function (data) {
     var fieldsWithType = []
     var fields = []
     buildReturningFields(fields, fieldsWithType, data)
-    var commands = ['DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')']
+    var commands = [
+      'DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'
+    ]
     commands.push(
       'DELETE FROM [' +
         data.identity.name +
         '] OUTPUT ' +
         fields
-          .map(function(field) {
+          .map(function (field) {
             return 'DELETED.[' + field + ']'
           })
           .join(',') +
@@ -182,16 +212,19 @@ module.exports = function() {
   adapter.update = common.update
   adapter.destroy = common.destroy
 
-  adapter.extractRecordset = function(jsonset, coerce) {
-    jsonset = typeof jsonset === 'string' ? JSON.parse(jsonset) : jsonset
+  adapter.extractRecordset = function (jsonset, coerce) {
+    jsonset =
+      typeof jsonset === 'string' ? JSON.parse(jsonset) : jsonset
     assert(_.isArray(jsonset), 'jsonset is not an array')
-    _.forEach(jsonset, function(record) {
-      coerce.map(function(coercion) {
+    _.forEach(jsonset, function (record) {
+      coerce.map(function (coercion) {
         const value = record[coercion.property]
         if (value === void 0) {
           record[coercion.property] = null
         } else if (value !== null) {
-          record[coercion.property] = coercion.fn(record[coercion.property])
+          record[coercion.property] = coercion.fn(
+            record[coercion.property]
+          )
         }
       })
     })
@@ -200,10 +233,13 @@ module.exports = function() {
 
   adapter.buildQuery = function buildQuery(data, options) {
     var fields = []
-    _.forEach(data.properties, function(property, name) {
+    _.forEach(data.properties, function (property, name) {
       var fieldName = property.field || name
       fields.push(
-        '[' + fieldName + ']' + (name !== fieldName ? ' AS [' + name + ']' : '')
+        '[' +
+          fieldName +
+          ']' +
+          (name !== fieldName ? ' AS [' + name + ']' : '')
       )
       if (
         options.fetchExternalDescription &&
@@ -218,9 +254,11 @@ module.exports = function() {
           display = display.substr(point + 1)
         }
         fields.push(
-          `(select [${display}] from [${property.schema.$ref}] where [${
-            property.schema.key
-          }]=[${data.key}].[${fieldName}]) as [${_.camelCase(
+          `(select [${display}] from [${
+            property.schema.$ref
+          }] where [${property.schema.key}]=[${
+            data.key
+          }].[${fieldName}]) as [${_.camelCase(
             `${data.identity.name} ${name} ${display}`
           )}]`
         )
@@ -230,14 +268,14 @@ module.exports = function() {
     if (updatedAtColumnName) {
       fields.push(updatedAtColumnName)
     }
-    _.forEach(data.associations, function(association) {
+    _.forEach(data.associations, function (association) {
       if (!association.data.foreignKey) {
         return false
       }
       const query = buildQuery(association.data, options)
       var foreignKey =
-        association.data.properties[association.data.foreignKey].field ||
-        association.data.foreignKey
+        association.data.properties[association.data.foreignKey]
+          .field || association.data.foreignKey
       fields.push(
         '(' +
           query +
@@ -266,16 +304,16 @@ module.exports = function() {
     )
   }
 
-  adapter.getCoercionFunction = function(type) {
+  adapter.getCoercionFunction = function (type) {
     switch (type) {
       case 'datetime':
-        return function(value) {
+        return function (value) {
           return new Date(value)
         }
       case 'integer':
         return Number
       default:
-        return function(value) {
+        return function (value) {
           return value
         }
     }

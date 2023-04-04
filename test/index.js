@@ -35,17 +35,17 @@ const mssqlDatabaseName = process.env.MSSQL_DATABASE || databaseName
 
 function createPostgresDb(dbName) {
   return pg
-      .execute('DROP DATABASE IF EXISTS "' + dbName + '";')
-      .then(function() {
-        return pg.execute('CREATE DATABASE "' + dbName + '"')
-      })
+    .execute('DROP DATABASE IF EXISTS "' + dbName + '";')
+    .then(function () {
+      return pg.execute('CREATE DATABASE "' + dbName + '"')
+    })
 }
 
 function createMssqlDb(dbName) {
   return mssql.execute(
-      'IF EXISTS(select * from sys.databases where name=\'' +
+    "IF EXISTS(select * from sys.databases where name='" +
       dbName +
-      '\') DROP DATABASE [' +
+      "') DROP DATABASE [" +
       dbName +
       '];' +
       'CREATE DATABASE [' +
@@ -57,89 +57,89 @@ function createMssqlDb(dbName) {
 const pgOptions = {}
 const mssqlOptions = {}
 
-before(function(done) {
+before(function (done) {
   pg.connect()
-      .then(function() {
-        return createPostgresDb(pgDatabaseName)
-            .then(function() {
-              return createPostgresDb(pgDatabaseName + '2')
-            })
-            .then(function() {
-              console.log('Postgres dbs created')
-              return pg.close()
-            })
-            .then(function() {
-              console.log('Postgres db creation connection closed')
-              pgConfig.database = pgDatabaseName
-              console.log('Postgres will connect to', pgConfig.database)
-              pgOptions.db = new PgCrLayer(pgConfig)
-              pgConfig.database = pgDatabaseName + '2'
-              pgOptions.db2 = new PgCrLayer(pgConfig)
-              return pgOptions.db.connect()
-            })
-      })
-      .then(function() {
-        return mssql.connect().then(function() {
-          return createMssqlDb(mssqlDatabaseName)
-              .then(function() {
-                return createMssqlDb(mssqlDatabaseName + '2')
-              })
-              .then(function() {
-                console.log('Mssql dbs created')
-                return mssql.close()
-              })
-              .then(function() {
-                console.log('Mssql db creation connection closed')
-                mssqlConfig.database = mssqlDatabaseName
-                console.log('Mssql will connect to', mssqlConfig.database)
-                mssqlOptions.db = new MssqlCrLayer(mssqlConfig)
-                mssqlConfig.database = mssqlDatabaseName + '2'
-                mssqlOptions.db2 = new MssqlCrLayer(mssqlConfig)
-                return mssqlOptions.db.connect()
-              })
+    .then(function () {
+      return createPostgresDb(pgDatabaseName)
+        .then(function () {
+          return createPostgresDb(pgDatabaseName + '2')
         })
+        .then(function () {
+          console.log('Postgres dbs created')
+          return pg.close()
+        })
+        .then(function () {
+          console.log('Postgres db creation connection closed')
+          pgConfig.database = pgDatabaseName
+          console.log('Postgres will connect to', pgConfig.database)
+          pgOptions.db = new PgCrLayer(pgConfig)
+          pgConfig.database = pgDatabaseName + '2'
+          pgOptions.db2 = new PgCrLayer(pgConfig)
+          return pgOptions.db.connect()
+        })
+    })
+    .then(function () {
+      return mssql.connect().then(function () {
+        return createMssqlDb(mssqlDatabaseName)
+          .then(function () {
+            return createMssqlDb(mssqlDatabaseName + '2')
+          })
+          .then(function () {
+            console.log('Mssql dbs created')
+            return mssql.close()
+          })
+          .then(function () {
+            console.log('Mssql db creation connection closed')
+            mssqlConfig.database = mssqlDatabaseName
+            console.log('Mssql will connect to', mssqlConfig.database)
+            mssqlOptions.db = new MssqlCrLayer(mssqlConfig)
+            mssqlConfig.database = mssqlDatabaseName + '2'
+            mssqlOptions.db2 = new MssqlCrLayer(mssqlConfig)
+            return mssqlOptions.db.connect()
+          })
       })
-      .then(function() {
-        done()
-      })
-      .catch(function(error) {
-        done(error)
-      })
+    })
+    .then(function () {
+      done()
+    })
+    .catch(function (error) {
+      done(error)
+    })
 })
 
-describe('postgres', function() {
+describe('postgres', function () {
   let duration
-  before(function() {
+  before(function () {
     duration = process.hrtime()
   })
   spec(pgOptions)
-  after(function() {
+  after(function () {
     duration = process.hrtime(duration)
     console.info(
-        'postgres finished after: %ds %dms',
-        duration[0],
-        duration[1] / 1000000
+      'postgres finished after: %ds %dms',
+      duration[0],
+      duration[1] / 1000000
     )
   })
 })
 
-describe('mssql', function() {
+describe('mssql', function () {
   let duration
-  before(function() {
+  before(function () {
     duration = process.hrtime()
   })
   spec(mssqlOptions)
-  after(function() {
+  after(function () {
     duration = process.hrtime(duration)
     console.info(
-        'mssql finished after: %ds %dms',
-        duration[0],
-        duration[1] / 1000000
+      'mssql finished after: %ds %dms',
+      duration[0],
+      duration[1] / 1000000
     )
   })
 })
 
-after(function() {
+after(function () {
   if (mssqlOptions.db) {
     mssqlOptions.db.close()
     mssqlOptions.db2.close()

@@ -2,12 +2,12 @@ var _ = require('lodash')
 var assert = require('assert')
 var common = require('./common')
 
-module.exports = function() {
+module.exports = function () {
   var adapter = {
     wrap: column => `"${column}"`
   }
 
-  adapter.createTimestamps = function(data, options) {
+  adapter.createTimestamps = function (data, options) {
     options = options || {}
     var table = this.wrap(data.identity.name)
     var schema = options.schema || 'public'
@@ -37,25 +37,29 @@ module.exports = function() {
       })
   }
 
-  adapter.buildInsertCommand = function(data) {
+  adapter.buildInsertCommand = function (data) {
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     data.insertCommand = `INSERT INTO ${this.wrap(
       data.identity.name
-    )} (<fields>${updatedAtColumnName ? `,"${updatedAtColumnName}"` : ''}) VALUES (<values>${
+    )} (<fields>${
+      updatedAtColumnName ? `,"${updatedAtColumnName}"` : ''
+    }) VALUES (<values>${
       updatedAtColumnName ? `,(now() at time zone 'utc')` : ''
     }) RETURNING *`
   }
 
-  adapter.buildUpdateCommand = function(data) {
+  adapter.buildUpdateCommand = function (data) {
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     data.updateCommand = `UPDATE ${this.wrap(
       data.identity.name
     )} SET <fields-values>${
-      updatedAtColumnName ? `,"${updatedAtColumnName}"=(now() at time zone 'utc')` : ''
+      updatedAtColumnName
+        ? `,"${updatedAtColumnName}"=(now() at time zone 'utc')`
+        : ''
     } WHERE <primary-keys> RETURNING *`
   }
 
-  adapter.buildDeleteCommand = function(data) {
+  adapter.buildDeleteCommand = function (data) {
     data.deleteCommand =
       'DELETE FROM ' +
       this.wrap(data.identity.name) +
@@ -64,26 +68,32 @@ module.exports = function() {
   adapter.create = common.create
   adapter.update = common.update
   adapter.destroy = common.destroy
-  adapter.extractRecordset = function(jsonset, coerce) {
+  adapter.extractRecordset = function (jsonset, coerce) {
     assert(_.isArray(jsonset), 'jsonset is not an array')
-    _.forEach(jsonset, function(record) {
-      coerce.map(function(coercion) {
+    _.forEach(jsonset, function (record) {
+      coerce.map(function (coercion) {
         const value = record[coercion.property]
         if (value === void 0) {
           record[coercion.property] = null
         } else if (value !== null) {
-          record[coercion.property] = coercion.fn(record[coercion.property])
+          record[coercion.property] = coercion.fn(
+            record[coercion.property]
+          )
         }
       })
     })
     return jsonset
   }
 
-  adapter.buildQuery = function buildQuery(data, options, isAssociation) {
+  adapter.buildQuery = function buildQuery(
+    data,
+    options,
+    isAssociation
+  ) {
     var fields = []
     _.forEach(
       data.properties,
-      function(property, name) {
+      function (property, name) {
         var fieldName = property.field || name
         var alias = name
         fields.push(
@@ -103,9 +113,11 @@ module.exports = function() {
             display = display.substr(point + 1)
           }
           fields.push(
-            `(select "${display}" FROM "${property.schema.$ref}" where "${
-              property.schema.key
-            }"="${data.key}"."${fieldName}") as "${_.camelCase(
+            `(select "${display}" FROM "${
+              property.schema.$ref
+            }" where "${property.schema.key}"="${
+              data.key
+            }"."${fieldName}") as "${_.camelCase(
               `${data.identity.name} ${name} ${display}`
             )}"`
           )
@@ -118,14 +130,14 @@ module.exports = function() {
     }
     _.forEach(
       data.associations,
-      function(association) {
+      function (association) {
         if (!association.data.foreignKey) {
           return false
         }
         const query = this.buildQuery(association.data, options, true)
         var foreignKey =
-          association.data.properties[association.data.foreignKey].field ||
-          association.data.foreignKey
+          association.data.properties[association.data.foreignKey]
+            .field || association.data.foreignKey
         fields.push(
           '(select array_to_json(array_agg(row_to_json(t))) from (' +
             query +
@@ -163,19 +175,21 @@ module.exports = function() {
     return fetchCommand
   }
 
-  adapter.getCoercionFunction = function(type, timezone) {
+  adapter.getCoercionFunction = function (type, timezone) {
     switch (type) {
       case 'datetime':
-        return function(value) {
+        return function (value) {
           if (timezone === 'ignore') {
             var d = new Date(value + 'Z')
-            return new Date(d.getTime() + d.getTimezoneOffset() * 60000)
+            return new Date(
+              d.getTime() + d.getTimezoneOffset() * 60000
+            )
           } else {
             return new Date(value)
           }
         }
       default:
-        return function(value) {
+        return function (value) {
           return value
         }
     }
