@@ -27,7 +27,7 @@
     "coveralls": "^3.1.1",
     "eslint": "^8.37.0",
     "eslint-config-google": "^0.14.0",
-    "glob": "^9.3.2",
+    "glob": "^9.3.4",
     "mocha": "^10.2.0",
     "mssql-cr-layer": "^2.0.17",
     "nyc": "^15.1.0",
