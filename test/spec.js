@@ -100,6 +100,17 @@ module.exports = function (options) {
         }
       })
       entityCadastro.setDialect(db.dialect)
+      entityCadastro.setTransforms({
+        read: record => {
+          record.emails = ['hi_1@abc.com', 'hi_2@abc.com']
+          return record
+        },
+        write: record => {
+          record.EMAIL = record.emails?.[0]
+          delete record.emails
+          return record
+        }
+      })
       tableCadastro = entityCadastro.new(db)
       tableCadastro2 = entityCadastro.new(db2)
       tableCadastro
@@ -194,6 +205,42 @@ module.exports = function (options) {
           expect(record.id).to.not.equal(undefined)
           expect(record.updatedAt).to.not.equal(undefined)
           expect(end[1]).above(minNanoSecsToSave)
+          expect(record.emails).to.deep.equal([
+            'hi_1@abc.com',
+            'hi_2@abc.com'
+          ])
+          return tableCadastro2
+            .update({...record, EMAIL: 'z@a.com'})
+            .then(function (record) {
+              end = process.hrtime(start)
+              expect(record.id).to.not.equal(undefined)
+              expect(record.updatedAt).to.not.equal(undefined)
+              expect(end[1]).above(minNanoSecsToSave)
+              expect(record.EMAIL).to.equal('hi_1@abc.com')
+              expect(record.emails).to.deep.equal([
+                'hi_1@abc.com',
+                'hi_2@abc.com'
+              ])
+              done()
+            })
+        })
+        .catch(function (err) {
+          done(err)
+        })
+    })
+    it('record should be readable in db 2', function (done) {
+      tableCadastro2
+        .fetch()
+        .then(function (recordset) {
+          expect(recordset).to.be.a('array')
+          expect(recordset.length).to.equal(1)
+          expect(tableCadastro2.db).to.equal(db2)
+          const record = recordset[0]
+          expect(record.EMAIL).to.equal('hi_1@abc.com')
+          expect(record.emails).to.deep.equal([
+            'hi_1@abc.com',
+            'hi_2@abc.com'
+          ])
           done()
         })
         .catch(function (err) {

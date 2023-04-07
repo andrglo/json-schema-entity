@@ -363,7 +363,7 @@ class TableRecord {
       })
     )
     setIs(this, record, it, isNew)
-    Object.freeze(this)
+    // Object.freeze(this)
   }
 
   get entity() {
@@ -1330,7 +1330,7 @@ module.exports = function (schemaName, schema, config) {
                 return db
                   .query(view.statement, view.params, options)
                   .then(function (res) {
-                    return res.map(function (record) {
+                    const recordset = res.map(function (record) {
                       return options.toPlainObject === true ||
                         options.fetchExternalDescription === true
                         ? buildPlainObject(record, data)
@@ -1343,10 +1343,16 @@ module.exports = function (schemaName, schema, config) {
                             self
                           )
                     })
+                    return config.transforms?.read
+                      ? recordset.map(config.transforms.read)
+                      : recordset
                   })
               })
             },
             create: function (entity, options) {
+              if (config.transforms?.write) {
+                entity = config.transforms.write(entity)
+              }
               options = options || {}
               var self = this
               var isInstance =
@@ -1387,21 +1393,28 @@ module.exports = function (schemaName, schema, config) {
                     })
                     .then(function (record) {
                       orderAssociations(record, data)
-                      return options.toPlainObject === true &&
-                        !isInstance
-                        ? record
-                        : buildEntity(
-                            record,
-                            data,
-                            false,
-                            false,
-                            entity,
-                            self
-                          )
+                      let res =
+                        options.toPlainObject === true && !isInstance
+                          ? record
+                          : buildEntity(
+                              record,
+                              data,
+                              false,
+                              false,
+                              entity,
+                              self
+                            )
+                      if (config.transforms?.read) {
+                        res = config.transforms.read(res)
+                      }
+                      return res
                     })
                 })
             },
             update: function (entity, key, options) {
+              if (config.transforms?.write) {
+                entity = config.transforms.write(entity)
+              }
               var self = this
               key = key || entity[data.primaryKeyAttributes[0]]
               if (!key) {
@@ -1509,17 +1522,21 @@ module.exports = function (schemaName, schema, config) {
                   })
                   .then(function (record) {
                     orderAssociations(record, data)
-                    return options.toPlainObject === true &&
-                      !isInstance
-                      ? record
-                      : buildEntity(
-                          record,
-                          data,
-                          false,
-                          false,
-                          entity,
-                          self
-                        )
+                    let res =
+                      options.toPlainObject === true && !isInstance
+                        ? record
+                        : buildEntity(
+                            record,
+                            data,
+                            false,
+                            false,
+                            entity,
+                            self
+                          )
+                    if (config.transforms?.read) {
+                      res = config.transforms.read(res)
+                    }
+                    return res
                   })
               })
             },
@@ -1683,6 +1700,13 @@ module.exports = function (schemaName, schema, config) {
           data.adapter = getAdapter(config.dialect)
           sv = sqlView(config.dialect)
           rebuild()
+          return data.public
+        },
+        setTransforms: function ({read, write}) {
+          config.transforms = {
+            read,
+            write
+          }
           return data.public
         },
         setScope: function (scope) {
