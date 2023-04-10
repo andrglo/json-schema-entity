@@ -1323,6 +1323,15 @@ module.exports = function (schemaName, schema, config) {
                 }
                 criteria = _.extend({}, criteria)
                 criteria.where = where
+                if (!sv) {
+                  throw new Error({
+                    type: 'InvalidData',
+                    message:
+                      'Entity ' +
+                      data.key +
+                      ' has no dialect defined'
+                  })
+                }
                 var view = sv.build(
                   data.adapter.buildQuery(entity, options),
                   criteria
