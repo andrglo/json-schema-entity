@@ -71,10 +71,6 @@ exports.create = function (record, data, options) {
       }
       return record
     })
-    .catch(err => {
-      console.error(insertCommand, err)
-      throw err
-    })
 }
 
 exports.update = function (record, data, options) {
@@ -173,10 +169,6 @@ exports.update = function (record, data, options) {
       }
       return record
     })
-    .catch(err => {
-      console.error(updateCommand, err)
-      throw err
-    })
 }
 
 exports.destroy = function (data, options) {
@@ -222,10 +214,6 @@ exports.destroy = function (data, options) {
         'delete'
       )
       return recordset.length
-    })
-    .catch(err => {
-      console.error(deleteCommand, err)
-      throw err
     })
 }
 

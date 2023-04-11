@@ -11,6 +11,8 @@ const {
   getUpdatedAtColumnName
 } = require('./adapters/common')
 
+const getErrorMessage = err => (err.precedingErrors || []).join(' ')  + err.message
+
 const isGenerator = obj =>
   typeof obj.next === 'function' && typeof obj.throw === 'function'
 
@@ -842,12 +844,19 @@ function runHooks(hooks, model, options, data, validatedInstance) {
           throw new EntityError({
             type: hook.name + 'HookError',
             message: err.message,
-            errors: [{path: hook.id, message: err.message}],
+            errors: [{path: hook.id, message: getErrorMessage(err)}],
             err
           })
         }
         if (res && res.then) {
-          return res
+          return res.catch(err => {
+            throw new EntityError({
+              type: hook.name + 'HookError',
+              message: err.message,
+              errors: [{path: hook.id, message: getErrorMessage(err)}],
+              err
+            })
+          })
         }
       })
     },

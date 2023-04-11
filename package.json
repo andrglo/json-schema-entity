@@ -25,13 +25,13 @@
   "devDependencies": {
     "chai": "^4.3.7",
     "coveralls": "^3.1.1",
-    "eslint": "^8.37.0",
+    "eslint": "^8.38.0",
     "eslint-config-google": "^0.14.0",
     "glob": "^9.3.4",
     "mocha": "^10.2.0",
-    "mssql-cr-layer": "^2.0.17",
+    "mssql-cr-layer": "^2.0.18",
     "nyc": "^15.1.0",
-    "pg-cr-layer": "^2.0.20",
+    "pg-cr-layer": "^2.0.21",
     "unorm": "^1.6.0",
     "validator": "^13.9.0"
   },
@@ -45,6 +45,6 @@
     "@ayk/co": "^4.6.4",
     "json-schema-table": "^1.0.25",
     "lodash": "^4.17.21",
-    "sql-view": "^1.0.15"
+    "sql-view": "^1.0.16"
   }
 }
