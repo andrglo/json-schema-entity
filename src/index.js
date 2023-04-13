@@ -1333,7 +1333,7 @@ module.exports = function (schemaName, schema, config) {
                 criteria = _.extend({}, criteria)
                 criteria.where = where
                 if (!sv) {
-                  throw new Error({
+                  throw new EntityError({
                     type: 'InvalidData',
                     message:
                       'Entity ' +
