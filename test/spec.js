@@ -87,8 +87,16 @@ module.exports = function (options) {
         title: 'Ticado',
         type: 'string',
         mapper: {
-          write: value => (value === true ? 'S' : 'N'),
-          read: value => value === 'S'
+          write: value => {
+            if (value === true) return 'S'
+            if (value === false) return 'N'
+            return value
+          },
+          read: value => {
+            if (value === 'S') return true
+            if (value === 'N') return false
+            return value
+          }
         }
       }
       entityCadastro = entity('CADASTRO', schema).useTimestamps(
