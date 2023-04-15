@@ -1361,16 +1361,11 @@ module.exports = function (schemaName, schema, config) {
                             self
                           )
                     })
-                    return config.transforms?.read
-                      ? recordset.map(config.transforms.read)
-                      : recordset
+                    return recordset
                   })
               })
             },
             create: function (entity, options) {
-              if (config.transforms?.write) {
-                entity = config.transforms.write(entity)
-              }
               options = options || {}
               var self = this
               var isInstance =
@@ -1422,17 +1417,11 @@ module.exports = function (schemaName, schema, config) {
                               entity,
                               self
                             )
-                      if (config.transforms?.read) {
-                        res = config.transforms.read(res)
-                      }
                       return res
                     })
                 })
             },
             update: function (entity, key, options) {
-              if (config.transforms?.write) {
-                entity = config.transforms.write(entity)
-              }
               var self = this
               key = key || entity[data.primaryKeyAttributes[0]]
               if (!key) {
@@ -1551,9 +1540,6 @@ module.exports = function (schemaName, schema, config) {
                             entity,
                             self
                           )
-                    if (config.transforms?.read) {
-                      res = config.transforms.read(res)
-                    }
                     return res
                   })
               })
@@ -1718,13 +1704,6 @@ module.exports = function (schemaName, schema, config) {
           data.adapter = getAdapter(config.dialect)
           sv = sqlView(config.dialect)
           rebuild()
-          return data.public
-        },
-        setTransforms: function ({read, write}) {
-          config.transforms = {
-            read,
-            write
-          }
           return data.public
         },
         setScope: function (scope) {
