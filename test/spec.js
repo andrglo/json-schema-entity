@@ -109,6 +109,8 @@ module.exports = function (options) {
       })
       entityCadastro.setDialect(db.dialect)
       tableCadastro = entityCadastro.new(db)
+      expect(tableCadastro.dialect).to.equal(db.dialect)
+      expect(tableCadastro.timestampsSuffix).to.equal('test')
       tableCadastro2 = entityCadastro.new(db2)
       tableCadastro
         .createTables()

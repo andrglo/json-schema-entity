@@ -1313,6 +1313,12 @@ module.exports = function (schemaName, schema, config) {
             get alias() {
               return data.public.alias
             },
+            get dialect() {
+              return config.dialect
+            },
+            get timestampsSuffix() {
+              return data.timestamps
+            },
             get schema() {
               return data.public.schema
             },
@@ -1770,9 +1776,6 @@ module.exports = function (schemaName, schema, config) {
         },
         get alias() {
           return identity.as
-        },
-        get dialect() {
-          return config.dialect
         },
         get schema() {
           function buildSchema(data) {
