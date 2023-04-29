@@ -1777,6 +1777,9 @@ module.exports = function (schemaName, schema, config) {
         get alias() {
           return identity.as
         },
+        get dialect() {
+          return config.dialect
+        },
         get schema() {
           function buildSchema(data) {
             var schema = data.schema
