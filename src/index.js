@@ -11,7 +11,7 @@ const {
   getUpdatedAtColumnName
 } = require('./adapters/common')
 
-const getErrorMessage = err => (err.precedingErrors || []).join(' ')  + err.message
+const getErrorMessage = err => (err.precedingErrors || []).map(e => e.message).join(' ')  + err.message
 
 const isGenerator = obj =>
   typeof obj.next === 'function' && typeof obj.throw === 'function'
