@@ -1,5 +1,6 @@
 var _ = require('lodash')
 var assert = require('assert')
+const debug = require('debug')('entity:adapter:common')
 var EntityError = require('../entity-error')
 
 exports.create = function (record, data, options) {
@@ -53,6 +54,7 @@ exports.create = function (record, data, options) {
       options.schema
     }.${insertCommand.substr(12)}`
   }
+  debug(insertCommand, params)
   return this.db
     .execute(insertCommand, params, options)
     .then(function (recordset) {
@@ -146,6 +148,7 @@ exports.update = function (record, data, options) {
       7
     )}`
   }
+  debug(updateCommand, params)
   return this.db
     .execute(updateCommand, params, options)
     .then(function (recordset) {
@@ -204,6 +207,7 @@ exports.destroy = function (data, options) {
       options.schema
     }.${deleteCommand.substr(12)}`
   }
+  debug(deleteCommand, params)
   return this.db
     .execute(deleteCommand, params, options)
     .then(function (recordset) {
