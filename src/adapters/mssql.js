@@ -304,12 +304,15 @@ module.exports = function () {
     )
   }
 
-  adapter.getCoercionFunction = function (type) {
+  adapter.getCoercionFunction = function (type, timezone) {
     switch (type) {
       case 'datetime':
         return function (value) {
           if (typeof value === 'string') {
-            return new Date(value.slice(0, 23) + 'Z')
+            if (timezone !== 'ignore' && !value.includes('Z')) {
+              value += 'Z'
+            }
+            return new Date(value)
           }
           return value
         }
