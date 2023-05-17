@@ -308,7 +308,10 @@ module.exports = function () {
     switch (type) {
       case 'datetime':
         return function (value) {
-          return new Date(value)
+          if (typeof value === 'string') {
+            return new Date(value.slice(0, 23) + 'Z')
+          }
+          return value
         }
       case 'integer':
         return Number
