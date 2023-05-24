@@ -1234,14 +1234,14 @@ function destroy(entity, options, data, adapter) {
 
 module.exports = function (schemaName, schema, config) {
   config = Object.assign({}, config)
-  var adapter
-  var sv
   if (config.dialect) {
     if (config.dialect === 'pg') config.dialect = 'postgres'
     if (config.dialect === 'ms') config.dialect = 'mssql'
-    adapter = getAdapter(config.dialect)
-    sv = sqlView(config.dialect)
+  } else {
+    config.dialect = 'postgres'
   }
+  var adapter = getAdapter(config.dialect)
+  var sv = sqlView(config.dialect)
   var entity = entityFactory(schemaName, schema, rebuild)
   entity.entity = entity
 
@@ -1338,15 +1338,6 @@ module.exports = function (schemaName, schema, config) {
                 }
                 criteria = _.extend({}, criteria)
                 criteria.where = where
-                if (!sv) {
-                  throw new EntityError({
-                    type: 'InvalidData',
-                    message:
-                      'Entity ' +
-                      data.key +
-                      ' has no dialect defined'
-                  })
-                }
                 var view = sv.build(
                   data.adapter.buildQuery(entity, options),
                   criteria
