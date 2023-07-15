@@ -175,18 +175,11 @@ module.exports = function () {
     return fetchCommand
   }
 
-  adapter.getCoercionFunction = function (type, timezone) {
+  adapter.getCoercionFunction = function (type) {
     switch (type) {
       case 'datetime':
         return function (value) {
-          if (timezone === 'ignore') {
-            var d = new Date(value + 'Z')
-            return new Date(
-              d.getTime() + d.getTimezoneOffset() * 60000
-            )
-          } else {
-            return new Date(value)
-          }
+          return new Date(value)
         }
       default:
         return function (value) {
