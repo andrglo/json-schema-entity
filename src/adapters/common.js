@@ -63,6 +63,14 @@ exports.create = function (record, data, options) {
       _.forEach(data.properties, function (property, name) {
         var fieldName = property.field || name
         record[name] = inserted[fieldName]
+        if (property.type === 'date') {
+          if (_.isDate(record[name])) {
+            record[name] = record[name].toISOString()
+          }
+          if (typeof record[name] === 'string') {
+            record[name] = record[name].slice(0, 10)
+          }
+        }
         if (property.mapper?.read) {
           record[name] = property.mapper.read(record[name], record)
         }
@@ -162,6 +170,14 @@ exports.update = function (record, data, options) {
       _.forEach(data.properties, function (property, name) {
         var fieldName = property.field || name
         record[name] = updated[fieldName]
+        if (property.type === 'date') {
+          if (_.isDate(record[name])) {
+            record[name] = record[name].toISOString()
+          }
+          if (typeof record[name] === 'string') {
+            record[name] = record[name].slice(0, 10)
+          }
+        }
         if (property.mapper?.read) {
           record[name] = property.mapper.read(record[name], record)
         }
