@@ -54,9 +54,9 @@ module.exports = function () {
       case 'date':
         return 'DATE'
       case 'datetime':
-        return property.timezone === 'ignore'
-          ? 'DATETIME2'
-          : 'DATETIMEOFFSET'
+        return property.timezone === true
+          ? 'DATETIMEOFFSET'
+          : 'DATETIME2'
       default:
         return 'NVARCHAR(' + (property.maxLength || 'MAX') + ')'
     }
@@ -304,17 +304,18 @@ module.exports = function () {
     )
   }
 
-  adapter.getCoercionFunction = function (type, timezone) {
+  adapter.getCoercionFunction = function (type) {
     switch (type) {
       case 'datetime':
         return function (value) {
-          if (typeof value === 'string') {
-            if (timezone !== 'ignore' && !value.includes('Z')) {
-              value += 'Z'
-            }
-            return new Date(value)
+          if (typeof value === 'string' && !value.endsWith('Z') && !value.match(/[-|+]\d\d:\d\d$/)) {
+            value = value + 'Z'
           }
-          return value
+          return new Date(value)
+        }
+      case 'date':
+        return function (value) {
+          return value.slice(0, 10)
         }
       case 'integer':
         return Number
