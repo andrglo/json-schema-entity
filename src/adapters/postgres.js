@@ -29,7 +29,7 @@ module.exports = function () {
           return this.db.execute(
             `ALTER TABLE ${table} ADD ${this.wrap(
               updatedAtColumnName
-            )} TIMESTAMP(3) WITHOUT TIME ZONE`,
+            )} TIMESTAMP(3) WITH TIME ZONE`,
             null,
             options
           )
@@ -44,7 +44,7 @@ module.exports = function () {
     )} (<fields>${
       updatedAtColumnName ? `,"${updatedAtColumnName}"` : ''
     }) VALUES (<values>${
-      updatedAtColumnName ? `,(now() at time zone 'utc')` : ''
+      updatedAtColumnName ? `,now()` : ''
     }) RETURNING *`
   }
 
@@ -54,7 +54,7 @@ module.exports = function () {
       data.identity.name
     )} SET <fields-values>${
       updatedAtColumnName
-        ? `,"${updatedAtColumnName}"=(now() at time zone 'utc')`
+        ? `,"${updatedAtColumnName}"=now()`
         : ''
     } WHERE <primary-keys> RETURNING *`
   }
