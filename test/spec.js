@@ -1414,7 +1414,7 @@ module.exports = function (options) {
             NUMERO: '5',
             DATNASC: '1999-12-31',
             DATNASCZ: '1999-12-31T00:00:00Z',
-            DATNASCNOZ: new Date('1999-12-31T19:00:00'),
+            DATNASCNOZ: '1999-12-31T19:00:00Z',
             fornecedor: {
               SIGLAFOR: 'Sigla',
               NUMERO: '99'
@@ -1455,8 +1455,8 @@ module.exports = function (options) {
               '1999-12-31T00:00:00.000Z'
             )
             record.should.have.property('DATNASCNOZ')
-            expect(record.DATNASCNOZ.toISOString()).to.equal(
-              new Date('1999-12-31T19:00:00').toISOString()
+            expect(record.DATNASCNOZ).to.equal(
+              '1999-12-31T19:00:00Z'
             )
             expect(record.cliente).to.be.a('object')
             expect(record.fornecedor).to.be.a('object')
@@ -1657,7 +1657,7 @@ module.exports = function (options) {
                 VALOR: 700,
                 DATAVENC: '2015-08-23',
                 DATAVENCZ: '1999-12-31T00:00:00Z',
-                DATAVENCNOZ: new Date('1999-12-31T19:00:00'),
+                DATAVENCNOZ: '1999-12-31T19:00:00Z',
                 'Hora do próximo aviso': '1999-12-31T00:00:00Z'
               },
               VALORLCTO: 700,
@@ -1712,8 +1712,8 @@ module.exports = function (options) {
             ).to.equal('1999-12-31T00:00:00.000Z')
             record.docpagvc[0].should.have.property('DATAVENCNOZ')
             expect(
-              record.docpagvc[0].DATAVENCNOZ.toISOString()
-            ).to.equal(new Date('1999-12-31T19:00:00').toISOString())
+              record.docpagvc[0].DATAVENCNOZ
+            ).to.equal('1999-12-31T19:00:00Z')
             expect(
               record.docpagvc[0][
                 'Hora do próximo aviso'
@@ -3438,7 +3438,7 @@ module.exports = function (options) {
             expect(record).to.not.have.property('save')
             expect(record.IDENT).to.be.null
             expect(record.DATNASC).to.be.a(
-              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+              'string'
             )
 
             expect(record.fornecedor.id).to.exist
@@ -3452,7 +3452,7 @@ module.exports = function (options) {
             ).to.not.have.property('save')
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null
             expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a(
-              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+              'string'
             )
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal(
               'P'
@@ -3492,7 +3492,7 @@ module.exports = function (options) {
             expect(record).to.not.have.property('save')
             expect(record.IDENT).to.be.null
             expect(record.DATNASC).to.be.a(
-              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+              'string'
             )
 
             expect(record.fornecedor.id).to.exist
@@ -3507,7 +3507,7 @@ module.exports = function (options) {
             ).to.not.have.property('save')
             expect(record.fornecedor.docpagvc[0].DATAPGTO).to.be.null
             expect(record.fornecedor.docpagvc[0].DATAVENC).to.be.a(
-              cadAtivo.db.dialect === 'mssql' ? 'date' : 'string'
+              'string'
             )
             expect(record.fornecedor.docpagvc[0].SITPGTO).to.equal(
               'P'
@@ -3754,7 +3754,7 @@ module.exports = function (options) {
                   ESTADO: 'MG',
                   DATNASC: '1999-12-31',
                   DATNASCZ: '1999-12-31T00:00:00Z',
-                  DATNASCNOZ: new Date('1999-12-31T19:00:00'),
+                  DATNASCNOZ: '1999-12-31T19:00:00Z',
                   fornecedor: {
                     SIGLAFOR: 'query test',
                     NUMERO: '99',
@@ -3887,8 +3887,8 @@ module.exports = function (options) {
             expect(recordset[0].DATNASCZ.toISOString()).to.equal(
               '1999-12-31T00:00:00.000Z'
             )
-            expect(recordset[0].DATNASCNOZ.toISOString()).to.equal(
-              new Date('1999-12-31T19:00:00').toISOString()
+            expect(recordset[0].DATNASCNOZ).to.equal(
+              '1999-12-31T19:00:00Z'
             )
             var i = 4
             recordset.map(function (record) {
