@@ -20,8 +20,7 @@
     "Inativa": {
       "title": "Inativa desde",
       "description": "Data a partir da qual esta conta ficará inativa",
-      "type": "date",
-      "timezone": "ignore"
+      "type": "date"
     },
     "A01_CODRED": {
       "title": "Reduzido",

@@ -26,15 +26,14 @@
       "title": "Vencimento",
       "description": "Data de vencimento",
       "type": "date",
-      "timezone": "ignore",
       "required": true
     },
     "DATAVENCZ": {
-      "type": "datetime"
+      "type": "datetime",
+      "timezone": true
     },
     "DATAVENCNOZ": {
-      "type": "datetime",
-      "timezone": "ignore"
+      "type": "string"
     },
     "CODDOC": {
       "title": "Documento",
@@ -84,8 +83,7 @@
       "title": "Quitação",
       "description": "Data do pagamento",
       "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "format": "date"
     },
     "DESCONTO": {
       "title": "Desconto",
@@ -123,15 +121,13 @@
       "title": "Data envio pgto esc.",
       "description": "Data de envio do pagamento escritural",
       "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "format": "date"
     },
     "DataConfirmacaoPgtoEsc": {
       "title": "Data confirmação pgto esc.",
       "description": "Data de confirmação do pagamento escritural",
       "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "format": "date"
     },
     "PgtoEscTipMov": {
       "description": "Tipo de movimento para pgto escritural informado ao banco",

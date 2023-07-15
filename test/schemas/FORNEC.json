@@ -100,26 +100,22 @@
     "DATMAIA": {
       "description": "Data do maior atraso",
       "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "format": "date"
     },
     "DATMAIC": {
       "description": "Data da maior compra",
       "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "format": "date"
     },
     "DATPRIC": {
       "description": "Data da primeira compra",
       "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "format": "date"
     },
     "DATULTC": {
       "description": "Data da última compra",
       "type": "string",
-      "format": "date",
-      "timezone": "UTC"
+      "format": "date"
     },
     "DIASATRASO": {
       "title": "Maior atraso",

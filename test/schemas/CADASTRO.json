@@ -144,11 +144,11 @@
       "type": "date"
     },
     "DATNASCZ": {
-      "type": "datetime"
+      "type": "datetime",
+      "timezone": true
     },
     "DATNASCNOZ": {
-      "type": "datetime",
-      "timezone": "ignore"
+      "type": "string"
     },
     "PAIS": {
       "title": "País",

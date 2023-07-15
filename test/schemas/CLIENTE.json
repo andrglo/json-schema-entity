@@ -283,26 +283,22 @@
     "DATMAIA": {
       "title": "Data >",
       "description": "Data do maior atraso",
-      "type": "date",
-      "timezone": "ignore"
+      "type": "date"
     },
     "DATMAIC": {
       "title": "Data > comp.",
       "description": "Data da maior compra",
-      "type": "date",
-      "timezone": "ignore"
+      "type": "date"
     },
     "DATPRIC": {
       "title": "Data prim.",
       "description": "Data da primeira compra",
-      "type": "date",
-      "timezone": "ignore"
+      "type": "date"
     },
     "DATULTC": {
       "title": "Dt ult.",
       "description": "Data da última compra",
-      "type": "date",
-      "timezone": "ignore"
+      "type": "date"
     },
     "LIMCREDIT": {
       "title": "Limite de crédito",
