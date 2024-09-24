@@ -1,4 +1,4 @@
-# json-schema-entity [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-entity.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-entity) [![Coverage Status](https://coveralls.io/repos/github/andrglo/json-schema-table/badge.svg)](https://coveralls.io/github/andrglo/json-schema-table)
+# json-schema-entity [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-entity.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-entity)
 > Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL database
 
 ## Install

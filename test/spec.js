@@ -3,12 +3,11 @@
 /* eslint no-undef:0 */
 
 var assert = require('assert')
-var chai = require('chai')
-var expect = chai.expect
-chai.should()
 var _ = require('lodash')
 var validator = require('validator')
 var sqlView = require('sql-view')
+
+var expect
 
 var entity = require('../src')
 
@@ -67,6 +66,12 @@ module.exports = function (options) {
   var db
   var db2
   const now = new Date()
+  before(function() {
+    return import('chai').then(chai => {
+      chai.should()
+      expect = chai.expect
+    })
+  })
   describe('single table', function () {
     var start
     var end
