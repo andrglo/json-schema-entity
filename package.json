@@ -1,6 +1,6 @@
 {
   "name": "json-schema-entity",
-  "version": "7.0.30",
+  "version": "7.0.31",
   "description": "Manage a group of tables with a parent child relation in SQL that will be seen as a document, or entity, like a no SQL database",
   "repository": "https://github.com/andrglo/json-schema-entity.git",
   "author": {
@@ -23,15 +23,15 @@
     "One"
   ],
   "devDependencies": {
-    "chai": "^5.2.0",
-    "eslint": "^9.22.0",
+    "chai": "^6.2.1",
+    "eslint": "^9.39.1",
     "eslint-config-google": "^0.14.0",
-    "glob": "^11.0.1",
-    "mocha": "^11.1.0",
+    "glob": "^13.0.0",
+    "mocha": "^11.7.5",
     "mssql-cr-layer": "^3.0.2",
     "pg-cr-layer": "^2.0.24",
     "unorm": "^1.6.0",
-    "validator": "^13.12.0"
+    "validator": "^13.15.23"
   },
   "scripts": {
     "test": "mocha --bail --exit --timeout 15000 test/index.js",
@@ -42,6 +42,6 @@
     "@ayk/co": "^4.6.4",
     "json-schema-table": "^2.0.2",
     "lodash": "^4.17.21",
-    "sql-view": "^1.0.19"
+    "sql-view": "^1.0.21"
   }
 }
