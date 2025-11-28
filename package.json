@@ -28,8 +28,8 @@
     "eslint-config-google": "^0.14.0",
     "glob": "^13.0.0",
     "mocha": "^11.7.5",
-    "mssql-cr-layer": "^3.0.2",
-    "pg-cr-layer": "^2.0.24",
+    "mssql-cr-layer": "^3.0.3",
+    "pg-cr-layer": "^2.0.25",
     "unorm": "^1.6.0",
     "validator": "^13.15.23"
   },
@@ -40,8 +40,8 @@
   "license": "MIT",
   "dependencies": {
     "@ayk/co": "^4.6.4",
-    "json-schema-table": "^2.0.2",
+    "json-schema-table": "^2.0.3",
     "lodash": "^4.17.21",
-    "sql-view": "^1.0.21"
+    "sql-view": "^1.0.22"
   }
 }
