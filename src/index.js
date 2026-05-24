@@ -1064,7 +1064,7 @@ function update(entity, was, options, data, adapter) {
                   if (
                     is[association.data.foreignKey] != primaryKeyValue
                   ) {
-                    // eslint-disable-line
+                     
                     throw new EntityError({
                       type: 'InvalidData',
                       message:

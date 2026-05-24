@@ -66,7 +66,7 @@ module.exports = function (options) {
   var db
   var db2
   const now = new Date()
-  before(function() {
+  before(function () {
     return import('chai').then(chai => {
       chai.should()
       expect = chai.expect
@@ -547,7 +547,7 @@ module.exports = function (options) {
         schema.properties.fornecedor.properties.docpagvc.should.have.property(
           'items'
         )
-        // eslint-disable-next-line max-len
+         
         schema.properties.fornecedor.properties.docpagvc.items.should.have.property(
           'properties'
         )

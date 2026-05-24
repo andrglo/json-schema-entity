@@ -21,23 +21,23 @@ function createPostgresDb() {
   const dbName = process.env.POSTGRES_DATABASE || databaseName
   return pg
       .execute('DROP DATABASE IF EXISTS "' + dbName + '";')
-      .then(function() {
+      .then(function () {
         return pg.execute('CREATE DATABASE "' + dbName + '"')
       })
 }
 
 const pgOptions = {}
 
-before(function(done) {
+before(function (done) {
   return pg
       .connect()
-      .then(function() {
+      .then(function () {
         return createPostgresDb()
-            .then(function() {
+            .then(function () {
               console.log('Postgres db created')
               return pg.close()
             })
-            .then(function() {
+            .then(function () {
               console.log('Postgres db creation connection closed')
               pgConfig.database = process.env.POSTGRES_DATABASE || databaseName
               console.log('Postgres will connect to', pgConfig.database)
@@ -45,21 +45,21 @@ before(function(done) {
               return pgOptions.db.connect()
             })
       })
-      .then(function() {
+      .then(function () {
         done()
       })
-      .catch(function(error) {
+      .catch(function (error) {
         done(error)
       })
 })
 
-describe('postgres', function() {
+describe('postgres', function () {
   let duration
-  before(function() {
+  before(function () {
     duration = process.hrtime()
   })
   spec(pgOptions)
-  after(function() {
+  after(function () {
     duration = process.hrtime(duration)
     console.info(
         'postgres finished after: %ds %dms',
@@ -69,6 +69,6 @@ describe('postgres', function() {
   })
 })
 
-after(function() {
+after(function () {
   pgOptions.db.close()
 })
