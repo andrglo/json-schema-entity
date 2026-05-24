@@ -1,4 +1,4 @@
-/* eslint-disable no-invalid-this */
+ 
 'use strict'
 
 var _ = require('lodash')
@@ -304,7 +304,7 @@ module.exports = function (config) {
       if (self.Suframa) throw new Error('Teste de promise')
     })
   })
-  cadAtivo.validate('Teste de generator', function* () {
+  cadAtivo.validate('Teste de generator', function *() {
     var self = this
     yield Promise.resolve().then(function () {
       if (self.Suframa) throw new Error('Teste de generator')
@@ -380,7 +380,7 @@ module.exports = function (config) {
   cadAtivo.beforeCreate('bc', function () {
     assert(this.entity, 'this should be a instance in beforeCreate')
   })
-  cadAtivo.beforeCreate('bcWithGenerator', function* () {
+  cadAtivo.beforeCreate('bcWithGenerator', function *() {
     assert(this.entity, 'this should be a instance in beforeCreate')
   })
   cadAtivo.afterCreate('ac', function (options, result) {
@@ -392,7 +392,7 @@ module.exports = function (config) {
   })
   cadAtivo.afterCreate(
     'acWithGenerator',
-    function* (options, result) {
+    function *(options, result) {
       assert(this.entity, 'this should be a instance in afterCreate')
       assert(
         result && !result.entity,
@@ -403,7 +403,7 @@ module.exports = function (config) {
   cadAtivo.beforeUpdate('bu', function () {
     assert(this.entity, 'this should be a instance in beforeUpdate')
   })
-  cadAtivo.beforeUpdate('buWithGenerator', function* () {
+  cadAtivo.beforeUpdate('buWithGenerator', function *() {
     assert(this.entity, 'this should be a instance in beforeUpdate')
   })
   cadAtivo.afterUpdate('au', function (options, result) {
@@ -415,7 +415,7 @@ module.exports = function (config) {
   })
   cadAtivo.afterUpdate(
     'auWithGenerator',
-    function* (options, result) {
+    function *(options, result) {
       assert(this.entity, 'this should be a instance in afterUpdate')
       assert(
         result && !result.entity,
@@ -426,7 +426,7 @@ module.exports = function (config) {
   cadAtivo.beforeDelete('bd', function () {
     assert(this.entity, 'this should be a instance in beforeDelete')
   })
-  cadAtivo.beforeDelete('bdWithGenerator', function* () {
+  cadAtivo.beforeDelete('bdWithGenerator', function *() {
     assert(this.entity, 'this should be a instance in beforeDelete')
   })
   cadAtivo.afterDelete('ad', function (options, result) {
@@ -438,7 +438,7 @@ module.exports = function (config) {
   })
   cadAtivo.afterDelete(
     'adWithGenerator',
-    function* (options, result) {
+    function *(options, result) {
       assert(this.entity, 'this should be a instance in afterDelete')
       assert(
         result && !result.entity,
