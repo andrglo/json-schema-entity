@@ -1,7 +1,6 @@
 'use strict'
 
 var _ = require('lodash')
-var co = require('@ayk/co')
 var assert = require('assert')
 var sqlView = require('sql-view')
 var jst = require('json-schema-table')
@@ -15,6 +14,25 @@ const getErrorMessage = err => err.precedingErrors ? err.precedingErrors.map(e =
 
 const isGenerator = obj =>
   typeof obj.next === 'function' && typeof obj.throw === 'function'
+
+// Run a generator that yields promises and return a single promise.
+// Equivalent of co(gen) for the only @ayk/co surface this file uses.
+const runGenerator = gen => new Promise((resolve, reject) => {
+  const step = (method, arg) => {
+    let result
+    try {
+      result = gen[method](arg)
+    } catch (err) {
+      return reject(err)
+    }
+    if (result.done) return resolve(result.value)
+    Promise.resolve(result.value).then(
+      val => step('next', val),
+      err => step('throw', err)
+    )
+  }
+  step('next', undefined)
+})
 
 function toArray(obj) {
   return Array.isArray(obj) ? obj : (obj && [obj]) || []
@@ -323,7 +341,7 @@ function runModelValidations(is, was, data, errors) {
         try {
           res = validation.fn.call(is || was)
           if (res && isGenerator(res)) {
-            res = co(res)
+            res = runGenerator(res)
           }
         } catch (err) {
           errors.push({path: validation.id, message: err.message})
@@ -838,7 +856,7 @@ function runHooks(hooks, model, options, data, validatedInstance) {
             validatedInstance ? model : void 0
           )
           if (res && isGenerator(res)) {
-            res = co(res)
+            res = runGenerator(res)
           }
         } catch (err) {
           throw new EntityError({
