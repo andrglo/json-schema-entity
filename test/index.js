@@ -1,9 +1,10 @@
 const PgCrLayer = require('pg-cr-layer')
 const MssqlCrLayer = require('mssql-cr-layer')
-const jst = require('json-schema-table')
+const jst = require('../src/json-schema-table')
 
 const spec = require('./spec')
 const sqlViewSpec = require('./sql-view-spec')
+const jstSpec = require('./json-schema-table-spec')
 const personSchema = require('./schemas/person.json')
 
 const pgConfig = {
@@ -68,6 +69,9 @@ before(function (done) {
           return createPostgresDb(pgDatabaseName + '2')
         })
         .then(function () {
+          return createPostgresDb(pgDatabaseName + '3')
+        })
+        .then(function () {
           console.log('Postgres dbs created')
           return pg.close()
         })
@@ -78,7 +82,12 @@ before(function (done) {
           pgOptions.db = new PgCrLayer(pgConfig)
           pgConfig.database = pgDatabaseName + '2'
           pgOptions.db2 = new PgCrLayer(pgConfig)
+          pgConfig.database = pgDatabaseName + '3'
+          pgOptions.db3 = new PgCrLayer(pgConfig)
           return pgOptions.db.connect()
+        })
+        .then(function () {
+          return pgOptions.db3.connect()
         })
         .then(function () {
           return jst('person', personSchema, {db: pgOptions.db}).create()
@@ -91,6 +100,9 @@ before(function (done) {
             return createMssqlDb(mssqlDatabaseName + '2')
           })
           .then(function () {
+            return createMssqlDb(mssqlDatabaseName + '3')
+          })
+          .then(function () {
             console.log('Mssql dbs created')
             return mssql.close()
           })
@@ -101,7 +113,12 @@ before(function (done) {
             mssqlOptions.db = new MssqlCrLayer(mssqlConfig)
             mssqlConfig.database = mssqlDatabaseName + '2'
             mssqlOptions.db2 = new MssqlCrLayer(mssqlConfig)
+            mssqlConfig.database = mssqlDatabaseName + '3'
+            mssqlOptions.db3 = new MssqlCrLayer(mssqlConfig)
             return mssqlOptions.db.connect()
+          })
+          .then(function () {
+            return mssqlOptions.db3.connect()
           })
           .then(function () {
             return jst('person', personSchema, {db: mssqlOptions.db}).create()
@@ -156,13 +173,31 @@ describe('sql-view (mssql)', function () {
   sqlViewSpec(mssqlOptions)
 })
 
+describe('json-schema-table (postgres)', function () {
+  jstSpec({
+    get db() {
+      return pgOptions.db3
+    }
+  })
+})
+
+describe('json-schema-table (mssql)', function () {
+  jstSpec({
+    get db() {
+      return mssqlOptions.db3
+    }
+  })
+})
+
 after(function () {
   if (mssqlOptions.db) {
     mssqlOptions.db.close()
     mssqlOptions.db2.close()
+    if (mssqlOptions.db3) mssqlOptions.db3.close()
   }
   if (pgOptions.db) {
     pgOptions.db.close()
     pgOptions.db2.close()
+    if (pgOptions.db3) pgOptions.db3.close()
   }
 })

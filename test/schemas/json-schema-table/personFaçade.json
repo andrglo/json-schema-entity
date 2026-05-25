@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "person": {
+      "type": "string",
+      "maxLength": 60,
+      "schema": {
+        "$ref": "person",
+        "key": "fieldName"
+      }
+    },
+    "façade": {
+      "type": "string",
+      "maxLength": 20,
+      "$ref": "façade",
+      "field": "XfaçadeX"
+    }
+  },
+  "required": [
+    "person",
+    "façade"
+  ],
+  "primaryKey": [
+    "person",
+    "façade"
+  ]
+}

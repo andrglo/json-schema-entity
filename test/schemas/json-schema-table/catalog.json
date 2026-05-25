@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "catnum": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true
+    },
+    "refnum": {
+      "type": "integer",
+      "required": true
+    }
+  },
+  "primaryKey": [
+    "catnum",
+    "refnum"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "properties": {
+    "NUMREF": {
+      "type": "integer",
+      "required": true
+    },
+    "NUMCAT": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true
+    },
+    "MODEL": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true
+    },
+    "REF": {
+      "type": "string",
+      "maxLength": 50,
+      "required": true
+    },
+    "SUPPLIER": {
+      "type": "integer",
+      "required": true
+    },
+    "STATUS": {
+      "type": "string",
+      "maxLength": 1
+    }
+  },
+  "primaryKey": [
+    "NUMCAT",
+    "NUMREF",
+    "MODEL",
+    "REF",
+    "SUPPLIER"
+  ],
+  "foreignKeys": {
+    "reffab": {
+      "NUMREF": "NUMREF",
+      "NUMCAT": "NUMCAT",
+      "MODEL": "MODEL",
+      "REF": "REF"
+    }
+  }
+}

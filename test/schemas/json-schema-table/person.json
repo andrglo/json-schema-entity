@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "autoIncrement": true,
+      "primaryKey": true,
+      "field": "personId"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 60,
+      "field": "fieldName"
+    },
+    "number": {
+      "type": "number",
+      "maxLength": 6
+    },
+    "summary": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "state": {
+      "type": "string",
+      "maxLength": 2,
+      "$ref": "state"
+    },
+    "dateOfBirth": {
+      "type": "date"
+    },
+    "momentOfBirth": {
+      "type": "datetime"
+    },
+    "momentOfBirthWithZone": {
+      "type": "datetime"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "unique": [
+    ["name"],
+    ["state", "dateOfBirth"],
+    ["fieldName", "state", "momentOfBirth"]
+  ]
+}

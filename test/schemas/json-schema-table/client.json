@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "$ref": "person",
+      "field": "clientId",
+      "primaryKey": true
+    },
+    "initials": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "sales": {
+      "type": "number",
+      "maxLength": 20,
+      "decimals": 6
+    },
+    "debt": {
+      "type": "number",
+      "maxLength": 20,
+      "decimals": 0
+    },
+    "lastSale": {
+      "type": "datetime"
+    },
+    "cityTax": {
+      "type": "object",
+      "schema": {
+        "$ref": "#/definitions/tax"
+      }
+    },
+    "stateTax": {
+      "schema": {
+        "$ref": "#/definitions/tax"
+      }
+    },
+    "tax": {
+      "$ref": "tax"
+    },
+    "taxes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "schema": {
+          "$ref": "#definitions/tax"
+        }
+      }
+    }
+  },
+  "required": [
+    "id",
+    "initials"
+  ]
+}

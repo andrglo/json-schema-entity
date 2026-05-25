@@ -1,0 +1,48 @@
+{
+  "properties": {
+    "NUMCAT": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true
+    },
+    "NUMREF": {
+      "type": "integer",
+      "required": true
+    },
+    "MODEL": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true
+    },
+    "REF": {
+      "type": "string",
+      "maxLength": 50,
+      "required": true
+    },
+    "ORIGINAL": {
+      "type": "string",
+      "maxLength": 1
+    }
+  },
+  "unique": [
+    [
+      "NUMREF",
+      "NUMCAT",
+      "MODEL",
+      "REF"
+    ],
+    [
+      "REF"
+    ],
+    [
+      "REF",
+      "ORIGINAL"
+    ]
+  ],
+  "foreignKeys": {
+    "catalog": {
+      "catnum": "NUMCAT",
+      "refnum": "NUMREF"
+    }
+  }
+}

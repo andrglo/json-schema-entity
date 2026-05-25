@@ -3,7 +3,7 @@
 var _ = require('lodash')
 var assert = require('assert')
 var sqlView = require('./sql-view')
-var jst = require('json-schema-table')
+var jst = require('./json-schema-table')
 var EntityError = require('./entity-error')
 const {
   convertToUpdatedAt,
