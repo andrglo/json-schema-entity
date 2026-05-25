@@ -5,7 +5,7 @@
 var assert = require('assert')
 var _ = require('lodash')
 var validator = require('validator')
-var sqlView = require('sql-view')
+var sqlView = require('../src/sql-view')
 
 var expect
 

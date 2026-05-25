@@ -1,7 +1,10 @@
 const PgCrLayer = require('pg-cr-layer')
 const MssqlCrLayer = require('mssql-cr-layer')
+const jst = require('json-schema-table')
 
 const spec = require('./spec')
+const sqlViewSpec = require('./sql-view-spec')
+const personSchema = require('./schemas/person.json')
 
 const pgConfig = {
   user: process.env.POSTGRES_USER || 'postgres',
@@ -77,6 +80,9 @@ before(function (done) {
           pgOptions.db2 = new PgCrLayer(pgConfig)
           return pgOptions.db.connect()
         })
+        .then(function () {
+          return jst('person', personSchema, {db: pgOptions.db}).create()
+        })
     })
     .then(function () {
       return mssql.connect().then(function () {
@@ -96,6 +102,9 @@ before(function (done) {
             mssqlConfig.database = mssqlDatabaseName + '2'
             mssqlOptions.db2 = new MssqlCrLayer(mssqlConfig)
             return mssqlOptions.db.connect()
+          })
+          .then(function () {
+            return jst('person', personSchema, {db: mssqlOptions.db}).create()
           })
       })
     })
@@ -137,6 +146,14 @@ describe('mssql', function () {
       duration[1] / 1000000
     )
   })
+})
+
+describe('sql-view (postgres)', function () {
+  sqlViewSpec(pgOptions)
+})
+
+describe('sql-view (mssql)', function () {
+  sqlViewSpec(mssqlOptions)
 })
 
 after(function () {
