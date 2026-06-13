@@ -3189,8 +3189,16 @@ module.exports = function (options) {
       it('then be modified and saved again', function (done) {
         jessica.NUMERO = '123'
         var updatedAt = jessica.updatedAt
-        jessica
-          .save()
+        // The server clock that stamps updatedAt has a coarse resolution
+        // (SQL Server getUtcDate() is ~3.33ms); when this re-save lands in the
+        // same tick as the previous save the timestamps are equal and the
+        // strict comparison below flakes. Wait a tick so updatedAt advances.
+        new Promise(function (resolve) {
+          setTimeout(resolve, 20)
+        })
+          .then(function () {
+            return jessica.save()
+          })
           .then(function () {
             jessica.should.have.property('NUMERO')
             jessica.NUMERO.should.equal('123')
