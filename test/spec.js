@@ -4352,4 +4352,49 @@ module.exports = function (options) {
         .catch(logError(done))
     })
   })
+  describe('sql capture inherited from the cr-layer', function () {
+    var table
+    var captureSchema = {
+      type: 'object',
+      title: 'sqlcapture',
+      properties: {
+        code: {type: 'string', maxLength: 5, required: true},
+        name: {type: 'string', maxLength: 20}
+      },
+      primaryKey: ['code']
+    }
+    before(function () {
+      db = options.db
+      var ent = entity('sqlcapture', captureSchema, {db: db})
+      if (typeof ent.setDialect === 'function') {
+        ent.setDialect(db.dialect)
+      }
+      table = ent.new(db)
+      return table.createTables()
+    })
+    it('a failed entity write surfaces err.sql from the layer', function () {
+      return table
+        .create({code: 'AA', name: 'first'})
+        .then(function () {
+          return table.create({code: 'AA', name: 'duplicate'})
+        })
+        .then(function () {
+          throw new Error('No error?')
+        })
+        .catch(function (error) {
+          expect(error.message.indexOf('No error?')).to.equal(-1)
+          var sql =
+            error.sql || (error.originalError && error.originalError.sql)
+          expect(sql).to.be.a('string')
+          expect(sql.length).to.be.above(0)
+        })
+    })
+    it('a successful entity read is unaffected', function () {
+      return table.fetch({where: {code: 'AA'}}).then(function (recordset) {
+        expect(recordset).to.be.a('array')
+        expect(recordset.length).to.equal(1)
+        expect(recordset.sql).to.equal(undefined)
+      })
+    })
+  })
 }
