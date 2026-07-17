@@ -506,7 +506,7 @@ class TableRecordSchema {
               case 'date':
                 value =
                   value instanceof Date
-                    ? value.toISOString().substr(0, 10)
+                    ? data.adapter.plainDate(value)
                     : value
                 break
             }
@@ -681,7 +681,7 @@ function buildPlainObject(record, data) {
       case 'date':
         record[key] =
           value instanceof Date
-            ? value.toISOString().substr(0, 10)
+            ? data.adapter.plainDate(value)
             : value
         break
     }

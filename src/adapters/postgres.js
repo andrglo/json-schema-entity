@@ -188,5 +188,21 @@ module.exports = function () {
     }
   }
 
+  // node-pg parses `timestamp without time zone` values as
+  // host-LOCAL Dates, so the lossless inverse for a date-semantics
+  // value stored in a timestamp column is local-component
+  // formatting. toISOString() here would re-express the wall-clock
+  // in UTC and shift the date by one day on hosts east of UTC.
+  adapter.plainDate = function (value) {
+    const pad = n => String(n).padStart(2, '0')
+    return (
+      value.getFullYear() +
+      '-' +
+      pad(value.getMonth() + 1) +
+      '-' +
+      pad(value.getDate())
+    )
+  }
+
   return adapter
 }

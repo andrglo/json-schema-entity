@@ -326,5 +326,14 @@ module.exports = function () {
     }
   }
 
+  // The mssql driver runs tedious with useUTC (its default), so
+  // datetime values arrive as UTC-constructed Dates and
+  // toISOString() is the lossless inverse. Do NOT switch this to
+  // local-component formatting: on hosts west of UTC it would
+  // shift every date read one day back.
+  adapter.plainDate = function (value) {
+    return value.toISOString().substr(0, 10)
+  }
+
   return adapter
 }

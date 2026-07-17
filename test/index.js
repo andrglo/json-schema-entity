@@ -4,6 +4,7 @@ const jst = require('../src/json-schema-table')
 
 const spec = require('./spec')
 const sqlViewSpec = require('./sql-view-spec')
+const dateInDatetimeSpec = require('./date-in-datetime-spec')
 const jstSpec = require('./json-schema-table-spec')
 const personSchema = require('./schemas/person.json')
 
@@ -163,6 +164,14 @@ describe('mssql', function () {
       duration[1] / 1000000
     )
   })
+})
+
+describe('date in datetime column (postgres)', function () {
+  dateInDatetimeSpec(pgOptions)
+})
+
+describe('date in datetime column (mssql)', function () {
+  dateInDatetimeSpec(mssqlOptions)
 })
 
 describe('sql-view (postgres)', function () {
