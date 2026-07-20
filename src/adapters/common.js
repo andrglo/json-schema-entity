@@ -19,7 +19,10 @@ exports.create = function (record, data, options) {
       if (value !== void 0) {
         var field = property.field || name
         fields.push(field)
-        if (property.enum) {
+        // `value !== null` — an explicit null is a caller asking to store SQL
+        // NULL, and there is nothing to truncate. Without this guard it throws
+        // "Cannot read properties of null (reading 'substr')".
+        if (property.enum && value !== null) {
           value = value.substr(0, property.maxLength)
         }
         if (property.mapper?.write) {
@@ -93,7 +96,10 @@ exports.update = function (record, data, options) {
       if (value !== void 0) {
         var field = property.field || name
         fields.push(field)
-        if (property.enum) {
+        // See the same guard in `insert` above: an explicit null means SQL
+        // NULL, not a string to truncate. Reachable from any client that sends
+        // `{"someEnumColumn": null}` to clear a column.
+        if (property.enum && value !== null) {
           value = value.substr(0, property.maxLength)
         }
         if (property.mapper?.write) {

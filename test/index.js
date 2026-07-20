@@ -5,6 +5,7 @@ const jst = require('../src/json-schema-table')
 const spec = require('./spec')
 const sqlViewSpec = require('./sql-view-spec')
 const dateInDatetimeSpec = require('./date-in-datetime-spec')
+const enumNullSpec = require('./enum-null-spec')
 const jstSpec = require('./json-schema-table-spec')
 const personSchema = require('./schemas/person.json')
 
@@ -172,6 +173,14 @@ describe('date in datetime column (postgres)', function () {
 
 describe('date in datetime column (mssql)', function () {
   dateInDatetimeSpec(mssqlOptions)
+})
+
+describe('enum null (postgres)', function () {
+  enumNullSpec(pgOptions)
+})
+
+describe('enum null (mssql)', function () {
+  enumNullSpec(mssqlOptions)
 })
 
 describe('sql-view (postgres)', function () {
