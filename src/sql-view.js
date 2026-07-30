@@ -214,11 +214,11 @@ function build(view, criteria) {
       statement += ' ORDER BY ' + orderBy.join()
     }
     if (criteria.limit) {
-      statement += ' LIMIT ' + criteria.limit
+      statement += ' LIMIT ' + checkPaging(criteria.limit, 'limit')
     }
     if (criteria.skip) {
       assert(criteria.order, 'Order should be defined when using skip')
-      statement += ' OFFSET ' + criteria.skip
+      statement += ' OFFSET ' + checkPaging(criteria.skip, 'skip')
     }
   } else {
     // msssql
@@ -226,14 +226,16 @@ function build(view, criteria) {
       assert(criteria.order, 'Order should be defined when using skip')
       statement =
         'SELECT' +
-        (criteria.limit ? ' TOP ' + criteria.limit : '') +
+        (criteria.limit
+          ? ' TOP ' + checkPaging(criteria.limit, 'limit')
+          : '') +
         ' * FROM (SELECT ROW_NUMBER() OVER (ORDER BY ' +
         orderBy.join() +
         ') AS row_number,* FROM (' +
         statement +
         ') t) t ' +
         'WHERE row_number > ' +
-        criteria.skip
+        checkPaging(criteria.skip, 'skip')
     } else {
       if (orderBy.length) {
         statement += ' ORDER BY ' + orderBy.join()
@@ -241,7 +243,7 @@ function build(view, criteria) {
       if (criteria.limit) {
         statement = statement.replace(
             'SELECT ',
-            'SELECT TOP ' + criteria.limit + ' '
+            'SELECT TOP ' + checkPaging(criteria.limit, 'limit') + ' '
         )
       }
     }
@@ -261,6 +263,18 @@ function splitAlias(name) {
     res.as = res.column
   }
   return res
+}
+
+// The paging values are interpolated in the statement, not parameterized,
+// so they must be proven to be plain non negative integers. A numeric
+// string is accepted - that is what a query parameter delivers - but what
+// is interpolated is always the coerced number, never the given value
+function checkPaging(value, name) {
+  const number = Number(value)
+  if (!Number.isInteger(number) || number < 0) {
+    throw new Error('Invalid ' + name + ': ' + value)
+  }
+  return number
 }
 
 function toArray(element) {

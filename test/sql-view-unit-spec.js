@@ -240,3 +240,132 @@ describe('sql-view identifier escaping (mssql)', function() {
     })
   })
 })
+
+describe('sql-view paging (postgres)', function() {
+  const pg = (view, criteria) => statement('postgres', view, criteria)
+  const payload = '1 UNION SELECT datname FROM pg_database'
+
+  describe('break out of the paging clauses', function() {
+    it('should reject sql in limit', function() {
+      expect(function() {
+        pg('t', {limit: payload})
+      }).to.throw(/Invalid limit/)
+    })
+    it('should reject sql in skip', function() {
+      expect(function() {
+        pg('t', {order: 'id', skip: payload})
+      }).to.throw(/Invalid skip/)
+    })
+    it('should reject a negative limit', function() {
+      expect(function() {
+        pg('t', {limit: -1})
+      }).to.throw(/Invalid limit/)
+    })
+    it('should reject a fractional limit', function() {
+      expect(function() {
+        pg('t', {limit: 1.5})
+      }).to.throw(/Invalid limit/)
+    })
+    it('should reject a not a number limit', function() {
+      expect(function() {
+        pg('t', {limit: 'abc'})
+      }).to.throw(/Invalid limit/)
+    })
+    it('should reject an infinite limit', function() {
+      expect(function() {
+        pg('t', {limit: Infinity})
+      }).to.throw(/Invalid limit/)
+    })
+  })
+
+  describe('paging round trip', function() {
+    it('should limit with a number', function() {
+      expect(pg('t', {limit: 10})).to.equal(
+        'SELECT * FROM "t" LIMIT 10'
+      )
+    })
+    it('should limit with a numeric string', function() {
+      expect(pg('t', {limit: '10'})).to.equal(
+        'SELECT * FROM "t" LIMIT 10'
+      )
+    })
+    it('should skip with a number', function() {
+      expect(pg('t', {order: 'id', skip: 5})).to.equal(
+        'SELECT * FROM "t" ORDER BY "id" OFFSET 5'
+      )
+    })
+    it('should skip with a numeric string', function() {
+      expect(pg('t', {order: 'id', skip: '5'})).to.equal(
+        'SELECT * FROM "t" ORDER BY "id" OFFSET 5'
+      )
+    })
+    it('should not page when not asked', function() {
+      expect(pg('t', {where: {name: 'a'}})).to.equal(
+        'SELECT * FROM "t" WHERE "name"=$1'
+      )
+    })
+  })
+})
+
+describe('sql-view paging (mssql)', function() {
+  const ms = (view, criteria) => statement('mssql', view, criteria)
+  const payload = '1 UNION SELECT name FROM sys.databases'
+
+  describe('break out of the paging clauses', function() {
+    it('should reject sql in limit', function() {
+      expect(function() {
+        ms('t', {limit: payload})
+      }).to.throw(/Invalid limit/)
+    })
+    it('should reject sql in skip', function() {
+      expect(function() {
+        ms('t', {order: 'id', skip: payload})
+      }).to.throw(/Invalid skip/)
+    })
+    it('should reject sql in limit when skipping', function() {
+      expect(function() {
+        ms('t', {order: 'id', skip: 5, limit: payload})
+      }).to.throw(/Invalid limit/)
+    })
+    it('should reject a negative skip', function() {
+      expect(function() {
+        ms('t', {order: 'id', skip: -1})
+      }).to.throw(/Invalid skip/)
+    })
+  })
+
+  describe('paging round trip', function() {
+    it('should limit with a number', function() {
+      expect(ms('t', {limit: 10})).to.equal(
+        'SELECT TOP 10 * FROM [t]'
+      )
+    })
+    it('should limit with a numeric string', function() {
+      expect(ms('t', {limit: '10'})).to.equal(
+        'SELECT TOP 10 * FROM [t]'
+      )
+    })
+    it('should skip with a number', function() {
+      expect(ms('t', {order: 'id', skip: 5})).to.contain(
+        'WHERE row_number > 5'
+      )
+    })
+    it('should skip with a numeric string', function() {
+      expect(ms('t', {order: 'id', skip: '5'})).to.contain(
+        'WHERE row_number > 5'
+      )
+    })
+    it('should limit and skip', function() {
+      expect(ms('t', {order: 'id', skip: 5, limit: 10})).to.equal(
+        'SELECT TOP 10 * FROM (SELECT ROW_NUMBER() OVER (ORDER BY ' +
+          '[id]) AS row_number,* FROM (SELECT * FROM [t]) t) t ' +
+          'WHERE row_number > 5'
+      )
+    })
+    it('should not page when not asked', function() {
+      expect(ms('t', {where: {name: 'a'}})).to.equal(
+        'SELECT * FROM [t] WHERE [name]=$1'
+      )
+    })
+  })
+})
