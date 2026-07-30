@@ -4,6 +4,7 @@ const jst = require('../src/json-schema-table')
 
 const spec = require('./spec')
 const sqlViewSpec = require('./sql-view-spec')
+require('./sql-view-unit-spec')
 const dateInDatetimeSpec = require('./date-in-datetime-spec')
 const enumNullSpec = require('./enum-null-spec')
 const jstSpec = require('./json-schema-table-spec')

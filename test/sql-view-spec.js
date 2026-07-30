@@ -630,4 +630,144 @@ module.exports = function(options) {
           .catch(done)
     })
   })
+
+  describe('identifier escaping', function() {
+    const table = 'escaping'
+    let weird
+    let alias
+    let selectBreakout
+    let whereBreakout
+    before(function() {
+      const isPg = db.dialect === 'postgres'
+      weird = isPg ? 'we"ird' : 'we]ird'
+      alias = isPg ? 'al"ias' : 'al]ias'
+      selectBreakout = isPg
+        ? 'datname as x" FROM pg_database--'
+        : 'name as x] FROM sys.databases--'
+      whereBreakout = isPg
+        ? 'plain" IN (SELECT datname FROM pg_database) OR 1=1 OR "plain'
+        : 'plain] IN (SELECT name FROM sys.databases) OR 1=1 OR [plain'
+      return db
+          .execute(
+              isPg
+            ? 'CREATE TABLE "escaping" ("plain" text, "we""ird" text, "decoy" text)'
+            : 'CREATE TABLE [escaping] ([plain] nvarchar(50), [we]]ird] nvarchar(50), [decoy] nvarchar(50))'
+          )
+          .then(function() {
+            return db.execute(
+                'INSERT INTO ' +
+              db.wrap(table) +
+              " VALUES ('r1','target-A','decoy-A')," +
+              "('r2','target-B','decoy-B'),('r3','target-A','decoy-C')"
+            )
+          })
+    })
+    after(function() {
+      return db.execute('DROP TABLE ' + db.wrap(table))
+    })
+    it('should read the rows of a column named with a quote', function(done) {
+      const view = sv.build(table, {where: {[weird]: 'target-A'}})
+      db.query(view.statement, view.params)
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array')
+            expect(recordset.length).to.equal(2)
+            expect(
+                _.map(recordset, 'plain')
+                    .sort()
+                    .join()
+            ).to.equal('r1,r3')
+            done()
+          })
+          .catch(done)
+    })
+    it('should not resolve to the decoy column', function(done) {
+      const view = sv.build(table, {where: {[weird]: 'decoy-A'}})
+      db.query(view.statement, view.params)
+          .then(function(recordset) {
+            expect(recordset.length).to.equal(0)
+            done()
+          })
+          .catch(done)
+    })
+    it('should select only the column named with a quote', function(done) {
+      const view = sv.build(table, {select: weird, where: {plain: 'r2'}})
+      db.query(view.statement, view.params)
+          .then(function(recordset) {
+            expect(recordset.length).to.equal(1)
+            expect(Object.keys(recordset[0]).length).to.equal(1)
+            expect(Object.keys(recordset[0])[0]).to.equal(weird)
+            expect(recordset[0][weird]).to.equal('target-B')
+            done()
+          })
+          .catch(done)
+    })
+    it('should order by the column named with a quote', function(done) {
+      const view = sv.build(table, {
+        select: [weird, 'plain'],
+        order: weird + ' desc'
+      })
+      db.query(view.statement, view.params)
+          .then(function(recordset) {
+            expect(_.map(recordset, weird)).to.deep.equal([
+              'target-B',
+              'target-A',
+              'target-A'
+            ])
+            done()
+          })
+          .catch(done)
+    })
+    it('should alias the column named with a quote', function(done) {
+      const view = sv.build(table, {
+        select: weird + ' as ' + alias,
+        where: {plain: 'r1'}
+      })
+      db.query(view.statement, view.params)
+          .then(function(recordset) {
+            expect(recordset.length).to.equal(1)
+            expect(Object.keys(recordset[0])[0]).to.equal(alias)
+            expect(recordset[0][alias]).to.equal('target-A')
+            done()
+          })
+          .catch(done)
+    })
+    it('should not break out of the identifier in a select', function(done) {
+      const view = sv.build(table, {select: selectBreakout})
+      db.query(view.statement, view.params).then(
+          function(recordset) {
+            done(
+                new Error(
+                    'Broke out of the identifier: ' + JSON.stringify(recordset)
+                )
+            )
+          },
+          function() {
+            done()
+          }
+      )
+    })
+    it('should not break out of the identifier in a where', function(done) {
+      const view = sv.build(table, {where: {[whereBreakout]: 'r1'}})
+      db.query(view.statement, view.params).then(
+          function(recordset) {
+            done(
+                new Error(
+                    'Broke out of the identifier: ' + JSON.stringify(recordset)
+                )
+            )
+          },
+          function() {
+            done()
+          }
+      )
+    })
+    it('should reject a cast type carrying sql', function() {
+      if (db.dialect !== 'postgres') {
+        return this.skip()
+      }
+      expect(function() {
+        sv.build(table, {select: 'datname:as text FROM pg_database--'})
+      }).to.throw(/Invalid cast type/)
+    })
+  })
 }

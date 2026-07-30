@@ -4,18 +4,26 @@
 const _ = require('lodash')
 const assert = require('assert')
 
+// Identifiers coming from a fetch criteria are escaped by doubling the
+// closing quote character - the standard SQL escape - so any character is
+// safe inside them. The cast type cannot be escaped the same way (quoting
+// it would break the cast), so it is validated and rejected instead
+const CAST_TYPE = /^[a-z][a-z0-9_]*$/
+
 const sql = {
   wrap: function(identifier) {
     let options = identifier.split(':')
     identifier = options[0]
     if (sql.dialect === 'postgres') {
-      identifier = '"' + identifier + '"'
+      identifier = '"' + identifier.replace(/"/g, '""') + '"'
       if (options.length > 1) {
         options = options.slice(1)
         if (options[0].startsWith('as')) {
-          identifier = `${identifier}::${options[0]
-              .substr(2)
-              .toLocaleLowerCase()}`
+          const type = options[0].substr(2).toLocaleLowerCase()
+          if (!CAST_TYPE.test(type)) {
+            throw new Error('Invalid cast type: ' + type)
+          }
+          identifier = `${identifier}::${type}`
         }
         if (options.includes('ai')) {
           identifier = `public.f_unaccent(${identifier})`
@@ -26,7 +34,7 @@ const sql = {
       }
       return identifier
     } else {
-      return '[' + identifier + ']'
+      return '[' + identifier.replace(/]/g, ']]') + ']'
     }
   },
 
