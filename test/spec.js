@@ -3189,16 +3189,27 @@ module.exports = function (options) {
       it('then be modified and saved again', function (done) {
         jessica.NUMERO = '123'
         var updatedAt = jessica.updatedAt
-        // The server clock that stamps updatedAt has a coarse resolution
-        // (SQL Server getUtcDate() is ~3.33ms); when this re-save lands in the
-        // same tick as the previous save the timestamps are equal and the
-        // strict comparison below flakes. Wait a tick so updatedAt advances.
-        new Promise(function (resolve) {
-          setTimeout(resolve, 20)
-        })
-          .then(function () {
-            return jessica.save()
+        // The server clock that stamps updatedAt is coarse (SQL Server
+        // getUtcDate() resolves to ~3.33ms), so a re-save landing in the same
+        // tick as the previous one yields an equal timestamp. A fixed sleep
+        // only makes that unlikely, never impossible -- it flaked on CI at
+        // 20ms. Re-save until the stamp actually advances instead: that asserts
+        // the invariant we care about (a save updates updatedAt) rather than
+        // assuming some duration is enough. If it never advances the loop runs
+        // out and the test fails, so a real regression is still caught.
+        var attempts = 0
+        var retry = function () {
+          attempts++
+          return jessica.save().then(function () {
+            if (jessica.updatedAt > updatedAt || attempts >= 20) {
+              return
+            }
+            return new Promise(function (resolve) {
+              setTimeout(resolve, 10)
+            }).then(retry)
           })
+        }
+        retry()
           .then(function () {
             jessica.should.have.property('NUMERO')
             jessica.NUMERO.should.equal('123')
