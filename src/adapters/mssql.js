@@ -14,7 +14,9 @@ module.exports = function () {
   adapter.createTimestamps = function (data, options) {
     options = options || {}
     var table = this.wrap(data.identity.name)
-    var schema = options.schema || 'dbo'
+    var schema = options.schema
+      ? common.checkSchema(options.schema)
+      : 'dbo'
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     return this.db
       .query(

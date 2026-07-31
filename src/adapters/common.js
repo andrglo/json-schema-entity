@@ -53,9 +53,9 @@ exports.create = function (record, data, options) {
       }, '')
     )
   if (options.schema && this.db.dialect === 'postgres') {
-    insertCommand = `INSERT INTO ${
+    insertCommand = `INSERT INTO ${checkSchema(
       options.schema
-    }.${insertCommand.substr(12)}`
+    )}.${insertCommand.substr(12)}`
   }
   debug(insertCommand, params)
   return this.db
@@ -158,9 +158,9 @@ exports.update = function (record, data, options) {
       }, '')
     )
   if (options.schema && this.db.dialect === 'postgres') {
-    updateCommand = `UPDATE ${options.schema}.${updateCommand.substr(
-      7
-    )}`
+    updateCommand = `UPDATE ${checkSchema(
+      options.schema
+    )}.${updateCommand.substr(7)}`
   }
   debug(updateCommand, params)
   return this.db
@@ -225,9 +225,9 @@ exports.destroy = function (data, options) {
     }, '')
   )
   if (options.schema && this.db.dialect === 'postgres') {
-    deleteCommand = `DELETE FROM ${
+    deleteCommand = `DELETE FROM ${checkSchema(
       options.schema
-    }.${deleteCommand.substr(12)}`
+    )}.${deleteCommand.substr(12)}`
   }
   debug(deleteCommand, params)
   return this.db
@@ -242,6 +242,50 @@ exports.destroy = function (data, options) {
       return recordset.length
     })
 }
+
+// `options.schema` is the only identifier the caller chooses at request time
+// - every other one is read from the entity definition - and it is always
+// interpolated in the statement, never parameterized: it qualifies the table
+// in the fetch, insert, update and delete commands, and it is compared as a
+// literal in the createTimestamps lookup of both dialects. It cannot be
+// quoted either: it is emitted bare, so postgres case folds it, and quoting
+// it would make every schema name that works today case sensitive. So it is
+// proven to be a plain identifier instead, the way sql-view proves a cast
+// type and the paging values.
+//
+// This guards the schema, and ONLY the schema. It does not make the
+// createTimestamps lookup a safe statement: the entity name and the
+// timestamps suffix are interpolated into that same single-quoted literal
+// with no validation at all, so a definition built from a hostile name still
+// executes whatever it carries. Those are definition-time values, chosen by
+// the developer rather than arriving with the request, which is why they are
+// out of scope here - not because they are proven.
+//
+// `$` IS accepted and that is load bearing, not sloppiness: it is a legal
+// identifier character in both dialects, and a multi instance MSSQL database
+// is addressed as `instance$name` - one such database, `rigelSql2019$Elba`,
+// exists in the field. A class without `$` would break exactly those
+// deployments and nowhere else, i.e. it would look green everywhere it is
+// tested. A leading digit is NOT rejected either: it is illegal in an
+// unquoted postgres identifier, but legal as a bracket quoted MSSQL name.
+// This rejects metacharacters, not naming taste.
+//
+// The class is pinned byte for byte to ONE class in the calling application:
+// habilis `app/lib/db/sql-identifier.js`. Not to habilis as a whole - that
+// codebase carries a second, narrower class in `app/lib/nfsNacional.js`
+// (no `$`) which it also applies to a schema, so the two are already a
+// parser differential and this one deliberately follows the looser, correct
+// one. That is the failure mode to watch: when two guards over the same
+// value disagree, the stricter layer rejects what the looser one admitted,
+// and a tenant accepted at one layer starts failing at the next
+const SCHEMA_IDENTIFIER = /^[A-Za-z0-9_$]+$/
+function checkSchema(value) {
+  if (typeof value !== 'string' || !SCHEMA_IDENTIFIER.test(value)) {
+    throw new Error('Invalid schema: ' + value)
+  }
+  return value
+}
+exports.checkSchema = checkSchema
 
 function checkRecordsetLength(data, key, n, type) {
   if (n === 0 && key) {

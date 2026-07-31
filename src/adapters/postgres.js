@@ -14,7 +14,9 @@ module.exports = function () {
   adapter.createTimestamps = function (data, options) {
     options = options || {}
     var table = this.wrap(data.identity.name)
-    var schema = options.schema || 'public'
+    var schema = options.schema
+      ? common.checkSchema(options.schema)
+      : 'public'
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     return this.db
       .query(
@@ -177,9 +179,13 @@ module.exports = function () {
       ' AS ' +
       this.wrap(data.key)
     if (options.schema && !isAssociation) {
+      const schema = common.checkSchema(options.schema)
+      // a function replacement, not a string one: `$` is a legal schema
+      // character and in a replacement string `$$` would collapse to a
+      // single `$`, silently renaming the schema
       fetchCommand = fetchCommand.replace(
         /" FROM "/g,
-        `" FROM ${options.schema}."`
+        () => `" FROM ${schema}."`
       )
     }
     return fetchCommand
