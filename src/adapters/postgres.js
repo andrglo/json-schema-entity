@@ -46,7 +46,9 @@ module.exports = function () {
     data.insertCommand = `INSERT INTO ${this.wrap(
       data.identity.name
     )} (<fields>${
-      updatedAtColumnName ? `,"${updatedAtColumnName}"` : ''
+      updatedAtColumnName
+        ? `,${this.wrap(updatedAtColumnName)}`
+        : ''
     }) VALUES (<values>${
       updatedAtColumnName ? `,now()` : ''
     }) RETURNING *`
@@ -58,7 +60,7 @@ module.exports = function () {
       data.identity.name
     )} SET <fields-values>${
       updatedAtColumnName
-        ? `,"${updatedAtColumnName}"=now()`
+        ? `,${this.wrap(updatedAtColumnName)}=now()`
         : ''
     } WHERE <primary-keys> RETURNING *`
   }
@@ -117,13 +119,17 @@ module.exports = function () {
             display = display.substr(point + 1)
           }
           fields.push(
-            `(select "${display}" FROM "${
+            `(select ${this.wrap(display)} FROM ${this.wrap(
               property.schema.$ref
-            }" where "${property.schema.key}"="${
-              data.key
-            }"."${fieldName}") as "${_.camelCase(
-              `${data.identity.name} ${name} ${display}`
-            )}"`
+            )} where ${this.wrap(
+              property.schema.key
+            )}=${this.wrap(data.key)}.${this.wrap(
+              fieldName
+            )}) as ${this.wrap(
+              _.camelCase(
+                `${data.identity.name} ${name} ${display}`
+              )
+            )}`
           )
         }
       }.bind(this)

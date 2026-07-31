@@ -69,9 +69,7 @@ module.exports = function () {
   function buildReturningFields(fields, fieldsWithType, data) {
     _.forEach(data.properties, function (property, name) {
       fieldsWithType.push(
-        '[' +
-          (property.field || name) +
-          ']' +
+        adapter.wrap(property.field || name) +
           ' ' +
           toSqlType(property)
       )
@@ -79,7 +77,9 @@ module.exports = function () {
     })
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     if (updatedAtColumnName) {
-      fieldsWithType.push(updatedAtColumnName + ' DATETIME2(3)')
+      fieldsWithType.push(
+        adapter.wrap(updatedAtColumnName) + ' DATETIME2(3)'
+      )
       fields.push(updatedAtColumnName)
     }
   }
@@ -92,9 +92,7 @@ module.exports = function () {
     _.forEach(data.properties, function (property, name) {
       if (data.primaryKeyFields.includes(property.field || name)) {
         fieldsWithType.push(
-          '[' +
-            (property.field || name) +
-            ']' +
+          adapter.wrap(property.field || name) +
             ' ' +
             toSqlType(property)
         )
@@ -121,14 +119,16 @@ module.exports = function () {
     ]
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     commands.push(
-      'INSERT INTO [' +
-        data.identity.name +
-        '] (<fields>' +
-        (updatedAtColumnName ? `,${updatedAtColumnName}` : '') +
+      'INSERT INTO ' +
+        adapter.wrap(data.identity.name) +
+        ' (<fields>' +
+        (updatedAtColumnName
+          ? `,${adapter.wrap(updatedAtColumnName)}`
+          : '') +
         ') OUTPUT ' +
         primaryKeysFields
           .map(function (field) {
-            return 'INSERTED.[' + field + ']'
+            return 'INSERTED.' + adapter.wrap(field)
           })
           .join(',') +
         ' INTO @tmp VALUES (<values>' +
@@ -137,12 +137,15 @@ module.exports = function () {
     )
     commands.push(
       'SELECT ' +
-        fields.map(name => `c.[${name}]`).join(',') +
-        ' FROM [' +
-        data.identity.name +
-        '] c INNER JOIN @tmp t ON ' +
+        fields.map(name => `c.${adapter.wrap(name)}`).join(',') +
+        ' FROM ' +
+        adapter.wrap(data.identity.name) +
+        ' c INNER JOIN @tmp t ON ' +
         primaryKeysFields
-          .map(name => `c.[${name}]=t.[${name}]`)
+          .map(
+            name =>
+              `c.${adapter.wrap(name)}=t.${adapter.wrap(name)}`
+          )
           .join(' AND ')
     )
     data.insertCommand = commands.join(';')
@@ -165,28 +168,31 @@ module.exports = function () {
     ]
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     commands.push(
-      'UPDATE [' +
-        data.identity.name +
-        '] SET <fields-values>' +
+      'UPDATE ' +
+        adapter.wrap(data.identity.name) +
+        ' SET <fields-values>' +
         (updatedAtColumnName
-          ? `,${updatedAtColumnName}=getUtcDate()`
+          ? `,${adapter.wrap(updatedAtColumnName)}=getUtcDate()`
           : '') +
         ' OUTPUT ' +
         primaryKeysFields
           .map(function (field) {
-            return 'INSERTED.[' + field + ']'
+            return 'INSERTED.' + adapter.wrap(field)
           })
           .join(',') +
         ' INTO @tmp WHERE <primary-keys>'
     )
     commands.push(
       'SELECT ' +
-        fields.map(name => `c.[${name}]`).join(',') +
-        ' FROM [' +
-        data.identity.name +
-        '] c INNER JOIN @tmp t ON ' +
+        fields.map(name => `c.${adapter.wrap(name)}`).join(',') +
+        ' FROM ' +
+        adapter.wrap(data.identity.name) +
+        ' c INNER JOIN @tmp t ON ' +
         primaryKeysFields
-          .map(name => `c.[${name}]=t.[${name}]`)
+          .map(
+            name =>
+              `c.${adapter.wrap(name)}=t.${adapter.wrap(name)}`
+          )
           .join(' AND ')
     )
     data.updateCommand = commands.join(';')
@@ -199,12 +205,12 @@ module.exports = function () {
       'DECLARE @tmp TABLE (' + fieldsWithType.join(',') + ')'
     ]
     commands.push(
-      'DELETE FROM [' +
-        data.identity.name +
-        '] OUTPUT ' +
+      'DELETE FROM ' +
+        adapter.wrap(data.identity.name) +
+        ' OUTPUT ' +
         fields
           .map(function (field) {
-            return 'DELETED.[' + field + ']'
+            return 'DELETED.' + adapter.wrap(field)
           })
           .join(',') +
         ' INTO @tmp WHERE <find-keys>'
@@ -240,10 +246,8 @@ module.exports = function () {
     _.forEach(data.properties, function (property, name) {
       var fieldName = property.field || name
       fields.push(
-        '[' +
-          fieldName +
-          ']' +
-          (name !== fieldName ? ' AS [' + name + ']' : '')
+        adapter.wrap(fieldName) +
+          (name !== fieldName ? ' AS ' + adapter.wrap(name) : '')
       )
       if (
         options.fetchExternalDescription &&
@@ -258,19 +262,23 @@ module.exports = function () {
           display = display.substr(point + 1)
         }
         fields.push(
-          `(select [${display}] from [${
+          `(select ${adapter.wrap(display)} from ${adapter.wrap(
             property.schema.$ref
-          }] where [${property.schema.key}]=[${
-            data.key
-          }].[${fieldName}]) as [${_.camelCase(
-            `${data.identity.name} ${name} ${display}`
-          )}]`
+          )} where ${adapter.wrap(
+            property.schema.key
+          )}=${adapter.wrap(data.key)}.${adapter.wrap(
+            fieldName
+          )}) as ${adapter.wrap(
+            _.camelCase(
+              `${data.identity.name} ${name} ${display}`
+            )
+          )}`
         )
       }
     })
     const updatedAtColumnName = common.getUpdatedAtColumnName(data)
     if (updatedAtColumnName) {
-      fields.push(updatedAtColumnName)
+      fields.push(adapter.wrap(updatedAtColumnName))
     }
     _.forEach(data.associations, function (association) {
       if (!association.data.foreignKey) {
@@ -283,28 +291,30 @@ module.exports = function () {
       fields.push(
         '(' +
           query +
-          ' WHERE [' +
-          foreignKey +
-          ']=[' +
-          data.key +
-          '].[' +
-          data.primaryKeyFields[0] +
-          '] ORDER BY ' +
-          (association.data.primaryOrderFields ||
-            association.data.primaryKeyFields) +
-          ' FOR JSON PATH) AS [' +
-          association.data.key +
-          ']'
+          ' WHERE ' +
+          adapter.wrap(foreignKey) +
+          '=' +
+          adapter.wrap(data.key) +
+          '.' +
+          adapter.wrap(data.primaryKeyFields[0]) +
+          ' ORDER BY ' +
+          (
+            association.data.primaryOrderFields ||
+            association.data.primaryKeyFields
+          )
+            .map(field => adapter.wrap(field))
+            .join(',') +
+          ' FOR JSON PATH) AS ' +
+          adapter.wrap(association.data.key)
       )
     })
     return (
       'SELECT ' +
       fields.join(',') +
-      ' FROM [' +
-      data.identity.name +
-      '] AS [' +
-      data.key +
-      ']'
+      ' FROM ' +
+      adapter.wrap(data.identity.name) +
+      ' AS ' +
+      adapter.wrap(data.key)
     )
   }
 
