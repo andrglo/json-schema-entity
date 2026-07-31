@@ -4,7 +4,11 @@ var common = require('./common')
 
 module.exports = function () {
   var adapter = {
-    wrap: column => `"${column}"`
+    // Identifiers are escaped by doubling the closing quote character -
+    // the standard SQL escape, same as in sql-view - so any character
+    // is safe inside them and a name carrying a quote cannot end the
+    // identifier early
+    wrap: column => `"${column.replace(/"/g, '""')}"`
   }
 
   adapter.createTimestamps = function (data, options) {

@@ -5,6 +5,8 @@ const jst = require('../src/json-schema-table')
 const spec = require('./spec')
 const sqlViewSpec = require('./sql-view-spec')
 require('./sql-view-unit-spec')
+const adapterWrapSpec = require('./adapter-wrap-spec')
+require('./adapter-wrap-unit-spec')
 const dateInDatetimeSpec = require('./date-in-datetime-spec')
 const enumNullSpec = require('./enum-null-spec')
 const jstSpec = require('./json-schema-table-spec')
@@ -190,6 +192,14 @@ describe('sql-view (postgres)', function () {
 
 describe('sql-view (mssql)', function () {
   sqlViewSpec(mssqlOptions)
+})
+
+describe('adapter wrap (postgres)', function () {
+  adapterWrapSpec(pgOptions)
+})
+
+describe('adapter wrap (mssql)', function () {
+  adapterWrapSpec(mssqlOptions)
 })
 
 describe('json-schema-table (postgres)', function () {
