@@ -4,7 +4,7 @@ jobs:
   test:
     working_directory: ~/repo
     docker:
-      - image: cimg/node:22.21.1
+      - image: cimg/node:24.19.0
         environment:
           NODE_ENV: test
           POSTGRES_HOST: 127.0.0.1
@@ -17,7 +17,7 @@ jobs:
         environment:
           ACCEPT_EULA: Y
           SA_PASSWORD: Passw0rd
-      - image: andrglo/postgres:15
+      - image: andrglo/postgres:18
         environment:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -67,7 +67,7 @@ jobs:
   publish:
     working_directory: ~/repo
     docker:
-      - image: cimg/node:22.21.1
+      - image: cimg/node:24.19.0
     steps:
       - attach_workspace:
           at: ~/repo
