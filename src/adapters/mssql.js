@@ -320,6 +320,104 @@ module.exports = function () {
     )
   }
 
+  // Written once per adapter on purpose: the two dialects are copies
+  // free to diverge, not a shared routine with a branch. Here there is
+  // no schema qualification - as in buildQuery, tenancy is per database
+  // - and the comparison is a plain LIKE: the client databases are
+  // case and accent insensitive and there is no f_unaccent here
+  adapter.buildAssociationSearch = function (
+    data,
+    key,
+    value,
+    prepareValue,
+    options,
+    outerAlias
+  ) {
+    const association = _.find(data.associations, function (item) {
+      return item.type === 'hasMany' && item.data.key === key
+    })
+    if (!association) {
+      throw new Error('Invalid search association: ' + key)
+    }
+    const child = association.data
+    if (!child.searchable || !child.searchable.length) {
+      throw new Error('Association is not searchable: ' + key)
+    }
+    if (!child.foreignKey) {
+      throw new Error(
+        'Association has no foreign key: ' + key
+      )
+    }
+    // only the first attribute would be correlated, so a composite
+    // key leaves the exists under constrained and OVER matches: it
+    // refuses to answer instead, as buildQuery is single key too
+    if (data.primaryKeyAttributes.length !== 1) {
+      throw new Error(
+        'Search needs a single column primary key: ' + key
+      )
+    }
+    const childAlias = adapter.wrap(key)
+    const foreignKey =
+      child.properties[child.foreignKey].field || child.foreignKey
+    const joins = []
+    const terms = []
+    _.forEach(child.searchable, function (name) {
+      const property = child.properties[name]
+      if (!property) {
+        throw new Error(
+          'Invalid searchable property ' +
+            name +
+            ' in association ' +
+            key
+        )
+      }
+      let expression
+      if (
+        property.display &&
+        property.schema &&
+        property.schema.$ref &&
+        property.schema.key
+      ) {
+        let display = property.display
+        const point = display.indexOf('.')
+        if (point > -1) {
+          display = display.substr(point + 1)
+        }
+        const lookupAlias = adapter.wrap(key + '_' + name)
+        joins.push(
+          ` LEFT JOIN ${adapter.wrap(
+            property.schema.$ref
+          )} AS ${lookupAlias} ON ${lookupAlias}.${adapter.wrap(
+            property.schema.key
+          )}=${childAlias}.${adapter.wrap(
+            property.field || name
+          )}`
+        )
+        expression = `${lookupAlias}.${adapter.wrap(display)}`
+      } else {
+        expression = `${childAlias}.${adapter.wrap(
+          property.field || name
+        )}`
+      }
+      // a new placeholder per occurrence: reusing one is fatal here
+      terms.push(
+        `${expression} LIKE ` + prepareValue('%' + value + '%')
+      )
+    })
+    // the parent is correlated by its primary key ATTRIBUTE: the outer
+    // where sees the derived table, where only the aliases exist
+    return (
+      `EXISTS (SELECT 1 FROM ${adapter.wrap(
+        child.identity.name
+      )} AS ${childAlias}${joins.join('')}` +
+      ` WHERE ${childAlias}.${adapter.wrap(
+        foreignKey
+      )}=${outerAlias}.${adapter.wrap(
+        data.primaryKeyAttributes[0]
+      )} AND (${terms.join(' OR ')}))`
+    )
+  }
+
   adapter.getCoercionFunction = function (type) {
     switch (type) {
       case 'datetime':

@@ -1358,7 +1358,24 @@ module.exports = function (schemaName, schema, config) {
                 criteria.where = where
                 var view = sv.build(
                   data.adapter.buildQuery(entity, options),
-                  criteria
+                  criteria,
+                  {
+                    buildAssociationSearch: function (
+                      key,
+                      value,
+                      prepareValue,
+                      outerAlias
+                    ) {
+                      return data.adapter.buildAssociationSearch(
+                        data,
+                        key,
+                        value,
+                        prepareValue,
+                        options,
+                        outerAlias
+                      )
+                    }
+                  }
                 )
                 return db
                   .query(view.statement, view.params, options)
@@ -1756,6 +1773,42 @@ module.exports = function (schemaName, schema, config) {
               field => schema.properties[field].field || field
             )
           }
+          if (options && options.searchable !== void 0) {
+            const declared = Array.isArray(options.searchable)
+              ? options.searchable
+              : String(options.searchable).split(',')
+            // a copy, never the caller's own array: it is validated
+            // here, so keeping the reference would let a name pushed
+            // afterwards reach the adapter and throw at query time
+            const searchable = []
+            declared.map(function (name) {
+              name = typeof name === 'string' ? name.trim() : name
+              if (name === '') {
+                return
+              }
+              if (!schema.properties[name]) {
+                throw new Error(
+                  'Invalid searchable property ' +
+                    name +
+                    ' in association ' +
+                    association.key
+                )
+              }
+              // twice the same name is twice the same like term
+              if (searchable.indexOf(name) === -1) {
+                searchable.push(name)
+              }
+            })
+            // the presence of the key is what tells a consumer the
+            // association can be searched, so an empty one would
+            // offer a search that throws on every query
+            if (searchable.length === 0) {
+              throw new Error(
+                'Empty searchable in association ' + association.key
+              )
+            }
+            association.searchable = searchable
+          }
           data.associations.push({type: 'hasMany', data: association})
           rebuild()
           return data.public[association.key]
@@ -1800,6 +1853,10 @@ module.exports = function (schemaName, schema, config) {
                 schema.properties[key] = {
                   type: 'array',
                   items: buildSchema(association.data)
+                }
+                if (association.data.searchable) {
+                  schema.properties[key].searchable =
+                    association.data.searchable.slice()
                 }
               }
             })

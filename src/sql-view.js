@@ -43,6 +43,26 @@ const sql = {
   },
 
   prepareCriterion: function(value, key, parentKey) {
+    // The association search is resolved by the caller: the parent key
+    // names a hasMany association, never an identifier, and the value is
+    // always bound as a parameter. Handled before the object recursion so
+    // an object or array payload cannot slip through as a where clause
+    if (parentKey && key === 'search') {
+      const fn = sql.context && sql.context.buildAssociationSearch
+      if (!fn) {
+        throw new Error('Unknown comparator: ' + key)
+      }
+      if (typeof value !== 'string' && typeof value !== 'number') {
+        throw new Error('Invalid search value for: ' + parentKey)
+      }
+      // an empty text is not a match all: LIKE '%%' still demands a
+      // child row with a non null searchable column, so a cleared
+      // search box would silently drop the childless parents
+      if (String(value).trim() === '') {
+        throw new Error('Invalid search value for: ' + parentKey)
+      }
+      return fn(parentKey, String(value), sql.prepareValue, sql.outerAlias)
+    }
     if (_.isObject(value) && !_.isDate(value) && !Array.isArray(value)) {
       return sql.where(value, null, key)
     }
@@ -134,11 +154,16 @@ const sql = {
 
 module.exports = function(dialect) {
   return {
-    build: function(view, criteria) {
+    build: function(view, criteria, context) {
       criteria = criteria || {}
       sql.dialect = dialect || 'mssql'
       sql.params = []
+      sql.context = context || {}
+      // the outer where is applied to the derived table, so the only
+      // names visible to a correlated subquery are its aliases
+      sql.outerAlias = isView(view) ? 't' : sql.wrap(view)
       const statement = build(view, criteria)
+      sql.context = {}
       return {
         statement: statement,
         params: sql.params

@@ -191,6 +191,121 @@ module.exports = function () {
     return fetchCommand
   }
 
+  // Written once per adapter on purpose: the two dialects are copies
+  // free to diverge, not a shared routine with a branch. Here the child
+  // and every lookup are schema qualified - the pool is shared between
+  // tenants and there is no per connection search_path - and the
+  // comparison is folded to case and accent insensitive, as the value
+  // arrives already normalized by the caller
+  adapter.buildAssociationSearch = function (
+    data,
+    key,
+    value,
+    prepareValue,
+    options,
+    outerAlias
+  ) {
+    const association = _.find(data.associations, function (item) {
+      return item.type === 'hasMany' && item.data.key === key
+    })
+    if (!association) {
+      throw new Error('Invalid search association: ' + key)
+    }
+    const child = association.data
+    if (!child.searchable || !child.searchable.length) {
+      throw new Error('Association is not searchable: ' + key)
+    }
+    if (!child.foreignKey) {
+      throw new Error(
+        'Association has no foreign key: ' + key
+      )
+    }
+    // only the first attribute would be correlated, so a composite
+    // key leaves the exists under constrained and OVER matches: it
+    // refuses to answer instead, as buildQuery is single key too
+    if (data.primaryKeyAttributes.length !== 1) {
+      throw new Error(
+        'Search needs a single column primary key: ' + key
+      )
+    }
+    const schema =
+      options && options.schema
+        ? common.checkSchema(options.schema) + '.'
+        : ''
+    const childAlias = this.wrap(key)
+    const foreignKey =
+      child.properties[child.foreignKey].field || child.foreignKey
+    const joins = []
+    const terms = []
+    _.forEach(
+      child.searchable,
+      function (name) {
+        const property = child.properties[name]
+        if (!property) {
+          throw new Error(
+            'Invalid searchable property ' +
+              name +
+              ' in association ' +
+              key
+          )
+        }
+        let expression
+        if (
+          property.display &&
+          property.schema &&
+          property.schema.$ref &&
+          property.schema.key
+        ) {
+          let display = property.display
+          const point = display.indexOf('.')
+          if (point > -1) {
+            display = display.substr(point + 1)
+          }
+          const lookupAlias = this.wrap(key + '_' + name)
+          joins.push(
+            ` LEFT JOIN ${schema}${this.wrap(
+              property.schema.$ref
+            )} AS ${lookupAlias} ON ${lookupAlias}.${this.wrap(
+              property.schema.key
+            )}=${childAlias}.${this.wrap(
+              property.field || name
+            )}`
+          )
+          expression = `${lookupAlias}.${this.wrap(display)}`
+        } else {
+          expression = `${childAlias}.${this.wrap(
+            property.field || name
+          )}`
+          // f_unaccent takes text and postgres has no implicit cast
+          // from a number or a date: without it the query errors
+          // where mssql, with its plain like, matches. Only this
+          // branch is cast - the type above is the type of the
+          // foreign key, never of the column being displayed
+          if (property.type !== 'string') {
+            expression = `${expression}::text`
+          }
+        }
+        // only the column is folded, never the parameter
+        terms.push(
+          `lower(public.f_unaccent(${expression})) LIKE ` +
+            prepareValue('%' + value + '%')
+        )
+      }.bind(this)
+    )
+    // the parent is correlated by its primary key ATTRIBUTE: the outer
+    // where sees the derived table, where only the aliases exist
+    return (
+      `EXISTS (SELECT 1 FROM ${schema}${this.wrap(
+        child.identity.name
+      )} AS ${childAlias}${joins.join('')}` +
+      ` WHERE ${childAlias}.${this.wrap(
+        foreignKey
+      )}=${outerAlias}.${this.wrap(
+        data.primaryKeyAttributes[0]
+      )} AND (${terms.join(' OR ')}))`
+    )
+  }
+
   adapter.getCoercionFunction = function (type) {
     switch (type) {
       case 'datetime':

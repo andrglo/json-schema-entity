@@ -7,6 +7,8 @@ const sqlViewSpec = require('./sql-view-spec')
 require('./sql-view-unit-spec')
 const adapterWrapSpec = require('./adapter-wrap-spec')
 require('./adapter-wrap-unit-spec')
+const associationSearchSpec = require('./association-search-spec')
+require('./association-search-unit-spec')
 const schemaOptionSpec = require('./schema-option-spec')
 const dateInDatetimeSpec = require('./date-in-datetime-spec')
 const enumNullSpec = require('./enum-null-spec')
@@ -201,6 +203,14 @@ describe('adapter wrap (postgres)', function () {
 
 describe('adapter wrap (mssql)', function () {
   adapterWrapSpec(mssqlOptions)
+})
+
+describe('association search round trip (postgres)', function () {
+  associationSearchSpec(pgOptions, 'postgres')
+})
+
+describe('association search round trip (mssql)', function () {
+  associationSearchSpec(mssqlOptions, 'mssql')
 })
 
 describe('schema option (postgres)', function () {
